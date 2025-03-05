@@ -1,5 +1,6 @@
 import 'package:buzz5_quiz_app/config/colors.dart';
 import 'package:buzz5_quiz_app/config/constants.dart';
+import 'package:buzz5_quiz_app/pages/instructions_page.dart';
 import 'package:buzz5_quiz_app/pages/joingame_page.dart';
 import 'package:flutter/material.dart';
 
@@ -47,7 +48,12 @@ class HomePage extends StatelessWidget {
               children: [
                 ElevatedButton(
                   onPressed: () {
-                    // Add your onPressed code here!
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => InstructionsPage(),
+                      ),
+                    );
                   },
                   style: ElevatedButton.styleFrom(
                     minimumSize: Size(300, 80), // Width and height
