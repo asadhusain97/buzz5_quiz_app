@@ -1,4 +1,4 @@
-import 'package:buzz5_quiz_app/themes/app_theme.dart';
+import 'package:buzz5_quiz_app/config/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:buzz5_quiz_app/pages/home_page.dart';
 
@@ -23,7 +23,7 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Buzz5 Quiz App',
       debugShowCheckedModeBanner: false,
       themeMode: _themeMode,
       darkTheme: AppTheme.dark,

@@ -1,3 +1,6 @@
+import 'package:buzz5_quiz_app/config/colors.dart';
+import 'package:buzz5_quiz_app/config/constants.dart';
+import 'package:buzz5_quiz_app/pages/joingame_page.dart';
 import 'package:flutter/material.dart';
 
 class HomePage extends StatelessWidget {
@@ -9,14 +12,28 @@ class HomePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Buzz5 Quiz'),
-        backgroundColor: Colors.deepPurple,
+        title: Text(
+          'Buzz5 Quiz',
+          style: TextStyle(color: ColorConstants.lightTextColor),
+        ),
+        backgroundColor: ColorConstants.primaryContainerColor,
         actions: [
-          Switch(
-            value: Theme.of(context).brightness == Brightness.dark,
-            onChanged: (value) {
-              onThemeChanged(value);
-            },
+          Row(
+            children: [
+              Text(
+                'Dark Theme',
+                style: TextStyle(color: ColorConstants.lightTextColor),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: Switch(
+                  value: Theme.of(context).brightness == Brightness.dark,
+                  onChanged: (value) {
+                    onThemeChanged(value);
+                  },
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -24,20 +41,33 @@ class HomePage extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            Text('Welcome to the Home Page!', style: TextStyle(fontSize: 24)),
-            SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () {
-                // Add your onPressed code here!
-              },
-              child: Text('Button 1'),
-            ),
-            SizedBox(height: 10),
-            ElevatedButton(
-              onPressed: () {
-                // Add your onPressed code here!
-              },
-              child: Text('Button 2'),
+            Text('Welcome to Buzz5!', style: AppTextStyles.headingBig),
+            SizedBox(height: 120),
+            Column(
+              children: [
+                ElevatedButton(
+                  onPressed: () {
+                    // Add your onPressed code here!
+                  },
+                  style: ElevatedButton.styleFrom(
+                    minimumSize: Size(300, 80), // Width and height
+                  ),
+                  child: Text('Start game', style: AppTextStyles.buttonTextBig),
+                ),
+                SizedBox(height: 80),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => JoinGamePage()),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    minimumSize: Size(300, 80), // Width and height
+                  ),
+                  child: Text('Join Game', style: AppTextStyles.buttonTextBig),
+                ),
+              ],
             ),
           ],
         ),
