@@ -55,9 +55,7 @@ class HomePage extends StatelessWidget {
                       ),
                     );
                   },
-                  style: ElevatedButton.styleFrom(
-                    minimumSize: Size(300, 80), // Width and height
-                  ),
+                  style: ElevatedButton.styleFrom(minimumSize: Size(300, 80)),
                   child: Text('Start game', style: AppTextStyles.buttonTextBig),
                 ),
                 SizedBox(height: 80),
