@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:buzz5_quiz_app/config/colors.dart';
 
 class AppTextStyles {
   static const TextStyle headingBig = TextStyle(
@@ -13,6 +14,10 @@ class AppTextStyles {
     fontSize: 24,
     fontWeight: FontWeight.bold,
   );
+  static const TextStyle titleMedium = TextStyle(
+    fontSize: 20,
+    fontWeight: FontWeight.bold,
+  );
   static const TextStyle titleSmall = TextStyle(
     fontSize: 16,
     fontWeight: FontWeight.bold,
@@ -24,5 +29,11 @@ class AppTextStyles {
   static const TextStyle caption = TextStyle(
     fontSize: 12,
     fontWeight: FontWeight.bold,
+  );
+  static TextStyle hintText = TextStyle(
+    fontSize: 14,
+    color: ColorConstants.hintGrey,
+    fontWeight: FontWeight.w200,
+    fontStyle: FontStyle.italic,
   );
 }

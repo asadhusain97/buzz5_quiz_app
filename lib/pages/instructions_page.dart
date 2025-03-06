@@ -4,6 +4,9 @@ import 'package:buzz5_quiz_app/widgets/appbar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:buzz5_quiz_app/models/player.dart';
+import 'package:buzz5_quiz_app/models/player_provider.dart';
+import 'package:provider/provider.dart';
 
 const String howToPlayMD = """
   ## How to Play
@@ -79,7 +82,7 @@ class InstructionsPage extends StatelessWidget {
               ],
             ),
           ),
-          Flexible(child: const PlayerNameForm()),
+          Flexible(child: PlayerNameForm()),
         ],
       ),
     );
@@ -87,7 +90,56 @@ class InstructionsPage extends StatelessWidget {
 }
 
 class PlayerNameForm extends StatelessWidget {
-  const PlayerNameForm({super.key});
+  PlayerNameForm({super.key});
+
+  final _player1Controller = TextEditingController();
+  final _player2Controller = TextEditingController();
+  final _player3Controller = TextEditingController();
+  final _player4Controller = TextEditingController();
+  final _player5Controller = TextEditingController();
+  final _player6Controller = TextEditingController();
+  final _player7Controller = TextEditingController();
+  final _player8Controller = TextEditingController();
+
+  bool _validateUniqueNames() {
+    final names = [
+      _player1Controller.text.trim(),
+      _player2Controller.text.trim(),
+      _player3Controller.text.trim(),
+      _player4Controller.text.trim(),
+      _player5Controller.text.trim(),
+      _player6Controller.text.trim(),
+      _player7Controller.text.trim(),
+      _player8Controller.text.trim(),
+    ];
+
+    final uniqueNames = names.toSet();
+    return uniqueNames.length == names.length;
+  }
+
+  void _addPlayersToProvider(BuildContext context) {
+    final playerProvider = Provider.of<PlayerProvider>(context, listen: false);
+    final names = [
+      _player1Controller.text.trim(),
+      _player2Controller.text.trim(),
+      _player3Controller.text.trim(),
+      _player4Controller.text.trim(),
+      _player5Controller.text.trim(),
+      _player6Controller.text.trim(),
+      _player7Controller.text.trim(),
+      _player8Controller.text.trim(),
+    ];
+
+    final nonEmptyNames = names.where((name) => name.isNotEmpty).toList();
+
+    if (nonEmptyNames.isEmpty) {
+      playerProvider.addPlayer(Player(name: "Lone Ranger"));
+    } else {
+      for (var name in nonEmptyNames) {
+        playerProvider.addPlayer(Player(name: name));
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -112,38 +164,41 @@ class PlayerNameForm extends StatelessWidget {
                 right: 0,
                 top: 0,
               ),
-              child: Text("Enter player names"),
+              child: Text(
+                "Enter player names",
+                style: AppTextStyles.titleMedium,
+              ),
             ),
-            SizedBox(height: 20),
+            SizedBox(height: 40),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Column(
                   children: [
-                    const PlayerTextField(),
+                    PlayerTextField(controller: _player1Controller),
                     SizedBox(height: 10),
-                    const PlayerTextField(),
+                    PlayerTextField(controller: _player2Controller),
                     SizedBox(height: 10),
-                    const PlayerTextField(),
+                    PlayerTextField(controller: _player3Controller),
                     SizedBox(height: 10),
-                    const PlayerTextField(),
+                    PlayerTextField(controller: _player4Controller),
                   ],
                 ),
                 Column(
                   children: [
-                    const PlayerTextField(),
+                    PlayerTextField(controller: _player5Controller),
                     SizedBox(height: 10),
-                    const PlayerTextField(),
+                    PlayerTextField(controller: _player6Controller),
                     SizedBox(height: 10),
-                    const PlayerTextField(),
+                    PlayerTextField(controller: _player7Controller),
                     SizedBox(height: 10),
-                    const PlayerTextField(),
+                    PlayerTextField(controller: _player8Controller),
                   ],
                 ),
               ],
             ),
-            SizedBox(height: 20),
+            SizedBox(height: 40),
             Padding(
               padding: const EdgeInsets.only(
                 left: 0,
@@ -153,10 +208,23 @@ class PlayerNameForm extends StatelessWidget {
               ),
               child: ElevatedButton(
                 onPressed: () {
-                  // Add your onPressed code here!
+                  if (_validateUniqueNames()) {
+                    _addPlayersToProvider(context);
+                    // Proceed with the next steps
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          'Player names must be unique',
+                          style: AppTextStyles.caption,
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    );
+                  }
                 },
-                style: ElevatedButton.styleFrom(minimumSize: Size(150, 40)),
-                child: Text("Lets Go!", style: AppTextStyles.buttonTextSmall),
+                style: ElevatedButton.styleFrom(minimumSize: Size(250, 60)),
+                child: Text("Lets Go!", style: AppTextStyles.buttonTextBig),
               ),
             ),
           ],
@@ -167,17 +235,21 @@ class PlayerNameForm extends StatelessWidget {
 }
 
 class PlayerTextField extends StatelessWidget {
-  const PlayerTextField({super.key});
+  final TextEditingController controller;
+  const PlayerTextField({super.key, required this.controller});
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: 200.0, // Set your desired width
-      height: 50.0, // Set your desired height
+      width: 200.0,
+      height: 40.0,
       child: TextFormField(
+        controller: controller,
+        maxLength: 15,
         decoration: InputDecoration(
           hintText: 'Enter player name',
-          prefixIcon: Icon(Icons.person),
+          hintStyle: AppTextStyles.hintText,
+          prefixIcon: Icon(Icons.person, size: 20.0),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(8.0),
             borderSide: BorderSide(color: ColorConstants.primaryColor),
@@ -186,7 +258,7 @@ class PlayerTextField extends StatelessWidget {
             borderRadius: BorderRadius.circular(8.0),
             borderSide: BorderSide(color: ColorConstants.secondaryColor),
           ),
-          hintStyle: TextStyle(color: ColorConstants.lightTextColor),
+          counterText: 'Max. 15 chars. allowed',
         ),
       ),
     );

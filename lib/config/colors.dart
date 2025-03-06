@@ -24,4 +24,5 @@ class ColorConstants {
   static Color errorContainerColor = Color(0xFF93000A);
   static Color lightTextColor = hexToColor('#F6F7EB');
   static Color darkTextColor = hexToColor('#0D1931');
+  static Color hintGrey = hexToColor('#B8BECC');
 }
