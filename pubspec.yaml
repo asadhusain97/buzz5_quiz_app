@@ -38,6 +38,7 @@ dependencies:
   flutter_markdown: ^0.7.6+2
   url_launcher: ^6.3.1
   provider: ^6.1.2
+  logger: ^2.5.0
 
 dev_dependencies:
   flutter_test:

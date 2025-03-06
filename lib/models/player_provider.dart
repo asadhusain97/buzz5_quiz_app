@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'package:buzz5_quiz_app/models/player.dart';
 import 'package:flutter/material.dart';
+import 'package:buzz5_quiz_app/config/logger.dart';
 
 class PlayerProvider with ChangeNotifier {
   List<Player> _playerList = [];
@@ -11,23 +12,28 @@ class PlayerProvider with ChangeNotifier {
 
   void addPlayer(Player player) {
     _playerList.add(player);
+    AppLogger.i("Added player: ${player.name}");
     if (_lastPositivePlayer == null && _playerList.isNotEmpty) {
       _lastPositivePlayer =
           _playerList[Random().nextInt(_playerList.length)]; // Random default
+      AppLogger.i("Set lastPositivePlayer to: ${_lastPositivePlayer?.name}");
     }
     notifyListeners();
   }
 
   void removePlayer(Player player) {
     _playerList.remove(player);
+    AppLogger.i("Removed player: ${player.name}");
     notifyListeners();
   }
 
   void setPlayerList(List<Player> playerList) {
     _playerList = playerList;
+    AppLogger.i("Set player list: $playerList");
     if (_lastPositivePlayer == null && _playerList.isNotEmpty) {
       _lastPositivePlayer =
           _playerList[Random().nextInt(_playerList.length)]; // Random default
+      AppLogger.i("Set lastPositivePlayer to: ${_lastPositivePlayer?.name}");
     }
     notifyListeners();
   }
@@ -55,6 +61,7 @@ class PlayerProvider with ChangeNotifier {
       // 3. Sort alphabetically by name
       return a.name.compareTo(b.name);
     });
+    AppLogger.i("Sorted player list: $_playerList");
     notifyListeners();
   }
 
@@ -64,7 +71,9 @@ class PlayerProvider with ChangeNotifier {
       _playerList[playerIndex].allPoints.add(point);
       if (point > 0) {
         _lastPositivePlayer = _playerList[playerIndex];
+        AppLogger.i("Set lastPositivePlayer to: ${_lastPositivePlayer?.name}");
       }
+      AppLogger.i("Added $point points to ${player.name}");
       notifyListeners();
     }
   }

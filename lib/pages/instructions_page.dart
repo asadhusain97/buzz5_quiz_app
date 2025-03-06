@@ -1,5 +1,6 @@
 import 'package:buzz5_quiz_app/config/colors.dart';
 import 'package:buzz5_quiz_app/config/constants.dart';
+import 'package:buzz5_quiz_app/pages/questionBoard.dart';
 import 'package:buzz5_quiz_app/widgets/appbar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
@@ -7,6 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:buzz5_quiz_app/models/player.dart';
 import 'package:buzz5_quiz_app/models/player_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:buzz5_quiz_app/config/logger.dart';
 
 const String howToPlayMD = """
   ## How to Play
@@ -29,12 +31,15 @@ class InstructionsPage extends StatelessWidget {
   Future<void> _launchURL(String url) async {
     final Uri uri = Uri.parse(url);
     if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+      AppLogger.e('Could not launch $url');
       throw 'Could not launch $url';
     }
+    AppLogger.i('Launched URL: $url');
   }
 
   @override
   Widget build(BuildContext context) {
+    AppLogger.i("InstructionsPage built");
     return Scaffold(
       appBar: CustomAppBar(title: "Instructions", showBackButton: true),
       body: Row(
@@ -102,18 +107,20 @@ class PlayerNameForm extends StatelessWidget {
   final _player8Controller = TextEditingController();
 
   bool _validateUniqueNames() {
-    final names = [
-      _player1Controller.text.trim(),
-      _player2Controller.text.trim(),
-      _player3Controller.text.trim(),
-      _player4Controller.text.trim(),
-      _player5Controller.text.trim(),
-      _player6Controller.text.trim(),
-      _player7Controller.text.trim(),
-      _player8Controller.text.trim(),
-    ];
+    final names =
+        [
+          _player1Controller.text.trim(),
+          _player2Controller.text.trim(),
+          _player3Controller.text.trim(),
+          _player4Controller.text.trim(),
+          _player5Controller.text.trim(),
+          _player6Controller.text.trim(),
+          _player7Controller.text.trim(),
+          _player8Controller.text.trim(),
+        ].where((name) => name.isNotEmpty).toList(); // Filter out empty names
 
     final uniqueNames = names.toSet();
+    AppLogger.i("Validating unique names: $names");
     return uniqueNames.length == names.length;
   }
 
@@ -134,15 +141,18 @@ class PlayerNameForm extends StatelessWidget {
 
     if (nonEmptyNames.isEmpty) {
       playerProvider.addPlayer(Player(name: "Lone Ranger"));
+      AppLogger.i("Added default player: Lone Ranger");
     } else {
       for (var name in nonEmptyNames) {
         playerProvider.addPlayer(Player(name: name));
+        AppLogger.i("Added player: $name");
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    AppLogger.i("PlayerNameForm built");
     return SizedBox(
       width: 600.0,
       height: 800.0,
@@ -210,8 +220,14 @@ class PlayerNameForm extends StatelessWidget {
                 onPressed: () {
                   if (_validateUniqueNames()) {
                     _addPlayersToProvider(context);
-                    // Proceed with the next steps
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => QuestionBoardPage(),
+                      ),
+                    );
                   } else {
+                    AppLogger.w("Player names are not unique");
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text(
@@ -258,7 +274,7 @@ class PlayerTextField extends StatelessWidget {
             borderRadius: BorderRadius.circular(8.0),
             borderSide: BorderSide(color: ColorConstants.secondaryColor),
           ),
-          counterText: 'Max. 15 chars. allowed',
+          counterText: '',
         ),
       ),
     );

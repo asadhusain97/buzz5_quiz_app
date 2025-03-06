@@ -3,6 +3,7 @@ import 'package:buzz5_quiz_app/config/constants.dart';
 import 'package:buzz5_quiz_app/pages/instructions_page.dart';
 import 'package:buzz5_quiz_app/pages/joingame_page.dart';
 import 'package:flutter/material.dart';
+import 'package:buzz5_quiz_app/config/logger.dart';
 
 class HomePage extends StatelessWidget {
   final Function(bool) onThemeChanged;
@@ -11,6 +12,7 @@ class HomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    AppLogger.i("HomePage built");
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -30,6 +32,7 @@ class HomePage extends StatelessWidget {
                 child: Switch(
                   value: Theme.of(context).brightness == Brightness.dark,
                   onChanged: (value) {
+                    AppLogger.i("Theme changed: ${value ? 'Dark' : 'Light'}");
                     onThemeChanged(value);
                   },
                 ),
@@ -48,6 +51,7 @@ class HomePage extends StatelessWidget {
               children: [
                 ElevatedButton(
                   onPressed: () {
+                    AppLogger.i("Navigating to InstructionsPage");
                     Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -61,6 +65,7 @@ class HomePage extends StatelessWidget {
                 SizedBox(height: 80),
                 ElevatedButton(
                   onPressed: () {
+                    AppLogger.i("Navigating to JoinGamePage");
                     Navigator.push(
                       context,
                       MaterialPageRoute(builder: (context) => JoinGamePage()),
