@@ -69,9 +69,10 @@ class InstructionsPage extends StatelessWidget {
               ),
             ],
           ),
-          SizedBox(width: 50),
+          SizedBox(width: 20),
           Column(
             mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [Text("Enter player names:")],
           ),
         ],
