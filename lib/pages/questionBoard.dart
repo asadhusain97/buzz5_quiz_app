@@ -16,29 +16,55 @@ class QuestionBoardPage extends StatelessWidget {
       appBar: CustomAppBar(title: "Question Board", showBackButton: true),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: <Widget>[
-            SingleChildScrollView(
-              child: Column(
-                children: [
-                  RoundDropDown(),
-                  SizedBox(height: 50),
-                  Leaderboard(),
-                  SizedBox(height: 60),
-                  EndGameButton(),
-                ],
-              ),
-            ),
-          ],
-        ),
+        child: QuestionBoardContent(),
       ),
     );
   }
 }
 
+class QuestionBoardContent extends StatefulWidget {
+  const QuestionBoardContent({super.key});
+
+  @override
+  _QuestionBoardContentState createState() => _QuestionBoardContentState();
+}
+
+class _QuestionBoardContentState extends State<QuestionBoardContent> {
+  String? selectedRound;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: <Widget>[
+        SingleChildScrollView(
+          child: Column(
+            children: [
+              RoundDropDown(
+                onRoundSelected: (String? round) {
+                  setState(() {
+                    selectedRound = round;
+                  });
+                },
+              ),
+              SizedBox(height: 50),
+              if (selectedRound != null) ...[
+                Leaderboard(),
+                SizedBox(height: 60),
+                EndGameButton(),
+              ],
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class RoundDropDown extends StatelessWidget {
-  const RoundDropDown({super.key});
+  final Function(String?) onRoundSelected;
+
+  const RoundDropDown({super.key, required this.onRoundSelected});
 
   @override
   Widget build(BuildContext context) {
@@ -47,6 +73,7 @@ class RoundDropDown extends StatelessWidget {
         Text('Choose Round:', style: AppTextStyles.bodyBig),
         SizedBox(width: 20),
         DropdownButton<String>(
+          hint: Text('...'),
           items:
               <String>['Round 1', 'Round 2', 'Round 3'].map((String value) {
                 return DropdownMenuItem<String>(
@@ -54,7 +81,9 @@ class RoundDropDown extends StatelessWidget {
                   child: Text(value),
                 );
               }).toList(),
-          onChanged: (_) {},
+          onChanged: (String? newValue) {
+            onRoundSelected(newValue);
+          },
         ),
         SizedBox(width: 10),
         IconButton(onPressed: () {}, icon: Icon(Icons.arrow_forward)),
