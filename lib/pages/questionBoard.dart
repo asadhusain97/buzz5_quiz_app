@@ -7,6 +7,8 @@ import 'package:provider/provider.dart';
 import 'package:buzz5_quiz_app/config/logger.dart';
 
 class QuestionBoardPage extends StatelessWidget {
+  const QuestionBoardPage({super.key});
+
   @override
   Widget build(BuildContext context) {
     AppLogger.i("QuestionBoardPage built");

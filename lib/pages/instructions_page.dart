@@ -28,6 +28,8 @@ const String aboutThisGameMD = """
   """;
 
 class InstructionsPage extends StatelessWidget {
+  const InstructionsPage({super.key});
+
   Future<void> _launchURL(String url) async {
     final Uri uri = Uri.parse(url);
     if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {

@@ -8,7 +8,7 @@ import 'package:buzz5_quiz_app/config/logger.dart';
 class HomePage extends StatelessWidget {
   final Function(bool) onThemeChanged;
 
-  HomePage({required this.onThemeChanged});
+  const HomePage({super.key, required this.onThemeChanged});
 
   @override
   Widget build(BuildContext context) {

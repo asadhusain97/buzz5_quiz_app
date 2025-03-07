@@ -4,6 +4,8 @@ import 'package:buzz5_quiz_app/widgets/appbar.dart';
 import 'package:flutter/material.dart';
 
 class JoinGamePage extends StatelessWidget {
+  const JoinGamePage({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
