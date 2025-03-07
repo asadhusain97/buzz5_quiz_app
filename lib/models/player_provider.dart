@@ -13,11 +13,6 @@ class PlayerProvider with ChangeNotifier {
   void addPlayer(Player player) {
     _playerList.add(player);
     AppLogger.i("Added player: ${player.name}");
-    if (_lastPositivePlayer == null && _playerList.isNotEmpty) {
-      _lastPositivePlayer =
-          _playerList[Random().nextInt(_playerList.length)]; // Random default
-      AppLogger.i("Set lastPositivePlayer to: ${_lastPositivePlayer?.name}");
-    }
     notifyListeners();
   }
 
@@ -29,10 +24,15 @@ class PlayerProvider with ChangeNotifier {
 
   void setPlayerList(List<Player> playerList) {
     _playerList = playerList;
+    _lastPositivePlayer = null;
     AppLogger.i("Set player list: $playerList");
-    if (_lastPositivePlayer == null && _playerList.isNotEmpty) {
-      _lastPositivePlayer =
-          _playerList[Random().nextInt(_playerList.length)]; // Random default
+    notifyListeners();
+  }
+
+  void setLastPositivePlayer() {
+    if (playerList.isNotEmpty) {
+      final randomIndex = Random().nextInt(playerList.length);
+      _lastPositivePlayer = playerList[randomIndex];
       AppLogger.i("Set lastPositivePlayer to: ${_lastPositivePlayer?.name}");
     }
     notifyListeners();

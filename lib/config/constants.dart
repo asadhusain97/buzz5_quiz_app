@@ -24,6 +24,7 @@ class AppTextStyles {
   );
   static const TextStyle buttonTextBig = TextStyle(fontSize: 24);
   static const TextStyle buttonTextSmall = TextStyle(fontSize: 16);
+  static const TextStyle bodyBig = TextStyle(fontSize: 18);
   static const TextStyle body = TextStyle(fontSize: 16);
   static const TextStyle bodySmall = TextStyle(fontSize: 14);
   static const TextStyle caption = TextStyle(

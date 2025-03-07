@@ -150,6 +150,13 @@ class PlayerNameForm extends StatelessWidget {
         AppLogger.i("Added player: $name");
       }
     }
+    playerProvider.setLastPositivePlayer();
+  }
+
+  void _resetPlayerList(BuildContext context) {
+    final playerProvider = Provider.of<PlayerProvider>(context, listen: false);
+    playerProvider.setPlayerList([]);
+    AppLogger.i("Player list reset");
   }
 
   @override
@@ -221,6 +228,7 @@ class PlayerNameForm extends StatelessWidget {
               child: ElevatedButton(
                 onPressed: () {
                   if (_validateUniqueNames()) {
+                    _resetPlayerList(context);
                     _addPlayersToProvider(context);
                     Navigator.push(
                       context,

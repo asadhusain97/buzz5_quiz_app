@@ -1,4 +1,3 @@
-import 'package:buzz5_quiz_app/config/colors.dart';
 import 'package:buzz5_quiz_app/config/constants.dart';
 import 'package:buzz5_quiz_app/widgets/appbar.dart';
 import 'package:flutter/material.dart';

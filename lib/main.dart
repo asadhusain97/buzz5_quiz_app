@@ -1,10 +1,12 @@
 import 'package:buzz5_quiz_app/config/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:buzz5_quiz_app/pages/home_page.dart';
+// import 'package:flutter/rendering.dart';
 import 'package:provider/provider.dart';
 import 'package:buzz5_quiz_app/models/player_provider.dart';
 
 void main() {
+  // debugPaintSizeEnabled = true;
   runApp(MyApp());
 }
 
