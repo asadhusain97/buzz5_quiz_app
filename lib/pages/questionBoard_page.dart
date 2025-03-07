@@ -16,7 +16,11 @@ class QuestionBoardPage extends StatelessWidget {
       appBar: CustomAppBar(title: "Question Board", showBackButton: true),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: QuestionBoardContent(),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [QuestionBoardContent()],
+        ),
       ),
     );
   }
@@ -59,8 +63,14 @@ class _QuestionBoardContentState extends State<QuestionBoardContent> {
                 ],
               ),
             ),
-            SizedBox(width: 50),
-            SizedBox(width: 200, height: 500, child: Column()),
+            if (selectedRound != null) ...[SizedBox(width: 50)],
+            if (selectedRound != null) ...[
+              SizedBox(
+                width: 800,
+                height: 800,
+                child: Column(children: [SetNames()]),
+              ),
+            ],
           ],
         ),
       ],
@@ -184,6 +194,37 @@ class EndGameButton extends StatelessWidget {
         style: ElevatedButton.styleFrom(minimumSize: Size(200, 60)),
         icon: Icon(Icons.emoji_events),
         label: Text('End Game', style: AppTextStyles.buttonTextSmall),
+      ),
+    );
+  }
+}
+
+class SetNames extends StatelessWidget {
+  const SetNames({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 60,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: 5,
+        itemBuilder: (context, index) {
+          return Row(
+            children: [
+              Container(
+                width: 100,
+                margin: const EdgeInsets.symmetric(horizontal: 8.0),
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.white),
+                  borderRadius: BorderRadius.circular(8.0),
+                ),
+                child: Center(child: Text('Box ${index + 1}')),
+              ),
+              SizedBox(width: 30.0),
+            ],
+          );
+        },
       ),
     );
   }
