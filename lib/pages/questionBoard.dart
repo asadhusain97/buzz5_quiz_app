@@ -37,24 +37,31 @@ class _QuestionBoardContentState extends State<QuestionBoardContent> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: <Widget>[
-        SingleChildScrollView(
-          child: Column(
-            children: [
-              RoundDropDown(
-                onRoundSelected: (String? round) {
-                  setState(() {
-                    selectedRound = round;
-                  });
-                },
+        Row(
+          children: [
+            SingleChildScrollView(
+              child: Column(
+                children: [
+                  RoundDropDown(
+                    selectedRound: selectedRound,
+                    onRoundSelected: (String? round) {
+                      setState(() {
+                        selectedRound = round;
+                      });
+                    },
+                  ),
+                  SizedBox(height: 50),
+                  if (selectedRound != null) ...[
+                    Leaderboard(),
+                    SizedBox(height: 60),
+                    EndGameButton(),
+                  ],
+                ],
               ),
-              SizedBox(height: 50),
-              if (selectedRound != null) ...[
-                Leaderboard(),
-                SizedBox(height: 60),
-                EndGameButton(),
-              ],
-            ],
-          ),
+            ),
+            SizedBox(width: 50),
+            SizedBox(width: 200, height: 500, child: Column()),
+          ],
         ),
       ],
     );
@@ -62,18 +69,26 @@ class _QuestionBoardContentState extends State<QuestionBoardContent> {
 }
 
 class RoundDropDown extends StatelessWidget {
+  final String? selectedRound;
   final Function(String?) onRoundSelected;
 
-  const RoundDropDown({super.key, required this.onRoundSelected});
+  const RoundDropDown({
+    super.key,
+    required this.selectedRound,
+    required this.onRoundSelected,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
+        SizedBox(height: 30),
         Text('Choose Round:', style: AppTextStyles.bodyBig),
         SizedBox(width: 20),
         DropdownButton<String>(
           hint: Text('...'),
+          value: selectedRound,
+          dropdownColor: Theme.of(context).scaffoldBackgroundColor,
           items:
               <String>['Round 1', 'Round 2', 'Round 3'].map((String value) {
                 return DropdownMenuItem<String>(
@@ -85,8 +100,10 @@ class RoundDropDown extends StatelessWidget {
             onRoundSelected(newValue);
           },
         ),
-        SizedBox(width: 10),
-        IconButton(onPressed: () {}, icon: Icon(Icons.arrow_forward)),
+        if (selectedRound != null) ...[
+          SizedBox(width: 10),
+          IconButton(onPressed: () {}, icon: Icon(Icons.arrow_forward)),
+        ],
       ],
     );
   }
