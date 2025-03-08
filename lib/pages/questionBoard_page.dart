@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:buzz5_quiz_app/config/colors.dart';
 import 'package:buzz5_quiz_app/config/constants.dart';
 import 'package:buzz5_quiz_app/widgets/appbar.dart';
@@ -36,8 +37,82 @@ class QuestionBoardContent extends StatefulWidget {
 class _QuestionBoardContentState extends State<QuestionBoardContent> {
   String? selectedRound;
 
+  // Mock JSON data
+  Map<String, dynamic> row = {
+    "qid": 1,
+    "round": "Round zero",
+    "set_num": 1,
+    "set_name": "Name the third",
+    "points": 10,
+    "question": "Michael Collins, Buzz Aldrin, ?",
+    "qstn_media": "",
+    "answer": "Neil Armstrong",
+    "ans_media": "https://i.imgur.com/SV4Yy9c.jpeg",
+  };
+  final String mockJsonStr = '''
+[
+  {
+    "qid": 1,
+    "round": "Round zero",
+    "set_num": 1,
+    "set_name": "Name the third",
+    "points": 10,
+    "question": "Michael Collins, Buzz Aldrin, ?",
+    "qstn_media": "",
+    "answer": "Neil Armstrong",
+    "ans_media": "https://i.imgur.com/SV4Yy9c.jpeg"
+  },
+  {
+    "qid": 2,
+    "round": "Round zero",
+    "set_num": 1,
+    "set_name": "Name the third",
+    "points": 20,
+    "question": "Before sunrise, Before sunset, ?",
+    "qstn_media": "",
+    "answer": "Before Midnight",
+    "ans_media": ""
+  },
+  {
+    "qid": 3,
+    "round": "Round zero",
+    "set_num": 1,
+    "set_name": "Name the third",
+    "points": 30,
+    "question": "Blossoms, Bubbles, ?",
+    "qstn_media": "",
+    "answer": "Buttercup",
+    "ans_media": "https://i.imgur.com/uDJkGqh.png"
+  },
+  {
+    "qid": 4,
+    "round": "Round zero",
+    "set_num": 1,
+    "set_name": "Name the third",
+    "points": 40,
+    "question": "Socrates, Plato, ?",
+    "qstn_media": "",
+    "answer": "Aristotle",
+    "ans_media": ""
+  },
+  {
+    "qid": 5,
+    "round": "Round zero",
+    "set_num": 1,
+    "set_name": "Name the third",
+    "points": 50,
+    "question": "Athos, Pathos, ?",
+    "qstn_media": "",
+    "answer": "Aramis",
+    "ans_media": ""
+  }]''';
+
   @override
   Widget build(BuildContext context) {
+    // Parse the JSON data
+    // final List<Map<String, dynamic>> MockJsonData = jsonDecode(mockJsonStr);
+    final Map<String, dynamic> rowMap = row;
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: <Widget>[
@@ -63,12 +138,28 @@ class _QuestionBoardContentState extends State<QuestionBoardContent> {
                 ],
               ),
             ),
-            if (selectedRound != null) ...[SizedBox(width: 50)],
+            if (selectedRound != null) ...[SizedBox(width: 80)],
             if (selectedRound != null) ...[
               SizedBox(
-                width: 800,
-                height: 800,
-                child: Column(children: [SetNames()]),
+                width: 950,
+                height: 900,
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.vertical,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        QSet(data: rowMap),
+                        QSet(data: rowMap),
+                        QSet(data: rowMap),
+                        QSet(data: rowMap),
+                        QSet(data: rowMap),
+                      ],
+                    ),
+                  ),
+                ),
               ),
             ],
           ],
@@ -199,32 +290,54 @@ class EndGameButton extends StatelessWidget {
   }
 }
 
-class SetNames extends StatelessWidget {
-  const SetNames({super.key});
+class QSet extends StatelessWidget {
+  final Map<String, dynamic> data;
+
+  const QSet({super.key, required this.data});
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 60,
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        itemCount: 5,
-        itemBuilder: (context, index) {
-          return Row(
-            children: [
-              Container(
-                width: 100,
-                margin: const EdgeInsets.symmetric(horizontal: 8.0),
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.white),
-                  borderRadius: BorderRadius.circular(8.0),
+    return Container(
+      padding: EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          SizedBox(height: 60),
+          Container(
+            width: 150,
+            height: 75,
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.blue),
+              borderRadius: BorderRadius.circular(8.0),
+            ),
+            child: Center(
+              child: Text('Set Name', style: AppTextStyles.titleMedium),
+            ),
+          ),
+          SizedBox(height: 30.0),
+          Column(
+            children: List.generate(5, (index) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8.0),
+                child: ElevatedButton(
+                  onPressed: () {
+                    // Add your button logic here
+                  },
+                  style: ElevatedButton.styleFrom(
+                    shape: CircleBorder(),
+                    padding: EdgeInsets.all(10),
+                    minimumSize: Size(80, 80),
+                  ),
+                  child: Text(
+                    '${index + 1}',
+                    style: AppTextStyles.buttonTextBig,
+                  ),
                 ),
-                child: Center(child: Text('Box ${index + 1}')),
-              ),
-              SizedBox(width: 30.0),
-            ],
-          );
-        },
+              );
+            }),
+          ),
+        ],
       ),
     );
   }
