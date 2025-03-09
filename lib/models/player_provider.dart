@@ -77,4 +77,13 @@ class PlayerProvider with ChangeNotifier {
       notifyListeners();
     }
   }
+
+  void undoLastPointForPlayer(Player player) {
+    int playerIndex = _playerList.indexOf(player);
+    if (playerIndex != -1) {
+      _playerList[playerIndex].undoLastPoint();
+      AppLogger.i("Undid last point for ${player.name}");
+      notifyListeners();
+    }
+  }
 }

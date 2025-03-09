@@ -33,6 +33,22 @@ class Player {
     AppLogger.i("Added $point points to $name. New score: $score");
   }
 
+  // Method to undo the last point added
+  void undoLastPoint() {
+    if (allPoints.isNotEmpty) {
+      int lastPoint = allPoints.removeLast();
+      score -= lastPoint;
+      if (lastPoint > 0) {
+        correctAnsCount--;
+        correctAnsTotal -= lastPoint;
+      } else {
+        wrongAnsCount--;
+        wrongAnsTotal -= lastPoint;
+      }
+      AppLogger.i("Undid $lastPoint points from $name. New score: $score");
+    }
+  }
+
   // Method to reset the player's score
   void resetScore() {
     score = 0;
