@@ -68,7 +68,7 @@ class PlayerProvider with ChangeNotifier {
   void addPointToPlayer(Player player, int point) {
     int playerIndex = _playerList.indexOf(player);
     if (playerIndex != -1) {
-      _playerList[playerIndex].allPoints.add(point);
+      _playerList[playerIndex].addPoints(point);
       if (point > 0) {
         _lastPositivePlayer = _playerList[playerIndex];
         AppLogger.i("Set lastPositivePlayer to: ${_lastPositivePlayer?.name}");

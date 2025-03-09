@@ -1,6 +1,7 @@
 import 'package:buzz5_quiz_app/config/colors.dart';
-import 'package:buzz5_quiz_app/config/constants.dart';
-import 'package:buzz5_quiz_app/pages/questionBoard_page.dart';
+import 'package:buzz5_quiz_app/config/text_styles.dart';
+import 'package:buzz5_quiz_app/pages/final_page.dart';
+import 'package:buzz5_quiz_app/pages/qBoard_page.dart';
 import 'package:buzz5_quiz_app/widgets/appbar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
@@ -233,7 +234,8 @@ class PlayerNameForm extends StatelessWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => QuestionBoardPage(),
+                        // builder: (context) => QuestionBoardPage(),
+                        builder: (context) => FinalPage(),
                       ),
                     );
                   } else {

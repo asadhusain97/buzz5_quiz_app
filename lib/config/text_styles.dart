@@ -37,4 +37,15 @@ class AppTextStyles {
     fontWeight: FontWeight.w200,
     fontStyle: FontStyle.italic,
   );
+  static TextStyle scoreSubtitle = TextStyle(
+    fontSize: 14,
+    color: ColorConstants.hintGrey,
+    fontWeight: FontWeight.w500,
+    fontStyle: FontStyle.italic,
+  );
+  static TextStyle scoreCard = TextStyle(
+    fontSize: 18,
+    color: ColorConstants.primaryColor,
+    fontWeight: FontWeight.w900,
+  );
 }

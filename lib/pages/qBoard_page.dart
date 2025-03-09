@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:buzz5_quiz_app/config/colors.dart';
-import 'package:buzz5_quiz_app/config/constants.dart';
+import 'package:buzz5_quiz_app/config/text_styles.dart';
+import 'package:buzz5_quiz_app/pages/final_page.dart';
 import 'package:buzz5_quiz_app/widgets/appbar.dart';
 import 'package:flutter/material.dart';
 import 'package:buzz5_quiz_app/models/player_provider.dart';
@@ -49,68 +50,10 @@ class _QuestionBoardContentState extends State<QuestionBoardContent> {
     "answer": "Neil Armstrong",
     "ans_media": "https://i.imgur.com/SV4Yy9c.jpeg",
   };
-  final String mockJsonStr = '''
-[
-  {
-    "qid": 1,
-    "round": "Round zero",
-    "set_num": 1,
-    "set_name": "Name the third",
-    "points": 10,
-    "question": "Michael Collins, Buzz Aldrin, ?",
-    "qstn_media": "",
-    "answer": "Neil Armstrong",
-    "ans_media": "https://i.imgur.com/SV4Yy9c.jpeg"
-  },
-  {
-    "qid": 2,
-    "round": "Round zero",
-    "set_num": 1,
-    "set_name": "Name the third",
-    "points": 20,
-    "question": "Before sunrise, Before sunset, ?",
-    "qstn_media": "",
-    "answer": "Before Midnight",
-    "ans_media": ""
-  },
-  {
-    "qid": 3,
-    "round": "Round zero",
-    "set_num": 1,
-    "set_name": "Name the third",
-    "points": 30,
-    "question": "Blossoms, Bubbles, ?",
-    "qstn_media": "",
-    "answer": "Buttercup",
-    "ans_media": "https://i.imgur.com/uDJkGqh.png"
-  },
-  {
-    "qid": 4,
-    "round": "Round zero",
-    "set_num": 1,
-    "set_name": "Name the third",
-    "points": 40,
-    "question": "Socrates, Plato, ?",
-    "qstn_media": "",
-    "answer": "Aristotle",
-    "ans_media": ""
-  },
-  {
-    "qid": 5,
-    "round": "Round zero",
-    "set_num": 1,
-    "set_name": "Name the third",
-    "points": 50,
-    "question": "Athos, Pathos, ?",
-    "qstn_media": "",
-    "answer": "Aramis",
-    "ans_media": ""
-  }]''';
 
   @override
   Widget build(BuildContext context) {
     // Parse the JSON data
-    // final List<Map<String, dynamic>> MockJsonData = jsonDecode(mockJsonStr);
     final Map<String, dynamic> rowMap = row;
 
     return Row(
@@ -280,7 +223,10 @@ class EndGameButton extends StatelessWidget {
     return Center(
       child: ElevatedButton.icon(
         onPressed: () {
-          // Add your end game logic here
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => FinalPage()),
+          );
         },
         style: ElevatedButton.styleFrom(minimumSize: Size(200, 60)),
         icon: Icon(Icons.emoji_events),
@@ -327,7 +273,7 @@ class QSet extends StatelessWidget {
                   style: ElevatedButton.styleFrom(
                     shape: CircleBorder(),
                     padding: EdgeInsets.all(10),
-                    minimumSize: Size(80, 80),
+                    minimumSize: Size(90, 90),
                   ),
                   child: Text(
                     '${index + 1}',
