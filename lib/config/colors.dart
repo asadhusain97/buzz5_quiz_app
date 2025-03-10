@@ -25,4 +25,7 @@ class ColorConstants {
   static Color lightTextColor = hexToColor('#F6F7EB');
   static Color darkTextColor = hexToColor('#0D1931');
   static Color hintGrey = hexToColor('#B8BECC');
+  static Color correctAnsBtn = Colors.lightGreen.shade300;
+  static Color wrongAnsBtn = Colors.red.shade300;
+  static Color ansBtn = Colors.grey.shade600;
 }

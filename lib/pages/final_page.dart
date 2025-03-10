@@ -1,5 +1,6 @@
 import 'package:buzz5_quiz_app/config/colors.dart';
 import 'package:buzz5_quiz_app/config/text_styles.dart';
+import 'package:buzz5_quiz_app/pages/home_page.dart';
 import 'package:buzz5_quiz_app/pages/instructions_page.dart';
 import 'package:buzz5_quiz_app/pages/joingame_page.dart';
 import 'package:buzz5_quiz_app/widgets/appbar.dart';
@@ -42,6 +43,7 @@ class ScoreBoard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
+              SizedBox(height: 10),
               Text('🏆 Final Standing', style: AppTextStyles.titleBig),
               SizedBox(height: 20),
               Flexible(
@@ -113,6 +115,95 @@ class GameStats extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column();
+    return Consumer<PlayerProvider>(
+      builder: (context, playerProvider, child) {
+        final playerList = playerProvider.playerList;
+        final totalAttempts = playerList.fold(
+          0,
+          (sum, player) => sum + player.allPoints.length,
+        );
+        final correctAnswers = playerList.fold(
+          0,
+          (sum, player) => sum + player.correctAnsCount,
+        );
+        final wrongAnswers = playerList.fold(
+          0,
+          (sum, player) => sum + player.wrongAnsCount,
+        );
+        final avgScore = (correctAnswers / totalAttempts).toStringAsFixed(1);
+        final gameTime =
+            'TBD'; // Placeholder, replace with actual game time calculation if available
+
+        return Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Text('Game Statistics', style: AppTextStyles.titleBig),
+            SizedBox(height: 20),
+            Row(
+              children: [
+                Column(
+                  children: [
+                    Text('$avgScore', style: AppTextStyles.scoreCard),
+                    Text('Avg. score', style: AppTextStyles.scoreSubtitle),
+                  ],
+                ),
+                SizedBox(width: 30),
+                Column(
+                  children: [
+                    Text('$totalAttempts', style: AppTextStyles.scoreCard),
+                    Text('Total attempts', style: AppTextStyles.scoreSubtitle),
+                  ],
+                ),
+              ],
+            ),
+            SizedBox(height: 30),
+            Row(
+              children: [
+                Column(
+                  children: [
+                    Text('$wrongAnswers', style: AppTextStyles.scoreCard),
+                    Text('Wrong answers', style: AppTextStyles.scoreSubtitle),
+                  ],
+                ),
+                SizedBox(width: 30),
+                Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text('$correctAnswers', style: AppTextStyles.scoreCard),
+                    Text('Correct answers', style: AppTextStyles.scoreSubtitle),
+                  ],
+                ),
+                SizedBox(width: 30),
+                Column(
+                  children: [
+                    Text('$gameTime', style: AppTextStyles.scoreCard),
+                    Text('Game time', style: AppTextStyles.scoreSubtitle),
+                  ],
+                ),
+              ],
+            ),
+            SizedBox(height: 50),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) {
+                      return HomePage(onThemeChanged: (bool) {});
+                    },
+                  ),
+                  (Route<dynamic> route) => false,
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                minimumSize: Size(150, 50), // Set the minimum size
+              ),
+              child: Text('Play Again'),
+            ),
+          ],
+        );
+      },
+    );
   }
 }
