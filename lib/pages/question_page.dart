@@ -18,6 +18,7 @@ class _QuestionPageState extends State<QuestionPage> {
   late String question;
   late String answer;
   late int score;
+  late int negScore;
   late List<String> answerStatus;
 
   @override
@@ -30,7 +31,8 @@ class _QuestionPageState extends State<QuestionPage> {
     setname = args?['setname'] ?? "Sample Set";
     question = args?['question'] ?? "Sample Question?";
     answer = args?['answer'] ?? "Sample Answer";
-    score = args?['score'] ?? 0;
+    score = args?['score'] ?? 1;
+    negScore = score * -1;
 
     final playerProvider = Provider.of<PlayerProvider>(context);
     answerStatus = List<String>.filled(playerProvider.playerList.length, "");
@@ -144,6 +146,20 @@ class _QuestionPageState extends State<QuestionPage> {
                                               setState(() {
                                                 answerStatus[index] =
                                                     isOn ? 'correct' : '';
+                                                if (isOn) {
+                                                  playerProvider
+                                                      .addPointToPlayer(
+                                                        playerProvider
+                                                            .playerList[index],
+                                                        score,
+                                                      );
+                                                } else {
+                                                  playerProvider
+                                                      .undoLastPointForPlayer(
+                                                        playerProvider
+                                                            .playerList[index],
+                                                      );
+                                                }
                                               });
                                             },
                                           ),
@@ -183,6 +199,20 @@ class _QuestionPageState extends State<QuestionPage> {
                                               setState(() {
                                                 answerStatus[index] =
                                                     isOn ? 'wrong' : '';
+                                                if (isOn) {
+                                                  playerProvider
+                                                      .addPointToPlayer(
+                                                        playerProvider
+                                                            .playerList[index],
+                                                        negScore,
+                                                      );
+                                                } else {
+                                                  playerProvider
+                                                      .undoLastPointForPlayer(
+                                                        playerProvider
+                                                            .playerList[index],
+                                                      );
+                                                }
                                               });
                                             },
                                           ),
