@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:buzz5_quiz_app/config/colors.dart';
 import 'package:buzz5_quiz_app/config/text_styles.dart';
 import 'package:buzz5_quiz_app/pages/final_page.dart';
+import 'package:buzz5_quiz_app/pages/question_page.dart';
 import 'package:buzz5_quiz_app/widgets/appbar.dart';
 import 'package:flutter/material.dart';
 import 'package:buzz5_quiz_app/models/player_provider.dart';
@@ -144,10 +145,7 @@ class RoundDropDown extends StatelessWidget {
             onRoundSelected(newValue);
           },
         ),
-        if (selectedRound != null) ...[
-          SizedBox(width: 10),
-          IconButton(onPressed: () {}, icon: Icon(Icons.arrow_forward)),
-        ],
+        if (selectedRound != null) ...[SizedBox(width: 10)],
       ],
     );
   }
@@ -268,7 +266,47 @@ class QSet extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(vertical: 8.0),
                 child: ElevatedButton(
                   onPressed: () {
-                    // Add your button logic here
+                    Navigator.push(
+                      context,
+                      PageRouteBuilder(
+                        pageBuilder:
+                            (context, animation, secondaryAnimation) =>
+                                QuestionPage(),
+                        settings: RouteSettings(
+                          arguments: {
+                            'setname': data['set_name'],
+                            'question': data['question'],
+                            'answer': data['answer'],
+                            'score': data['points'],
+                            'playerList':
+                                Provider.of<PlayerProvider>(
+                                      context,
+                                      listen: false,
+                                    ).playerList
+                                    .map((player) => player.name)
+                                    .toList(),
+                          },
+                        ),
+                        transitionsBuilder: (
+                          context,
+                          animation,
+                          secondaryAnimation,
+                          child,
+                        ) {
+                          final curvedAnimation = CurvedAnimation(
+                            parent: animation,
+                            curve: Curves.easeInOut,
+                          );
+                          return SlideTransition(
+                            position: Tween<Offset>(
+                              begin: const Offset(0, 1),
+                              end: Offset.zero,
+                            ).animate(curvedAnimation),
+                            child: child,
+                          );
+                        },
+                      ),
+                    );
                   },
                   style: ElevatedButton.styleFrom(
                     shape: CircleBorder(),

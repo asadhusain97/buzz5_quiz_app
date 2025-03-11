@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:buzz5_quiz_app/config/logger.dart';
 import 'package:provider/provider.dart';
 import 'package:buzz5_quiz_app/models/player_provider.dart';
+import 'package:buzz5_quiz_app/models/player.dart';
 
 class QuestionPage extends StatefulWidget {
   const QuestionPage({super.key});
@@ -132,9 +133,12 @@ class _QuestionPageState extends State<QuestionPage> {
                                             CrossAxisAlignment.center,
                                         children: [
                                           ToggleIconButton(
-                                            icon:
-                                                Icons
-                                                    .check_box, // Customize icon
+                                            player:
+                                                playerProvider
+                                                    .playerList[index],
+                                            point: score,
+                                            iconType:
+                                                "correctAns", // Customize icon
                                             onColor:
                                                 ColorConstants
                                                     .correctAnsBtn, // Color when toggled ON
@@ -146,20 +150,6 @@ class _QuestionPageState extends State<QuestionPage> {
                                               setState(() {
                                                 answerStatus[index] =
                                                     isOn ? 'correct' : '';
-                                                if (isOn) {
-                                                  playerProvider
-                                                      .addPointToPlayer(
-                                                        playerProvider
-                                                            .playerList[index],
-                                                        score,
-                                                      );
-                                                } else {
-                                                  playerProvider
-                                                      .undoLastPointForPlayer(
-                                                        playerProvider
-                                                            .playerList[index],
-                                                      );
-                                                }
                                               });
                                             },
                                           ),
@@ -186,8 +176,12 @@ class _QuestionPageState extends State<QuestionPage> {
                                             ),
                                           ),
                                           ToggleIconButton(
-                                            icon:
-                                                Icons.cancel, // Customize icon
+                                            player:
+                                                playerProvider
+                                                    .playerList[index],
+                                            point: negScore,
+                                            iconType:
+                                                "wrongAns", // Customize icon
                                             onColor:
                                                 ColorConstants
                                                     .wrongAnsBtn, // Color when toggled ON
@@ -199,20 +193,6 @@ class _QuestionPageState extends State<QuestionPage> {
                                               setState(() {
                                                 answerStatus[index] =
                                                     isOn ? 'wrong' : '';
-                                                if (isOn) {
-                                                  playerProvider
-                                                      .addPointToPlayer(
-                                                        playerProvider
-                                                            .playerList[index],
-                                                        negScore,
-                                                      );
-                                                } else {
-                                                  playerProvider
-                                                      .undoLastPointForPlayer(
-                                                        playerProvider
-                                                            .playerList[index],
-                                                      );
-                                                }
                                               });
                                             },
                                           ),
@@ -267,7 +247,9 @@ class _QuestionPageState extends State<QuestionPage> {
 }
 
 class ToggleIconButton extends StatefulWidget {
-  final IconData icon;
+  final Player player;
+  final int point;
+  final String iconType;
   final Color onColor;
   final Color offColor;
   final bool isDisabled;
@@ -275,7 +257,9 @@ class ToggleIconButton extends StatefulWidget {
 
   const ToggleIconButton({
     super.key,
-    required this.icon,
+    required this.player,
+    required this.point,
+    required this.iconType,
     required this.onColor,
     required this.offColor,
     required this.isDisabled,
@@ -291,8 +275,17 @@ class _ToggleIconButtonState extends State<ToggleIconButton> {
 
   @override
   Widget build(BuildContext context) {
+    IconData icon;
+    if (widget.iconType == 'correctAns') {
+      icon = Icons.check_box;
+    } else if (widget.iconType == 'wrongAns') {
+      icon = Icons.cancel;
+    } else {
+      icon = Icons.help; // Default icon if none match
+    }
+
     return IconButton(
-      icon: Icon(widget.icon, size: 30),
+      icon: Icon(icon, size: 30),
       color:
           widget.isDisabled
               ? Colors.grey
@@ -308,6 +301,11 @@ class _ToggleIconButtonState extends State<ToggleIconButton> {
                 });
                 if (widget.onToggle != null) {
                   widget.onToggle!(isOn);
+                }
+                if (isOn) {
+                  widget.player.addPoints(widget.point);
+                } else {
+                  widget.player.undoLastPoint();
                 }
               },
     );

@@ -235,8 +235,7 @@ class PlayerNameForm extends StatelessWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        // builder: (context) => QuestionBoardPage(),
-                        builder: (context) => QuestionPage(),
+                        builder: (context) => QuestionBoardPage(),
                       ),
                     );
                   } else {
