@@ -47,5 +47,8 @@ class AppTextStyles {
     fontSize: 18,
     color: ColorConstants.primaryColor,
     fontWeight: FontWeight.w900,
+    // fontFeatures: [
+    //   FontFeature.enable('smcp'),
+    // ], // All caps but first letter bigger than others
   );
 }
