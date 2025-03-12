@@ -39,6 +39,8 @@ dependencies:
   url_launcher: ^6.3.1
   provider: ^6.1.2
   logger: ^2.5.0
+  http: ^0.13.3
+  test: ^1.16.0
 
 dev_dependencies:
   flutter_test:

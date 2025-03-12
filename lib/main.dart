@@ -1,6 +1,7 @@
 import 'package:buzz5_quiz_app/config/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:buzz5_quiz_app/pages/home_page.dart';
+import 'package:buzz5_quiz_app/pages/gsheet_check.dart';
 // import 'package:flutter/rendering.dart';
 import 'package:provider/provider.dart';
 import 'package:buzz5_quiz_app/models/player_provider.dart';
@@ -37,6 +38,7 @@ class _MyAppState extends State<MyApp> {
         darkTheme: AppTheme.dark,
         theme: AppTheme.light,
         home: HomePage(onThemeChanged: _toggleTheme),
+        // home: GSheetCheckPage(),
       ),
     );
   }

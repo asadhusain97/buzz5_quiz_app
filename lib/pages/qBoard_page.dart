@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:buzz5_quiz_app/models/player_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:buzz5_quiz_app/config/logger.dart';
+import 'package:buzz5_quiz_app/models/qrow.dart';
 
 class QuestionBoardPage extends StatelessWidget {
   const QuestionBoardPage({super.key});
@@ -38,76 +39,246 @@ class QuestionBoardContent extends StatefulWidget {
 
 class _QuestionBoardContentState extends State<QuestionBoardContent> {
   String? selectedRound;
+  late Future<List<QRow>> _qrowsFuture;
+  List<QRow> _allQRows = [];
+  List<QRow> _filteredQRows = [];
+  List<String> uniqueRounds = [];
+  List<String> uniqueSetNames = [];
+  bool isDataLoaded = false;
+  bool hasError = false;
+  String errorMessage = '';
 
-  // Mock JSON data
-  Map<String, dynamic> row = {
-    "qid": 1,
-    "round": "Round zero",
-    "set_num": 1,
-    "set_name": "Name the third",
-    "points": 10,
-    "question": "Michael Collins, Buzz Aldrin, ?",
-    "qstn_media": "",
-    "answer": "Neil Armstrong",
-    "ans_media": "https://i.imgur.com/SV4Yy9c.jpeg",
-  };
+  @override
+  void initState() {
+    super.initState();
+    AppLogger.i("QuestionBoardContent initState called");
+    _fetchQRows();
+  }
+
+  Future<void> _fetchQRows() async {
+    setState(() {
+      isDataLoaded = false;
+      hasError = false;
+    });
+    
+    try {
+      _qrowsFuture = QRow.fetchAll();
+      await _loadData();
+    } catch (e) {
+      AppLogger.e("Error in _fetchQRows: $e");
+      setState(() {
+        isDataLoaded = true;
+        hasError = true;
+        errorMessage = "Failed to initialize data: ${e.toString()}";
+      });
+    }
+  }
+
+  Future<void> _loadData() async {
+    try {
+      _allQRows = await _qrowsFuture;
+      
+      // Add debug logging
+      AppLogger.i("Loaded ${_allQRows.length} QRows from API");
+      
+      final uniqueRoundsResult = QRow.getUniqueRounds(_allQRows);
+      
+      // Add debug logging for rounds
+      AppLogger.i("Found ${uniqueRoundsResult.length} unique rounds: $uniqueRoundsResult");
+      
+      setState(() {
+        uniqueRounds = uniqueRoundsResult;
+        isDataLoaded = true;
+        hasError = false;
+      });
+    } catch (e) {
+      AppLogger.e("Error loading QRows: $e");
+      setState(() {
+        isDataLoaded = true; // Still mark as loaded to show error message
+        hasError = true;
+        errorMessage = e.toString();
+      });
+      
+      // Show error snackbar
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to load questions: ${e.toString()}'),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 5),
+          ),
+        );
+      }
+    }
+  }
+
+  void _filterQRowsByRound(String round) {
+    AppLogger.i("Filtering QRows for round: $round");
+    
+    // Get the QRows for this round
+    final filteredRows = QRow.filterByRound(_allQRows, round);
+    AppLogger.i("Found ${filteredRows.length} QRows for round: $round");
+    
+    // Get unique set names for this round
+    final setNames = QRow.getUniqueSetNames(filteredRows);
+    AppLogger.i("Found ${setNames.length} unique set names for round $round: $setNames");
+    
+    setState(() {
+      selectedRound = round;
+      _filteredQRows = filteredRows;
+      uniqueSetNames = setNames;
+    });
+  }
+
+  List<QRow> _getQRowsForSetName(String setName) {
+    return QRow.filterBySetName(_filteredQRows, setName);
+  }
 
   @override
   Widget build(BuildContext context) {
-    // Parse the JSON data
-    final Map<String, dynamic> rowMap = row;
-
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        Row(
-          children: [
-            SingleChildScrollView(
+        // Left side with controls
+        if (!isDataLoaded) ...[
+          // Show loading indicator in the center of the screen
+          Center(
+            child: Container(
+              width: 300,
+              padding: EdgeInsets.all(24),
               child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  RoundDropDown(
-                    selectedRound: selectedRound,
-                    onRoundSelected: (String? round) {
-                      setState(() {
-                        selectedRound = round;
-                      });
-                    },
+                  CircularProgressIndicator(),
+                  SizedBox(height: 24),
+                  Text(
+                    'Loading questions...',
+                    style: AppTextStyles.bodyBig,
+                    textAlign: TextAlign.center,
                   ),
-                  SizedBox(height: 50),
-                  if (selectedRound != null) ...[
-                    Leaderboard(),
-                    SizedBox(height: 60),
-                    EndGameButton(),
-                  ],
                 ],
               ),
             ),
-            if (selectedRound != null) ...[SizedBox(width: 80)],
-            if (selectedRound != null) ...[
+          ),
+        ] else ...[
+          SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                if (hasError) ...[
+                  SizedBox(height: 20),
+                  Container(
+                    padding: EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.error_outline, color: Colors.red),
+                            SizedBox(width: 8),
+                            Text('Error loading questions', style: AppTextStyles.bodyBig.copyWith(color: Colors.red)),
+                          ],
+                        ),
+                        SizedBox(height: 8),
+                        Text(errorMessage, style: AppTextStyles.body.copyWith(color: Colors.red)),
+                        SizedBox(height: 16),
+                        ElevatedButton.icon(
+                          onPressed: () {
+                            setState(() {
+                              isDataLoaded = false;
+                              hasError = false;
+                            });
+                            _fetchQRows();
+                          },
+                          icon: Icon(Icons.refresh),
+                          label: Text('Try Again'),
+                        ),
+                      ],
+                    ),
+                  ),
+                ] else ...[
+                  RoundDropDown(
+                    selectedRound: selectedRound,
+                    onRoundSelected: (String? round) {
+                      if (round != null) {
+                        _filterQRowsByRound(round);
+                      }
+                    },
+                    rounds: uniqueRounds,
+                  ),
+                  SizedBox(height: 50),
+                  if (selectedRound != null) ...[
+                    Column(children: [Leaderboard(),
+                    SizedBox(height: 50),
+                    EndGameButton(),])
+                  ],
+                ],
+              ],
+            ),
+          ),
+          
+          // Spacing between controls and question board
+          if (selectedRound != null) ...[SizedBox(width: 50)],
+          
+          // Question board area - only show if round is selected and there are set names
+          if (selectedRound != null) ...[
+            if (uniqueSetNames.isEmpty) ...[
               SizedBox(
-                width: 950,
+                width: 400,
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.warning, size: 48, color: Colors.amber),
+                      SizedBox(height: 20),
+                      Text(
+                        'No question sets found for this round',
+                        style: AppTextStyles.titleMedium,
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ] else ...[
+              SizedBox(
+                width: 1100,
                 height: 900,
                 child: SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: SingleChildScrollView(
                     scrollDirection: Axis.vertical,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        QSet(data: rowMap),
-                        QSet(data: rowMap),
-                        QSet(data: rowMap),
-                        QSet(data: rowMap),
-                        QSet(data: rowMap),
-                      ],
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Wrap(
+                        spacing: 10.0,
+                        runSpacing: 10.0,
+                        alignment: WrapAlignment.center,
+                        children: uniqueSetNames.map((setName) {
+                          final List<QRow> setData = _getQRowsForSetName(setName);
+                          // Convert QRow objects to Map format for QSet
+                          final List<Map<String, dynamic>> setDataMaps = setData.map((qrow) => {
+                            'qid': qrow.qid,
+                            'round': qrow.round,
+                            'set_name': qrow.setName,
+                            'points': qrow.points,
+                            'question': qrow.question,
+                            'qstn_media': qrow.qstnMedia,
+                            'answer': qrow.answer,
+                            'ans_media': qrow.ansMedia,
+                          }).toList();
+                          
+                          return QSet(data: setDataMaps);
+                        }).toList(),
+                      ),
                     ),
                   ),
                 ),
               ),
             ],
           ],
-        ),
+        ],
       ],
     );
   }
@@ -116,37 +287,53 @@ class _QuestionBoardContentState extends State<QuestionBoardContent> {
 class RoundDropDown extends StatelessWidget {
   final String? selectedRound;
   final Function(String?) onRoundSelected;
+  final List<String> rounds;
 
   const RoundDropDown({
     super.key,
     required this.selectedRound,
     required this.onRoundSelected,
+    required this.rounds,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        SizedBox(height: 30),
-        Text('Choose Round:', style: AppTextStyles.bodyBig),
-        SizedBox(width: 20),
-        DropdownButton<String>(
-          hint: Text('...'),
-          value: selectedRound,
-          dropdownColor: Theme.of(context).scaffoldBackgroundColor,
-          items:
-              <String>['Round 1', 'Round 2', 'Round 3'].map((String value) {
-                return DropdownMenuItem<String>(
-                  value: value,
-                  child: Text(value),
-                );
-              }).toList(),
-          onChanged: (String? newValue) {
-            onRoundSelected(newValue);
-          },
-        ),
-        if (selectedRound != null) ...[SizedBox(width: 10)],
-      ],
+    // Debug print to verify the rounds
+    AppLogger.i("Building RoundDropDown with ${rounds.length} rounds: $rounds");
+    
+    return Container(
+      width: 200, // Set a fixed width
+      padding: EdgeInsets.symmetric(vertical: 5.0, horizontal: 5.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Center(child: Text('Choose Round:', 
+            style: AppTextStyles.bodyBig,
+          )),
+          SizedBox(height: 10),
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 10.0),
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<String>(
+                isExpanded: true,
+                hint: Text('Select a round'),
+                value: selectedRound,
+                dropdownColor: Theme.of(context).scaffoldBackgroundColor,
+                items: rounds.map((String value) {
+                  return DropdownMenuItem<String>(
+                    value: value,
+                    child: Text(value, style: AppTextStyles.body),
+                  );
+                }).toList(),
+                onChanged: (String? newValue) {
+                  AppLogger.i("Round selected: $newValue");
+                  onRoundSelected(newValue);
+                },
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -235,33 +422,47 @@ class EndGameButton extends StatelessWidget {
 }
 
 class QSet extends StatelessWidget {
-  final Map<String, dynamic> data;
+  final List<Map<String, dynamic>> data;
 
   const QSet({super.key, required this.data});
 
   @override
   Widget build(BuildContext context) {
+    // Sort data by points
+    final sortedData = List<Map<String, dynamic>>.from(data)
+      ..sort((a, b) => a['points'].compareTo(b['points']));
+    
     return Container(
-      padding: EdgeInsets.all(16.0),
+      width: 200,
+      margin: EdgeInsets.all(2.0),
+      padding: EdgeInsets.all(2.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
-        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          SizedBox(height: 60),
           Container(
-            width: 150,
-            height: 75,
+            width: double.infinity,
+            height: 80,
+            padding: EdgeInsets.symmetric(vertical: 2.0, horizontal: 4.0),
             decoration: BoxDecoration(
-              border: Border.all(color: Colors.blue),
+              color: Theme.of(context).primaryColor.withOpacity(0.1),
+              border: Border.all(color: Theme.of(context).primaryColor),
               borderRadius: BorderRadius.circular(8.0),
             ),
-            child: Center(
-              child: Text('Set Name', style: AppTextStyles.titleMedium),
-            ),
-          ),
-          SizedBox(height: 30.0),
+            child: FittedBox(
+            fit: BoxFit.scaleDown,
+          child: Text(
+            data.isNotEmpty ? data[0]['set_name'] : 'Default setname',
+            maxLines: 2, // Allow multiple lines
+            overflow: TextOverflow.ellipsis, // Or TextOverflow.clip
+            style: AppTextStyles.titleMedium,
+        ),
+          ),),
+          SizedBox(height: 24.0),
           Column(
-            children: List.generate(5, (index) {
+            mainAxisSize: MainAxisSize.min,
+            children: List.generate(sortedData.length, (index) {
+              final item = sortedData[index];
               return Padding(
                 padding: const EdgeInsets.symmetric(vertical: 8.0),
                 child: ElevatedButton(
@@ -274,10 +475,10 @@ class QSet extends StatelessWidget {
                                 QuestionPage(),
                         settings: RouteSettings(
                           arguments: {
-                            'setname': data['set_name'],
-                            'question': data['question'],
-                            'answer': data['answer'],
-                            'score': data['points'],
+                            'setname': item['set_name'],
+                            'question': item['question'],
+                            'answer': item['answer'],
+                            'score': item['points'],
                             'playerList':
                                 Provider.of<PlayerProvider>(
                                       context,
@@ -309,13 +510,23 @@ class QSet extends StatelessWidget {
                     );
                   },
                   style: ElevatedButton.styleFrom(
-                    shape: CircleBorder(),
-                    padding: EdgeInsets.all(10),
-                    minimumSize: Size(90, 90),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(45),
+                    ),
+                    padding: EdgeInsets.all(0),
                   ),
-                  child: Text(
-                    '${index + 1}',
-                    style: AppTextStyles.buttonTextBig,
+                  child: Container(
+                    width: 90,
+                    height: 90,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                    ),
+                    child: Center(
+                      child: Text(
+                        item['points'].toString(),
+                        style: AppTextStyles.buttonTextBig,
+                      ),
+                    ),
                   ),
                 ),
               );

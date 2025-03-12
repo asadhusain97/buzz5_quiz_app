@@ -232,7 +232,7 @@ class _QuestionPageState extends State<QuestionPage> {
                   Text(answer, style: AppTextStyles.bodyBig),
                   ElevatedButton(
                     onPressed: () {
-                      // Done button logic
+                      Navigator.of(context).pop();
                     },
                     child: Text("Done"),
                   ),
