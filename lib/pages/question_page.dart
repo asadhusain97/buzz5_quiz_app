@@ -18,6 +18,8 @@ class _QuestionPageState extends State<QuestionPage> {
   late String setname;
   late String question;
   late String answer;
+  late String qstnMedia;
+  late String ansMedia;
   late int score;
   late int negScore;
   late List<String> answerStatus;
@@ -32,6 +34,8 @@ class _QuestionPageState extends State<QuestionPage> {
     setname = args?['setname'] ?? "Sample Set";
     question = args?['question'] ?? "Sample Question?";
     answer = args?['answer'] ?? "Sample Answer";
+    qstnMedia = args?['qstn_media'] ?? "";
+    ansMedia = args?['ans_media'] ?? "";
     score = args?['score'] ?? 1;
     negScore = score * -1;
 
@@ -69,7 +73,7 @@ class _QuestionPageState extends State<QuestionPage> {
         ],
         title: Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [Text(setname), Text('Points: $score')],
+          children: [Text(setname, style: AppTextStyles.titleMedium), Text('Points: $score', style: AppTextStyles.titleMedium)],
         ),
       ),
       body: Padding(
@@ -78,7 +82,9 @@ class _QuestionPageState extends State<QuestionPage> {
           crossAxisAlignment: CrossAxisAlignment.center,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(question, style: AppTextStyles.titleMedium),
+            // Question section with intelligent layout based on content
+            _buildContentSection(question, qstnMedia),
+            
             SizedBox(height: 40),
             Center(
               child: Padding(
@@ -223,25 +229,76 @@ class _QuestionPageState extends State<QuestionPage> {
                 child: Text("Show Answer"),
               ),
             ),
-            SizedBox(height: 20),
+            SizedBox(height: 30),
             if (_showAnswer)
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Text(answer, style: AppTextStyles.bodyBig),
-                  ElevatedButton(
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                    },
-                    child: Text("Done"),
-                  ),
-                ],
-              ),
+              _buildAnswerSection(),
             SizedBox(height: 5),
           ],
         ),
       ),
+    );
+  }
+  
+  // Helper method to build content section (question or answer)
+  Widget _buildContentSection(String text, String mediaUrl) {
+    if (text.isEmpty && mediaUrl.isEmpty) {
+      return SizedBox(); // Empty space if no content
+    } else if (text.isEmpty && mediaUrl.isNotEmpty) {
+      // Only image, center it
+      return Center(
+        child: SimplerNetworkImage(imageUrl: mediaUrl),
+      );
+    } else if (text.isNotEmpty && mediaUrl.isEmpty) {
+      // Only text, center it
+      return Center(
+        child: Text(
+          text,
+          style: AppTextStyles.titleMedium,
+          textAlign: TextAlign.center,
+        ),
+      );
+    } else {
+      // Both text and image, show side by side with 50 spacing
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Expanded(
+            child: Center(
+              child: Text(
+                text,
+                style: AppTextStyles.titleMedium,
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ),
+          SizedBox(width: 50), // Fixed 50 spacing
+          SimplerNetworkImage(imageUrl: mediaUrl),
+        ],
+      );
+    }
+  }
+  
+  // Helper method to build the answer section with "Done" button
+  Widget _buildAnswerSection() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        // Content (text and/or image)
+        Container(
+          margin: EdgeInsets.only(right: 30), // Space for button
+          child: _buildContentSection(answer, ansMedia),
+        ),
+        
+        // Done button always on right
+ElevatedButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+            child: Text("Done"),
+          ),
+
+      ],
     );
   }
 }
@@ -275,6 +332,8 @@ class _ToggleIconButtonState extends State<ToggleIconButton> {
 
   @override
   Widget build(BuildContext context) {
+    final playerProvider = Provider.of<PlayerProvider>(context, listen: false);
+    
     IconData icon;
     if (widget.iconType == 'correctAns') {
       icon = Icons.check_box;
@@ -303,11 +362,108 @@ class _ToggleIconButtonState extends State<ToggleIconButton> {
                   widget.onToggle!(isOn);
                 }
                 if (isOn) {
-                  widget.player.addPoints(widget.point);
+                  // Use PlayerProvider to update score instead of direct player manipulation
+                  playerProvider.addPointToPlayer(widget.player, widget.point);
+                  AppLogger.i("Added ${widget.point} points to ${widget.player.name} via PlayerProvider");
                 } else {
-                  widget.player.undoLastPoint();
+                  // Use PlayerProvider to undo points
+                  playerProvider.undoLastPointForPlayer(widget.player);
+                  AppLogger.i("Undid last point for ${widget.player.name} via PlayerProvider");
                 }
               },
+    );
+  }
+}
+
+// Simpler network image without border
+class SimplerNetworkImage extends StatelessWidget {
+  final String imageUrl;
+  
+  const SimplerNetworkImage({
+    super.key,
+    required this.imageUrl,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        _showFullScreenImage(context, imageUrl);
+      },
+      child: SizedBox(
+        height: 150,
+        width: 150,
+        child: Image.network(
+          imageUrl,
+          fit: BoxFit.contain,
+          loadingBuilder: (context, child, loadingProgress) {
+            if (loadingProgress == null) return child;
+            return Center(
+              child: CircularProgressIndicator(
+                value: loadingProgress.expectedTotalBytes != null
+                    ? loadingProgress.cumulativeBytesLoaded / 
+                        loadingProgress.expectedTotalBytes!
+                    : null,
+              ),
+            );
+          },
+          errorBuilder: (context, error, stackTrace) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.error, color: Colors.red),
+                  SizedBox(height: 8),
+                  Text(
+                    'Failed to load image',
+                    style: TextStyle(color: Colors.red),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  void _showFullScreenImage(BuildContext context, String imageUrl) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        insetPadding: EdgeInsets.zero,
+        child: Container(
+          width: double.infinity,
+          height: double.infinity,
+          color: Colors.black,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              // Image with pinch to zoom
+              InteractiveViewer(
+                panEnabled: true,
+                boundaryMargin: EdgeInsets.all(20),
+                minScale: 0.5,
+                maxScale: 4,
+                child: Image.network(
+                  imageUrl,
+                  fit: BoxFit.contain,
+                ),
+              ),
+              // Close button
+              Positioned(
+                top: 20,
+                right: 20,
+                child: IconButton(
+                  icon: Icon(Icons.close, color: Colors.white, size: 30),
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

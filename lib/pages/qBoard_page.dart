@@ -54,6 +54,15 @@ class _QuestionBoardContentState extends State<QuestionBoardContent> {
     AppLogger.i("QuestionBoardContent initState called");
     _fetchQRows();
   }
+  
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Force a refresh of the player provider when returning to this page
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<PlayerProvider>(context, listen: false).notifyListeners();
+    });
+  }
 
   Future<void> _fetchQRows() async {
     setState(() {
@@ -338,14 +347,23 @@ class RoundDropDown extends StatelessWidget {
   }
 }
 
-class Leaderboard extends StatelessWidget {
+class Leaderboard extends StatefulWidget {
   const Leaderboard({super.key});
 
+  @override
+  _LeaderboardState createState() => _LeaderboardState();
+}
+
+class _LeaderboardState extends State<Leaderboard> {
   @override
   Widget build(BuildContext context) {
     return Consumer<PlayerProvider>(
       builder: (context, playerProvider, child) {
-        AppLogger.i("Player list updated: ${playerProvider.playerList}");
+        AppLogger.i("Leaderboard rebuilding with player list: ${playerProvider.playerList}");
+        
+        // Sort players by score in descending order
+        final listPlayers = List.from(playerProvider.playerList);
+        
         return SingleChildScrollView(
           child: SizedBox(
             width: 250,
@@ -360,27 +378,26 @@ class Leaderboard extends StatelessWidget {
                   child: ListView.builder(
                     shrinkWrap: true,
                     physics: NeverScrollableScrollPhysics(),
-                    itemCount: playerProvider.playerList.length,
+                    itemCount: listPlayers.length,
                     itemBuilder: (context, index) {
-                      final player = playerProvider.playerList[index];
-                      final isLastPositivePlayer =
-                          playerProvider.lastPositivePlayer == player;
+                      final player = listPlayers[index];
+                      final isLastPositivePlayer = playerProvider.lastPositivePlayer == player;
                       return Container(
+                        key: ValueKey('player-${player.name}'),
                         margin: const EdgeInsets.symmetric(vertical: 4.0),
                         padding: const EdgeInsets.all(8.0),
                         decoration: BoxDecoration(
                           border: Border.all(
-                            color:
-                                isLastPositivePlayer
-                                    ? Colors.green
-                                    : Colors.grey,
+                            color: isLastPositivePlayer
+                                ? Colors.green
+                                : Colors.grey,
                           ),
                           borderRadius: BorderRadius.circular(8.0),
                         ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(player.name, style: AppTextStyles.body),
+                            Text('${index + 1}. ${player.name}', style: AppTextStyles.body),
                             Text(
                               '${player.score}',
                               style: AppTextStyles.bodyBig,
@@ -478,6 +495,8 @@ class QSet extends StatelessWidget {
                             'setname': item['set_name'],
                             'question': item['question'],
                             'answer': item['answer'],
+                            'qstn_media': item['qstn_media'] ?? '',
+                            'ans_media': item['ans_media'] ?? '',
                             'score': item['points'],
                             'playerList':
                                 Provider.of<PlayerProvider>(
