@@ -39,6 +39,14 @@ class _QuestionPageState extends State<QuestionPage> {
     score = args?['score'] ?? 1;
     negScore = score * -1;
 
+    // Add logging to debug media URLs
+    if (qstnMedia.isNotEmpty) {
+      AppLogger.i("Question loaded with question media: '$qstnMedia'");
+    }
+    if (ansMedia.isNotEmpty) {
+      AppLogger.i("Question loaded with answer media: '$ansMedia'");
+    }
+
     final playerProvider = Provider.of<PlayerProvider>(context);
     answerStatus = List<String>.filled(playerProvider.playerList.length, "");
   }
@@ -73,7 +81,10 @@ class _QuestionPageState extends State<QuestionPage> {
         ],
         title: Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [Text(setname, style: AppTextStyles.titleMedium), Text('Points: $score', style: AppTextStyles.titleMedium)],
+          children: [
+            Text(setname, style: AppTextStyles.titleMedium),
+            Text('Points: $score', style: AppTextStyles.titleMedium),
+          ],
         ),
       ),
       body: Padding(
@@ -84,7 +95,6 @@ class _QuestionPageState extends State<QuestionPage> {
           children: [
             // Question section with intelligent layout based on content
             _buildContentSection(question, qstnMedia),
-            
             SizedBox(height: 40),
             Center(
               child: Padding(
@@ -226,28 +236,26 @@ class _QuestionPageState extends State<QuestionPage> {
                     _showAnswer = !_showAnswer;
                   });
                 },
+                style: ElevatedButton.styleFrom(minimumSize: Size(150, 40)),
                 child: Text("Show Answer"),
               ),
             ),
             SizedBox(height: 30),
-            if (_showAnswer)
-              _buildAnswerSection(),
+            if (_showAnswer) _buildAnswerSection(answer, ansMedia),
             SizedBox(height: 5),
           ],
         ),
       ),
     );
   }
-  
+
   // Helper method to build content section (question or answer)
   Widget _buildContentSection(String text, String mediaUrl) {
     if (text.isEmpty && mediaUrl.isEmpty) {
-      return SizedBox(); // Empty space if no content
+      return Text("I have no question for you.."); // Empty space if no content
     } else if (text.isEmpty && mediaUrl.isNotEmpty) {
       // Only image, center it
-      return Center(
-        child: SimplerNetworkImage(imageUrl: mediaUrl),
-      );
+      return Center(child: SimplerNetworkImage(imageUrl: mediaUrl));
     } else if (text.isNotEmpty && mediaUrl.isEmpty) {
       // Only text, center it
       return Center(
@@ -278,27 +286,71 @@ class _QuestionPageState extends State<QuestionPage> {
       );
     }
   }
-  
+
   // Helper method to build the answer section with "Done" button
-  Widget _buildAnswerSection() {
+  Widget _buildAnswerSection(String text, String mediaUrl) {
+    if (text.isEmpty && mediaUrl.isEmpty) {
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text("I have no answer for you.."),
+          SizedBox(width: 50),
+          DoneButton(context: context),
+        ],
+      );
+    } else if (text.isEmpty && mediaUrl.isNotEmpty) {
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          SimplerNetworkImage(imageUrl: mediaUrl),
+          SizedBox(width: 50),
+          DoneButton(context: context),
+        ],
+      );
+    } else if (text.isNotEmpty && mediaUrl.isEmpty) {
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            text,
+            style: AppTextStyles.titleMedium,
+            textAlign: TextAlign.center,
+          ),
+          SizedBox(width: 50),
+          DoneButton(context: context),
+        ],
+      );
+    }
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        // Content (text and/or image)
-        Container(
-          margin: EdgeInsets.only(right: 30), // Space for button
-          child: _buildContentSection(answer, ansMedia),
+        SimplerNetworkImage(imageUrl: mediaUrl),
+        SizedBox(width: 50),
+        Text(
+          text,
+          style: AppTextStyles.titleMedium,
+          textAlign: TextAlign.center,
         ),
-        
-        // Done button always on right
-ElevatedButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-            },
-            child: Text("Done"),
-          ),
-
+        SizedBox(width: 50),
+        DoneButton(context: context),
       ],
+    );
+  }
+}
+
+class DoneButton extends StatelessWidget {
+  const DoneButton({super.key, required this.context});
+
+  final BuildContext context;
+
+  @override
+  Widget build(BuildContext context) {
+    return ElevatedButton(
+      style: ElevatedButton.styleFrom(minimumSize: Size(150, 40)),
+      onPressed: () {
+        Navigator.of(context).pop();
+      },
+      child: Text("Done"),
     );
   }
 }
@@ -333,7 +385,7 @@ class _ToggleIconButtonState extends State<ToggleIconButton> {
   @override
   Widget build(BuildContext context) {
     final playerProvider = Provider.of<PlayerProvider>(context, listen: false);
-    
+
     IconData icon;
     if (widget.iconType == 'correctAns') {
       icon = Icons.check_box;
@@ -364,11 +416,15 @@ class _ToggleIconButtonState extends State<ToggleIconButton> {
                 if (isOn) {
                   // Use PlayerProvider to update score instead of direct player manipulation
                   playerProvider.addPointToPlayer(widget.player, widget.point);
-                  AppLogger.i("Added ${widget.point} points to ${widget.player.name} via PlayerProvider");
+                  AppLogger.i(
+                    "Added ${widget.point} points to ${widget.player.name} via PlayerProvider",
+                  );
                 } else {
                   // Use PlayerProvider to undo points
                   playerProvider.undoLastPointForPlayer(widget.player);
-                  AppLogger.i("Undid last point for ${widget.player.name} via PlayerProvider");
+                  AppLogger.i(
+                    "Undid last point for ${widget.player.name} via PlayerProvider",
+                  );
                 }
               },
     );
@@ -378,14 +434,21 @@ class _ToggleIconButtonState extends State<ToggleIconButton> {
 // Simpler network image without border
 class SimplerNetworkImage extends StatelessWidget {
   final String imageUrl;
-  
-  const SimplerNetworkImage({
-    super.key,
-    required this.imageUrl,
-  });
+
+  const SimplerNetworkImage({super.key, required this.imageUrl});
 
   @override
   Widget build(BuildContext context) {
+    if (imageUrl.isEmpty) {
+      return SizedBox(
+        height: 150,
+        width: 150,
+        child: Center(
+          child: Icon(Icons.image_not_supported, color: Colors.grey),
+        ),
+      );
+    }
+
     return GestureDetector(
       onTap: () {
         _showFullScreenImage(context, imageUrl);
@@ -400,14 +463,18 @@ class SimplerNetworkImage extends StatelessWidget {
             if (loadingProgress == null) return child;
             return Center(
               child: CircularProgressIndicator(
-                value: loadingProgress.expectedTotalBytes != null
-                    ? loadingProgress.cumulativeBytesLoaded / 
-                        loadingProgress.expectedTotalBytes!
-                    : null,
+                value:
+                    loadingProgress.expectedTotalBytes != null
+                        ? loadingProgress.cumulativeBytesLoaded /
+                            loadingProgress.expectedTotalBytes!
+                        : null,
               ),
             );
           },
           errorBuilder: (context, error, stackTrace) {
+            AppLogger.e(
+              "Failed to load image from URL: $imageUrl, error: $error",
+            );
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -431,39 +498,37 @@ class SimplerNetworkImage extends StatelessWidget {
   void _showFullScreenImage(BuildContext context, String imageUrl) {
     showDialog(
       context: context,
-      builder: (context) => Dialog(
-        insetPadding: EdgeInsets.zero,
-        child: Container(
-          width: double.infinity,
-          height: double.infinity,
-          color: Colors.black,
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              // Image with pinch to zoom
-              InteractiveViewer(
-                panEnabled: true,
-                boundaryMargin: EdgeInsets.all(20),
-                minScale: 0.5,
-                maxScale: 4,
-                child: Image.network(
-                  imageUrl,
-                  fit: BoxFit.contain,
-                ),
+      builder:
+          (context) => Dialog(
+            insetPadding: EdgeInsets.zero,
+            child: Container(
+              width: double.infinity,
+              height: double.infinity,
+              color: Colors.black,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  // Image with pinch to zoom
+                  InteractiveViewer(
+                    panEnabled: true,
+                    boundaryMargin: EdgeInsets.all(20),
+                    minScale: 0.5,
+                    maxScale: 4,
+                    child: Image.network(imageUrl, fit: BoxFit.contain),
+                  ),
+                  // Close button
+                  Positioned(
+                    top: 20,
+                    right: 20,
+                    child: IconButton(
+                      icon: Icon(Icons.close, color: Colors.white, size: 30),
+                      onPressed: () => Navigator.of(context).pop(),
+                    ),
+                  ),
+                ],
               ),
-              // Close button
-              Positioned(
-                top: 20,
-                right: 20,
-                child: IconButton(
-                  icon: Icon(Icons.close, color: Colors.white, size: 30),
-                  onPressed: () => Navigator.of(context).pop(),
-                ),
-              ),
-            ],
+            ),
           ),
-        ),
-      ),
     );
   }
 }

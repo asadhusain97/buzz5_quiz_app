@@ -54,22 +54,13 @@ class _QuestionBoardContentState extends State<QuestionBoardContent> {
     AppLogger.i("QuestionBoardContent initState called");
     _fetchQRows();
   }
-  
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    // Force a refresh of the player provider when returning to this page
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<PlayerProvider>(context, listen: false).notifyListeners();
-    });
-  }
 
   Future<void> _fetchQRows() async {
     setState(() {
       isDataLoaded = false;
       hasError = false;
     });
-    
+
     try {
       _qrowsFuture = QRow.fetchAll();
       await _loadData();
@@ -86,15 +77,17 @@ class _QuestionBoardContentState extends State<QuestionBoardContent> {
   Future<void> _loadData() async {
     try {
       _allQRows = await _qrowsFuture;
-      
+
       // Add debug logging
       AppLogger.i("Loaded ${_allQRows.length} QRows from API");
-      
+
       final uniqueRoundsResult = QRow.getUniqueRounds(_allQRows);
-      
+
       // Add debug logging for rounds
-      AppLogger.i("Found ${uniqueRoundsResult.length} unique rounds: $uniqueRoundsResult");
-      
+      AppLogger.i(
+        "Found ${uniqueRoundsResult.length} unique rounds: $uniqueRoundsResult",
+      );
+
       setState(() {
         uniqueRounds = uniqueRoundsResult;
         isDataLoaded = true;
@@ -107,7 +100,7 @@ class _QuestionBoardContentState extends State<QuestionBoardContent> {
         hasError = true;
         errorMessage = e.toString();
       });
-      
+
       // Show error snackbar
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -123,15 +116,17 @@ class _QuestionBoardContentState extends State<QuestionBoardContent> {
 
   void _filterQRowsByRound(String round) {
     AppLogger.i("Filtering QRows for round: $round");
-    
+
     // Get the QRows for this round
     final filteredRows = QRow.filterByRound(_allQRows, round);
     AppLogger.i("Found ${filteredRows.length} QRows for round: $round");
-    
+
     // Get unique set names for this round
     final setNames = QRow.getUniqueSetNames(filteredRows);
-    AppLogger.i("Found ${setNames.length} unique set names for round $round: $setNames");
-    
+    AppLogger.i(
+      "Found ${setNames.length} unique set names for round $round: $setNames",
+    );
+
     setState(() {
       selectedRound = round;
       _filteredQRows = filteredRows;
@@ -173,7 +168,7 @@ class _QuestionBoardContentState extends State<QuestionBoardContent> {
         ] else ...[
           SingleChildScrollView(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 if (hasError) ...[
                   SizedBox(height: 20),
@@ -186,11 +181,19 @@ class _QuestionBoardContentState extends State<QuestionBoardContent> {
                           children: [
                             Icon(Icons.error_outline, color: Colors.red),
                             SizedBox(width: 8),
-                            Text('Error loading questions', style: AppTextStyles.bodyBig.copyWith(color: Colors.red)),
+                            Text(
+                              'Error loading questions',
+                              style: AppTextStyles.bodyBig.copyWith(
+                                color: Colors.red,
+                              ),
+                            ),
                           ],
                         ),
                         SizedBox(height: 8),
-                        Text(errorMessage, style: AppTextStyles.body.copyWith(color: Colors.red)),
+                        Text(
+                          errorMessage,
+                          style: AppTextStyles.body.copyWith(color: Colors.red),
+                        ),
                         SizedBox(height: 16),
                         ElevatedButton.icon(
                           onPressed: () {
@@ -207,29 +210,36 @@ class _QuestionBoardContentState extends State<QuestionBoardContent> {
                     ),
                   ),
                 ] else ...[
-                  RoundDropDown(
-                    selectedRound: selectedRound,
-                    onRoundSelected: (String? round) {
-                      if (round != null) {
-                        _filterQRowsByRound(round);
-                      }
-                    },
-                    rounds: uniqueRounds,
+                  Center(
+                    child: RoundDropDown(
+                      selectedRound: selectedRound,
+                      onRoundSelected: (String? round) {
+                        if (round != null) {
+                          _filterQRowsByRound(round);
+                        }
+                      },
+                      rounds: uniqueRounds,
+                    ),
                   ),
                   SizedBox(height: 50),
                   if (selectedRound != null) ...[
-                    Column(children: [Leaderboard(),
-                    SizedBox(height: 50),
-                    EndGameButton(),])
+                    Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Leaderboard(),
+                        SizedBox(height: 60),
+                        EndGameButton(),
+                      ],
+                    ),
                   ],
                 ],
               ],
             ),
           ),
-          
+
           // Spacing between controls and question board
-          if (selectedRound != null) ...[SizedBox(width: 50)],
-          
+          if (selectedRound != null) ...[SizedBox(width: 80)],
+
           // Question board area - only show if round is selected and there are set names
           if (selectedRound != null) ...[
             if (uniqueSetNames.isEmpty) ...[
@@ -252,7 +262,7 @@ class _QuestionBoardContentState extends State<QuestionBoardContent> {
               ),
             ] else ...[
               SizedBox(
-                width: 1100,
+                width: 950,
                 height: 900,
                 child: SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
@@ -261,25 +271,33 @@ class _QuestionBoardContentState extends State<QuestionBoardContent> {
                     child: Padding(
                       padding: const EdgeInsets.all(16.0),
                       child: Wrap(
-                        spacing: 10.0,
-                        runSpacing: 10.0,
+                        spacing: 24.0,
+                        runSpacing: 24.0,
                         alignment: WrapAlignment.center,
-                        children: uniqueSetNames.map((setName) {
-                          final List<QRow> setData = _getQRowsForSetName(setName);
-                          // Convert QRow objects to Map format for QSet
-                          final List<Map<String, dynamic>> setDataMaps = setData.map((qrow) => {
-                            'qid': qrow.qid,
-                            'round': qrow.round,
-                            'set_name': qrow.setName,
-                            'points': qrow.points,
-                            'question': qrow.question,
-                            'qstn_media': qrow.qstnMedia,
-                            'answer': qrow.answer,
-                            'ans_media': qrow.ansMedia,
-                          }).toList();
-                          
-                          return QSet(data: setDataMaps);
-                        }).toList(),
+                        children:
+                            uniqueSetNames.map((setName) {
+                              final List<QRow> setData = _getQRowsForSetName(
+                                setName,
+                              );
+                              // Convert QRow objects to Map format for QSet
+                              final List<Map<String, dynamic>> setDataMaps =
+                                  setData
+                                      .map(
+                                        (qrow) => {
+                                          'qid': qrow.qid,
+                                          'round': qrow.round,
+                                          'set_name': qrow.setName,
+                                          'points': qrow.points,
+                                          'question': qrow.question,
+                                          'qstn_media': qrow.qstnMedia,
+                                          'answer': qrow.answer,
+                                          'ans_media': qrow.ansMedia,
+                                        },
+                                      )
+                                      .toList();
+
+                              return QSet(data: setDataMaps);
+                            }).toList(),
                       ),
                     ),
                   ),
@@ -309,17 +327,16 @@ class RoundDropDown extends StatelessWidget {
   Widget build(BuildContext context) {
     // Debug print to verify the rounds
     AppLogger.i("Building RoundDropDown with ${rounds.length} rounds: $rounds");
-    
+
     return Container(
       width: 200, // Set a fixed width
       padding: EdgeInsets.symmetric(vertical: 5.0, horizontal: 5.0),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Center(child: Text('Choose Round:', 
-            style: AppTextStyles.bodyBig,
-          )),
-          SizedBox(height: 10),
+          Text('Choose Round:', style: AppTextStyles.bodyBig),
+          SizedBox(height: 12),
           Container(
             padding: EdgeInsets.symmetric(horizontal: 10.0),
             child: DropdownButtonHideUnderline(
@@ -328,12 +345,13 @@ class RoundDropDown extends StatelessWidget {
                 hint: Text('Select a round'),
                 value: selectedRound,
                 dropdownColor: Theme.of(context).scaffoldBackgroundColor,
-                items: rounds.map((String value) {
-                  return DropdownMenuItem<String>(
-                    value: value,
-                    child: Text(value, style: AppTextStyles.body),
-                  );
-                }).toList(),
+                items:
+                    rounds.map((String value) {
+                      return DropdownMenuItem<String>(
+                        value: value,
+                        child: Text(value, style: AppTextStyles.body),
+                      );
+                    }).toList(),
                 onChanged: (String? newValue) {
                   AppLogger.i("Round selected: $newValue");
                   onRoundSelected(newValue);
@@ -347,29 +365,20 @@ class RoundDropDown extends StatelessWidget {
   }
 }
 
-class Leaderboard extends StatefulWidget {
+class Leaderboard extends StatelessWidget {
   const Leaderboard({super.key});
 
-  @override
-  _LeaderboardState createState() => _LeaderboardState();
-}
-
-class _LeaderboardState extends State<Leaderboard> {
   @override
   Widget build(BuildContext context) {
     return Consumer<PlayerProvider>(
       builder: (context, playerProvider, child) {
-        AppLogger.i("Leaderboard rebuilding with player list: ${playerProvider.playerList}");
-        
-        // Sort players by score in descending order
-        final listPlayers = List.from(playerProvider.playerList);
-        
+        AppLogger.i("Player list updated: ${playerProvider.playerList}");
         return SingleChildScrollView(
           child: SizedBox(
             width: 250,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
-              mainAxisAlignment: MainAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text('Leaderboard', style: AppTextStyles.titleMedium),
                 SizedBox(height: 20.0),
@@ -378,26 +387,27 @@ class _LeaderboardState extends State<Leaderboard> {
                   child: ListView.builder(
                     shrinkWrap: true,
                     physics: NeverScrollableScrollPhysics(),
-                    itemCount: listPlayers.length,
+                    itemCount: playerProvider.playerList.length,
                     itemBuilder: (context, index) {
-                      final player = listPlayers[index];
-                      final isLastPositivePlayer = playerProvider.lastPositivePlayer == player;
+                      final player = playerProvider.playerList[index];
+                      final isLastPositivePlayer =
+                          playerProvider.lastPositivePlayer == player;
                       return Container(
-                        key: ValueKey('player-${player.name}'),
                         margin: const EdgeInsets.symmetric(vertical: 4.0),
                         padding: const EdgeInsets.all(8.0),
                         decoration: BoxDecoration(
                           border: Border.all(
-                            color: isLastPositivePlayer
-                                ? Colors.green
-                                : Colors.grey,
+                            color:
+                                isLastPositivePlayer
+                                    ? Colors.green
+                                    : Colors.grey,
                           ),
                           borderRadius: BorderRadius.circular(8.0),
                         ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text('${index + 1}. ${player.name}', style: AppTextStyles.body),
+                            Text(player.name, style: AppTextStyles.body),
                             Text(
                               '${player.score}',
                               style: AppTextStyles.bodyBig,
@@ -425,6 +435,8 @@ class EndGameButton extends StatelessWidget {
     return Center(
       child: ElevatedButton.icon(
         onPressed: () {
+          // Sort players by score before ending the game
+          Provider.of<PlayerProvider>(context, listen: false).sortPlayerList();
           Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => FinalPage()),
@@ -448,9 +460,9 @@ class QSet extends StatelessWidget {
     // Sort data by points
     final sortedData = List<Map<String, dynamic>>.from(data)
       ..sort((a, b) => a['points'].compareTo(b['points']));
-    
+
     return Container(
-      width: 200,
+      width: 150,
       margin: EdgeInsets.all(2.0),
       padding: EdgeInsets.all(2.0),
       child: Column(
@@ -458,30 +470,34 @@ class QSet extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            width: double.infinity,
+            width: 150,
             height: 80,
-            padding: EdgeInsets.symmetric(vertical: 2.0, horizontal: 4.0),
+            padding: EdgeInsets.symmetric(vertical: 2.0, horizontal: 2.0),
+            margin: EdgeInsets.symmetric(vertical: 2.0, horizontal: 6.0),
             decoration: BoxDecoration(
-              color: Theme.of(context).primaryColor.withOpacity(0.1),
-              border: Border.all(color: Theme.of(context).primaryColor),
+              border: Border.all(color: Colors.grey.shade600, width: 1.0),
               borderRadius: BorderRadius.circular(8.0),
             ),
-            child: FittedBox(
-            fit: BoxFit.scaleDown,
-          child: Text(
-            data.isNotEmpty ? data[0]['set_name'] : 'Default setname',
-            maxLines: 2, // Allow multiple lines
-            overflow: TextOverflow.ellipsis, // Or TextOverflow.clip
-            style: AppTextStyles.titleMedium,
-        ),
-          ),),
-          SizedBox(height: 24.0),
+            child: Center(
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  data.isNotEmpty ? data[0]['set_name'] : 'Default setname',
+                  style: AppTextStyles.titleMedium,
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ),
+          ),
+          SizedBox(height: 20.0),
           Column(
             mainAxisSize: MainAxisSize.min,
             children: List.generate(sortedData.length, (index) {
               final item = sortedData[index];
               return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8.0),
+                padding: const EdgeInsets.symmetric(vertical: 2.0),
                 child: ElevatedButton(
                   onPressed: () {
                     Navigator.push(
@@ -495,9 +511,9 @@ class QSet extends StatelessWidget {
                             'setname': item['set_name'],
                             'question': item['question'],
                             'answer': item['answer'],
-                            'qstn_media': item['qstn_media'] ?? '',
-                            'ans_media': item['ans_media'] ?? '',
                             'score': item['points'],
+                            'qstn_media': item['qstn_media'] ?? "",
+                            'ans_media': item['ans_media'] ?? "",
                             'playerList':
                                 Provider.of<PlayerProvider>(
                                       context,
@@ -537,9 +553,7 @@ class QSet extends StatelessWidget {
                   child: Container(
                     width: 90,
                     height: 90,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                    ),
+                    decoration: BoxDecoration(shape: BoxShape.circle),
                     child: Center(
                       child: Text(
                         item['points'].toString(),
