@@ -97,7 +97,7 @@ class _QuestionPageState extends State<QuestionPage> {
                 padding: EdgeInsets.all(20),
                 child: SizedBox(
                   height: 200,
-                  width: _calculatePlayerContainerWidth(
+                  width: _calculatePlayerBoardContainerWidth(
                     playerProvider.playerList.length,
                   ),
                   child: Column(
@@ -130,27 +130,23 @@ class _QuestionPageState extends State<QuestionPage> {
                                     MainAxisAlignment.spaceEvenly,
                                 crossAxisAlignment: CrossAxisAlignment.center,
                                 children: [
-                                  _buildToggleButton(
-                                    isOn: buttonState.correctActive,
-                                    isDisabled: buttonState.wrongActive,
-                                    iconData: Icons.check_box,
+                                  ToggleButton(
+                                    key: ValueKey(
+                                      'correct_${player.name}_${buttonState.correctOn}',
+                                    ),
+                                    initialOn: buttonState.correctOn,
+                                    isDisabled: buttonState.correctDisabled,
+                                    iconData: Icons.check,
                                     onColor: ColorConstants.correctAnsBtn,
                                     offColor: ColorConstants.ansBtn,
-                                    onPressed: () {
+                                    onToggle: (isOn) {
                                       setState(() {
-                                        if (buttonState.correctActive) {
-                                          // Toggle off
-                                          buttonState.correctActive = false;
-                                          playerProvider.undoLastPointForPlayer(
-                                            player,
-                                          );
-                                        } else {
-                                          // Toggle on
-                                          buttonState.correctActive = true;
-                                          playerProvider.addPointToPlayer(
-                                            player,
-                                            score,
-                                          );
+                                        buttonState.correctOn = isOn;
+                                        buttonState.wrongDisabled = isOn;
+                                        player.addPoints(score);
+                                        if (!isOn) {
+                                          buttonState.wrongDisabled = false;
+                                          player.undoLastPoint();
                                         }
                                       });
                                     },
@@ -172,27 +168,23 @@ class _QuestionPageState extends State<QuestionPage> {
                                       ),
                                     ),
                                   ),
-                                  _buildToggleButton(
-                                    isOn: buttonState.wrongActive,
-                                    isDisabled: buttonState.correctActive,
-                                    iconData: Icons.cancel,
+                                  ToggleButton(
+                                    key: ValueKey(
+                                      'wrong_${player.name}_${buttonState.wrongOn}',
+                                    ),
+                                    initialOn: buttonState.wrongOn,
+                                    isDisabled: buttonState.wrongDisabled,
+                                    iconData: Icons.cancel_outlined,
                                     onColor: ColorConstants.wrongAnsBtn,
                                     offColor: ColorConstants.ansBtn,
-                                    onPressed: () {
+                                    onToggle: (isOn) {
                                       setState(() {
-                                        if (buttonState.wrongActive) {
-                                          // Toggle off
-                                          buttonState.wrongActive = false;
-                                          playerProvider.undoLastPointForPlayer(
-                                            player,
-                                          );
-                                        } else {
-                                          // Toggle on
-                                          buttonState.wrongActive = true;
-                                          playerProvider.addPointToPlayer(
-                                            player,
-                                            negScore,
-                                          );
+                                        buttonState.wrongOn = isOn;
+                                        buttonState.correctDisabled = isOn;
+                                        player.addPoints(negScore);
+                                        if (!isOn) {
+                                          buttonState.correctDisabled = false;
+                                          player.undoLastPoint();
                                         }
                                       });
                                     },
@@ -318,22 +310,7 @@ class _QuestionPageState extends State<QuestionPage> {
     );
   }
 
-  Widget _buildToggleButton({
-    required bool isOn,
-    required bool isDisabled,
-    required IconData iconData,
-    required Color onColor,
-    required Color offColor,
-    required VoidCallback onPressed,
-  }) {
-    return IconButton(
-      icon: Icon(iconData, size: 30),
-      color: isDisabled ? Colors.grey : (isOn ? onColor : offColor),
-      onPressed: isDisabled ? null : onPressed,
-    );
-  }
-
-  double _calculatePlayerContainerWidth(int playerCount) {
+  double _calculatePlayerBoardContainerWidth(int playerCount) {
     if (playerCount <= 1) return 300;
     if (playerCount <= 4) return 500;
     if (playerCount <= 6) return 700;
@@ -343,8 +320,10 @@ class _QuestionPageState extends State<QuestionPage> {
 
 // Simple class to track button states for each player
 class PlayerButtonState {
-  bool correctActive = false;
-  bool wrongActive = false;
+  bool correctOn = false;
+  bool wrongOn = false;
+  bool correctDisabled = false;
+  bool wrongDisabled = false;
 }
 
 class DoneButton extends StatelessWidget {
@@ -462,6 +441,68 @@ class SimplerNetworkImage extends StatelessWidget {
               ),
             ),
           ),
+    );
+  }
+}
+
+// New stateful widget: ToggleButton
+
+class ToggleButton extends StatefulWidget {
+  final bool initialOn;
+  final bool isDisabled;
+  final IconData iconData;
+  final Color onColor;
+  final Color offColor;
+  final ValueChanged<bool>? onToggle; // returns the new isOn value
+
+  const ToggleButton({
+    Key? key,
+    this.initialOn = false,
+    this.isDisabled = false,
+    required this.iconData,
+    required this.onColor,
+    required this.offColor,
+    this.onToggle,
+  }) : super(key: key);
+
+  @override
+  _ToggleButtonState createState() => _ToggleButtonState();
+}
+
+class _ToggleButtonState extends State<ToggleButton> {
+  late bool _isOn;
+
+  @override
+  void initState() {
+    super.initState();
+    _isOn = widget.initialOn;
+  }
+
+  @override
+  void didUpdateWidget(covariant ToggleButton oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.initialOn != oldWidget.initialOn) {
+      _isOn = widget.initialOn;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      icon: Icon(widget.iconData, size: 30),
+      color:
+          widget.isDisabled
+              ? Colors.grey
+              : (_isOn ? widget.onColor : widget.offColor),
+      onPressed:
+          widget.isDisabled
+              ? null
+              : () {
+                setState(() {
+                  _isOn = !_isOn;
+                });
+                if (widget.onToggle != null) widget.onToggle!(_isOn);
+              },
     );
   }
 }
