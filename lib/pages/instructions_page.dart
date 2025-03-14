@@ -155,10 +155,11 @@ class PlayerNameForm extends StatelessWidget {
     playerProvider.setLastPositivePlayer();
   }
 
-  void _resetPlayerList(BuildContext context) {
+  void _resetGameState(BuildContext context) {
     final playerProvider = Provider.of<PlayerProvider>(context, listen: false);
     playerProvider.setPlayerList([]);
-    AppLogger.i("Player list reset");
+    playerProvider.resetAnsweredQuestions();
+    AppLogger.i("Game state reset (players and answered questions)");
   }
 
   @override
@@ -230,8 +231,13 @@ class PlayerNameForm extends StatelessWidget {
               child: ElevatedButton(
                 onPressed: () {
                   if (_validateUniqueNames()) {
-                    _resetPlayerList(context);
+                    _resetGameState(context);
                     _addPlayersToProvider(context);
+                    // Record the game start time now
+                    Provider.of<PlayerProvider>(
+                      context,
+                      listen: false,
+                    ).setGameStartTime(DateTime.now());
                     Navigator.push(
                       context,
                       MaterialPageRoute(

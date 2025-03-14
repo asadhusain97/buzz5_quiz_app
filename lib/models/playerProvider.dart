@@ -6,9 +6,22 @@ import 'package:buzz5_quiz_app/config/logger.dart';
 class PlayerProvider with ChangeNotifier {
   List<Player> _playerList = [];
   Player? _lastPositivePlayer;
+  DateTime? _gameStartTime;
+  DateTime? _gameEndTime;
 
   List<Player> get playerList => _playerList;
   Player? get lastPositivePlayer => _lastPositivePlayer;
+
+  // New getter for game time (in minutes)
+  String get gameTime {
+    if (_gameStartTime != null && _gameEndTime != null) {
+      final duration = _gameEndTime!.difference(_gameStartTime!);
+      return '${duration.inMinutes}m';
+    }
+    return 'TBD';
+  }
+
+  final Set<String> _answeredQuestions = {};
 
   void addPlayer(Player player) {
     _playerList.add(player);
@@ -45,7 +58,7 @@ class PlayerProvider with ChangeNotifier {
         return b.score.compareTo(a.score);
       }
 
-      // 2. Sort by lowest sum of negative points
+      // 2. Sort by lowest sum of negative points descending (players with less negative total come first)
       int sumNegativeA = a.allPoints.fold(
         0,
         (value, point) => point < 0 ? value + point : value,
@@ -55,13 +68,13 @@ class PlayerProvider with ChangeNotifier {
         (value, point) => point < 0 ? value + point : value,
       );
       if (sumNegativeA != sumNegativeB) {
-        return sumNegativeA.compareTo(sumNegativeB);
+        return sumNegativeB.compareTo(sumNegativeA);
       }
 
       // 3. Sort alphabetically by name
       return a.name.compareTo(b.name);
     });
-    AppLogger.i("Sorted player list: $_playerList");
+    AppLogger.i("Player list sorted");
     notifyListeners();
   }
 
@@ -85,5 +98,34 @@ class PlayerProvider with ChangeNotifier {
       AppLogger.i("Undid last point for ${player.name}");
       notifyListeners();
     }
+  }
+
+  // Check if a question has been answered
+  bool isQuestionAnswered(String questionId) {
+    return _answeredQuestions.contains(questionId);
+  }
+
+  // Mark a question as answered
+  void markQuestionAsAnswered(String questionId) {
+    if (questionId.isNotEmpty) {
+      _answeredQuestions.add(questionId);
+      notifyListeners(); // Notify listeners to update UI
+    }
+  }
+
+  // Reset answered questions
+  void resetAnsweredQuestions() {
+    _answeredQuestions.clear();
+    notifyListeners();
+  }
+
+  void setGameStartTime(DateTime startTime) {
+    _gameStartTime = startTime;
+    notifyListeners();
+  }
+
+  void setGameEndTime(DateTime endTime) {
+    _gameEndTime = endTime;
+    notifyListeners();
   }
 }

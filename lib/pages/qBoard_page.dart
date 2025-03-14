@@ -436,6 +436,11 @@ class EndGameButton extends StatelessWidget {
     return Center(
       child: ElevatedButton.icon(
         onPressed: () {
+          // Record game end time
+          Provider.of<PlayerProvider>(
+            context,
+            listen: false,
+          ).setGameEndTime(DateTime.now());
           // Sort players by score before ending the game
           Provider.of<PlayerProvider>(context, listen: false).sortPlayerList();
           Navigator.push(

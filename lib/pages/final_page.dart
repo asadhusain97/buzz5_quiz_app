@@ -56,7 +56,9 @@ class ScoreBoard extends StatelessWidget {
                       margin: const EdgeInsets.symmetric(vertical: 2.0),
                       padding: const EdgeInsets.all(5.0),
                       decoration: BoxDecoration(
-                        border: Border.all(color: Colors.grey),
+                        border: Border.all(
+                          color: index == 0 ? Colors.yellow : Colors.grey,
+                        ),
                         borderRadius: BorderRadius.circular(8.0),
                       ),
                       child: Column(
@@ -81,17 +83,36 @@ class ScoreBoard extends StatelessWidget {
                           SizedBox(height: 2),
                           Padding(
                             padding: EdgeInsets.only(left: 15),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.start,
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text(
-                                  'Wrong answers:  ${player.wrongAnsCount} (${player.wrongAnsTotal})',
-                                  style: AppTextStyles.scoreSubtitle,
+                                Column(
+                                  mainAxisAlignment: MainAxisAlignment.start,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Wrong ans:  ${player.wrongAnsCount} (${player.wrongAnsTotal})',
+                                      style: AppTextStyles.scoreSubtitle,
+                                    ),
+                                    Text(
+                                      'Correct ans:  ${player.correctAnsCount} (+${player.correctAnsTotal})',
+                                      style: AppTextStyles.scoreSubtitle,
+                                    ),
+                                  ],
                                 ),
-                                Text(
-                                  'Correct answers:  ${player.correctAnsCount} (+${player.correctAnsTotal})',
-                                  style: AppTextStyles.scoreSubtitle,
+                                Column(
+                                  mainAxisAlignment: MainAxisAlignment.start,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Accuracy:  ${player.allPoints.isNotEmpty ? '${(player.correctAnsCount / player.allPoints.length * 100).toStringAsFixed(1)}%' : '-'}',
+                                      style: AppTextStyles.scoreSubtitle,
+                                    ),
+                                    Text(
+                                      'Total attempts:  ${player.allPoints.length}',
+                                      style: AppTextStyles.scoreSubtitle,
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),
@@ -130,29 +151,52 @@ class GameStats extends StatelessWidget {
           0,
           (sum, player) => sum + player.wrongAnsCount,
         );
-        final avgScore = (correctAnswers / totalAttempts).toStringAsFixed(1);
-        final gameTime =
-            'TBD'; // Placeholder, replace with actual game time calculation if available
+        // Use the computed game time from the provider
+        final gameTime = playerProvider.gameTime;
 
         return Column(
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Text('Game Statistics', style: AppTextStyles.titleBig),
-            SizedBox(height: 20),
+            Text(
+              'Game Statistics',
+              style: AppTextStyles.headingSmall.copyWith(
+                color: ColorConstants.primaryColor,
+              ),
+            ),
+            SizedBox(height: 80),
             Row(
               children: [
                 Column(
                   children: [
-                    Text('$avgScore', style: AppTextStyles.scoreCard),
-                    Text('Avg. score', style: AppTextStyles.scoreSubtitle),
+                    Text(
+                      totalAttempts > 0
+                          ? '${(correctAnswers / totalAttempts * 100).toStringAsFixed(1)}%'
+                          : '-',
+                      style: AppTextStyles.titleBig,
+                    ),
+                    Text(
+                      'Accuracy',
+                      style: AppTextStyles.titleMedium.copyWith(
+                        color: ColorConstants.primaryColor,
+                        fontStyle: FontStyle.italic,
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
                   ],
                 ),
                 SizedBox(width: 30),
                 Column(
                   children: [
-                    Text('$totalAttempts', style: AppTextStyles.scoreCard),
-                    Text('Total attempts', style: AppTextStyles.scoreSubtitle),
+                    Text('$totalAttempts', style: AppTextStyles.titleBig),
+                    Text(
+                      'Total attempts',
+                      style: AppTextStyles.titleMedium.copyWith(
+                        color: ColorConstants.primaryColor,
+                        fontStyle: FontStyle.italic,
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
                   ],
                 ),
               ],
@@ -162,28 +206,49 @@ class GameStats extends StatelessWidget {
               children: [
                 Column(
                   children: [
-                    Text('$wrongAnswers', style: AppTextStyles.scoreCard),
-                    Text('Wrong answers', style: AppTextStyles.scoreSubtitle),
+                    Text('$wrongAnswers', style: AppTextStyles.titleBig),
+                    Text(
+                      'Wrong answers',
+                      style: AppTextStyles.titleMedium.copyWith(
+                        color: ColorConstants.primaryColor,
+                        fontStyle: FontStyle.italic,
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
                   ],
                 ),
                 SizedBox(width: 30),
                 Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text('$correctAnswers', style: AppTextStyles.scoreCard),
-                    Text('Correct answers', style: AppTextStyles.scoreSubtitle),
+                    Text('$correctAnswers', style: AppTextStyles.titleBig),
+                    Text(
+                      'Correct answers',
+                      style: AppTextStyles.titleMedium.copyWith(
+                        color: ColorConstants.primaryColor,
+                        fontStyle: FontStyle.italic,
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
                   ],
                 ),
                 SizedBox(width: 30),
                 Column(
                   children: [
-                    Text('$gameTime', style: AppTextStyles.scoreCard),
-                    Text('Game time', style: AppTextStyles.scoreSubtitle),
+                    Text('$gameTime', style: AppTextStyles.titleBig),
+                    Text(
+                      'Game time',
+                      style: AppTextStyles.titleMedium.copyWith(
+                        color: ColorConstants.primaryColor,
+                        fontStyle: FontStyle.italic,
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
                   ],
                 ),
               ],
             ),
-            SizedBox(height: 50),
+            SizedBox(height: 80),
             ElevatedButton(
               onPressed: () {
                 Navigator.pushAndRemoveUntil(

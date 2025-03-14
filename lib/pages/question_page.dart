@@ -98,7 +98,7 @@ class _QuestionPageState extends State<QuestionPage> {
                 padding: EdgeInsets.all(20),
                 child: SizedBox(
                   height: 200,
-                  width: _calculatePlayerContainerWidth(
+                  width: _calculatePlayerBoardContainerWidth(
                     playerProvider.playerList.length,
                   ),
                   child: Column(
@@ -131,29 +131,36 @@ class _QuestionPageState extends State<QuestionPage> {
                                     MainAxisAlignment.spaceEvenly,
                                 crossAxisAlignment: CrossAxisAlignment.center,
                                 children: [
-                                  _buildToggleButton(
-                                    isOn: buttonState.correctActive,
-                                    isDisabled: buttonState.wrongActive,
-                                    iconData: Icons.check_box,
+                                  ToggleButton(
+                                    key: ValueKey('correct_${player.name}'),
+                                    initialOn: buttonState.correctOn,
+                                    isDisabled: buttonState.correctDisabled,
+                                    iconData: Icons.check,
                                     onColor: ColorConstants.correctAnsBtn,
                                     offColor: ColorConstants.ansBtn,
-                                    onPressed: () {
+                                    onToggle: (isOn) {
+                                      // force update the UI
                                       setState(() {
-                                        if (buttonState.correctActive) {
-                                          // Toggle off
-                                          buttonState.correctActive = false;
-                                          playerProvider.undoLastPointForPlayer(
-                                            player,
-                                          );
-                                        } else {
-                                          // Toggle on
-                                          buttonState.correctActive = true;
-                                          playerProvider.addPointToPlayer(
-                                            player,
-                                            score,
-                                          );
-                                        }
+                                        buttonState.setCorrect(isOn);
                                       });
+                                      // // Then handle the score through the provider
+                                      // final playerProvider =
+                                      //     Provider.of<PlayerProvider>(
+                                      //       context,
+                                      //       listen: false,
+                                      //     );
+                                      // if (isOn) {
+                                      //   // Add points through provider
+                                      //   playerProvider.addPointToPlayer(
+                                      //     player,
+                                      //     score,
+                                      //   );
+                                      // } else {
+                                      //   // Remove points through provider
+                                      //   playerProvider.undoLastPointForPlayer(
+                                      //     player,
+                                      //   );
+                                      // }
                                     },
                                   ),
                                   SizedBox(
@@ -173,29 +180,36 @@ class _QuestionPageState extends State<QuestionPage> {
                                       ),
                                     ),
                                   ),
-                                  _buildToggleButton(
-                                    isOn: buttonState.wrongActive,
-                                    isDisabled: buttonState.correctActive,
-                                    iconData: Icons.cancel,
+                                  ToggleButton(
+                                    key: ValueKey('wrong_${player.name}'),
+                                    initialOn: buttonState.wrongOn,
+                                    isDisabled: buttonState.wrongDisabled,
+                                    iconData: Icons.cancel_outlined,
                                     onColor: ColorConstants.wrongAnsBtn,
                                     offColor: ColorConstants.ansBtn,
-                                    onPressed: () {
+                                    onToggle: (isOn) {
+                                      // force update the UI
                                       setState(() {
-                                        if (buttonState.wrongActive) {
-                                          // Toggle off
-                                          buttonState.wrongActive = false;
-                                          playerProvider.undoLastPointForPlayer(
-                                            player,
-                                          );
-                                        } else {
-                                          // Toggle on
-                                          buttonState.wrongActive = true;
-                                          playerProvider.addPointToPlayer(
-                                            player,
-                                            negScore,
-                                          );
-                                        }
+                                        buttonState.setWrong(isOn);
                                       });
+                                      // // Then handle the score through the provider
+                                      // final playerProvider =
+                                      //     Provider.of<PlayerProvider>(
+                                      //       context,
+                                      //       listen: false,
+                                      //     );
+                                      // if (isOn) {
+                                      //   // Add points through provider
+                                      //   playerProvider.addPointToPlayer(
+                                      //     player,
+                                      //     negScore,
+                                      //   );
+                                      // } else {
+                                      //   // Remove points through provider
+                                      //   playerProvider.undoLastPointForPlayer(
+                                      //     player,
+                                      //   );
+                                      // }
                                     },
                                   ),
                                 ],
@@ -277,7 +291,12 @@ class _QuestionPageState extends State<QuestionPage> {
         children: [
           Text("I have no answer for you.."),
           SizedBox(width: 50),
-          DoneButton(context: context),
+          DoneButton(
+            context: context,
+            playerButtonStates: playerButtonStates,
+            score: score,
+            negScore: negScore,
+          ),
         ],
       );
     } else if (text.isEmpty && mediaUrl.isNotEmpty) {
@@ -286,7 +305,12 @@ class _QuestionPageState extends State<QuestionPage> {
         children: [
           SimplerNetworkImage(imageUrl: mediaUrl),
           SizedBox(width: 50),
-          DoneButton(context: context),
+          DoneButton(
+            context: context,
+            playerButtonStates: playerButtonStates,
+            score: score,
+            negScore: negScore,
+          ),
         ],
       );
     } else if (text.isNotEmpty && mediaUrl.isEmpty) {
@@ -299,7 +323,12 @@ class _QuestionPageState extends State<QuestionPage> {
             textAlign: TextAlign.center,
           ),
           SizedBox(width: 50),
-          DoneButton(context: context),
+          DoneButton(
+            context: context,
+            playerButtonStates: playerButtonStates,
+            score: score,
+            negScore: negScore,
+          ),
         ],
       );
     }
@@ -314,27 +343,17 @@ class _QuestionPageState extends State<QuestionPage> {
           textAlign: TextAlign.center,
         ),
         SizedBox(width: 50),
-        DoneButton(context: context),
+        DoneButton(
+          context: context,
+          playerButtonStates: playerButtonStates,
+          score: score,
+          negScore: negScore,
+        ),
       ],
     );
   }
 
-  Widget _buildToggleButton({
-    required bool isOn,
-    required bool isDisabled,
-    required IconData iconData,
-    required Color onColor,
-    required Color offColor,
-    required VoidCallback onPressed,
-  }) {
-    return IconButton(
-      icon: Icon(iconData, size: 30),
-      color: isDisabled ? Colors.grey : (isOn ? onColor : offColor),
-      onPressed: isDisabled ? null : onPressed,
-    );
-  }
-
-  double _calculatePlayerContainerWidth(int playerCount) {
+  double _calculatePlayerBoardContainerWidth(int playerCount) {
     if (playerCount <= 1) return 300;
     if (playerCount <= 4) return 500;
     if (playerCount <= 6) return 700;
@@ -344,14 +363,55 @@ class _QuestionPageState extends State<QuestionPage> {
 
 // Simple class to track button states for each player
 class PlayerButtonState {
-  bool correctActive = false;
-  bool wrongActive = false;
+  bool correctOn = false;
+  bool wrongOn = false;
+  bool correctDisabled = false;
+  bool wrongDisabled = false;
+
+  // Reset all states
+  void reset() {
+    correctOn = false;
+    wrongOn = false;
+    correctDisabled = false;
+    wrongDisabled = false;
+  }
+
+  // Set correct answer
+  void setCorrect(bool isOn) {
+    correctOn = isOn;
+    wrongDisabled = isOn; // When correct is on, wrong is disabled
+
+    // If correct is being turned off, make sure wrong is enabled
+    if (!isOn) {
+      wrongDisabled = false;
+    }
+  }
+
+  // Set wrong answer
+  void setWrong(bool isOn) {
+    wrongOn = isOn;
+    correctDisabled = isOn; // When wrong is on, correct is disabled
+
+    // If wrong is being turned off, make sure correct is enabled
+    if (!isOn) {
+      correctDisabled = false;
+    }
+  }
 }
 
 class DoneButton extends StatelessWidget {
-  const DoneButton({super.key, required this.context});
+  const DoneButton({
+    super.key,
+    required this.context,
+    required this.playerButtonStates,
+    required this.score,
+    required this.negScore,
+  });
 
   final BuildContext context;
+  final Map<String, PlayerButtonState> playerButtonStates;
+  final int score;
+  final int negScore;
 
   @override
   Widget build(BuildContext context) {
@@ -363,6 +423,28 @@ class DoneButton extends StatelessWidget {
     return ElevatedButton(
       style: ElevatedButton.styleFrom(minimumSize: Size(150, 40)),
       onPressed: () {
+        // Process all player scores based on button states
+        final playerProvider = Provider.of<PlayerProvider>(
+          context,
+          listen: false,
+        );
+
+        // Update scores for all players
+        for (final player in playerProvider.playerList) {
+          final buttonState = playerButtonStates[player.name];
+          if (buttonState != null) {
+            if (buttonState.correctOn) {
+              // Add positive points for correct answer
+              playerProvider.addPointToPlayer(player, score);
+              AppLogger.i("Added $score points to ${player.name}");
+            } else if (buttonState.wrongOn) {
+              // Add negative points for wrong answer
+              playerProvider.addPointToPlayer(player, negScore);
+              AppLogger.i("Added $negScore points to ${player.name}");
+            }
+          }
+        }
+
         if (questionId.isNotEmpty) {
           // Mark this question as answered
           Provider.of<AnsweredQuestionsProvider>(
@@ -372,6 +454,7 @@ class DoneButton extends StatelessWidget {
 
           AppLogger.i("Question $questionId marked as answered");
         }
+
         // Return to previous screen
         Navigator.of(context).pop();
       },
@@ -478,6 +561,73 @@ class SimplerNetworkImage extends StatelessWidget {
               ),
             ),
           ),
+    );
+  }
+}
+
+// New stateful widget: ToggleButton
+
+class ToggleButton extends StatefulWidget {
+  final bool initialOn;
+  final bool isDisabled;
+  final IconData iconData;
+  final Color onColor;
+  final Color offColor;
+  final ValueChanged<bool>? onToggle; // returns the new isOn value
+
+  const ToggleButton({
+    Key? key,
+    this.initialOn = false,
+    this.isDisabled = false,
+    required this.iconData,
+    required this.onColor,
+    required this.offColor,
+    this.onToggle,
+  }) : super(key: key);
+
+  @override
+  _ToggleButtonState createState() => _ToggleButtonState();
+}
+
+class _ToggleButtonState extends State<ToggleButton> {
+  late bool _isOn;
+
+  @override
+  void initState() {
+    super.initState();
+    _isOn = widget.initialOn;
+  }
+
+  @override
+  void didUpdateWidget(covariant ToggleButton oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    // Update internal state when props change
+    if (widget.initialOn != oldWidget.initialOn) {
+      setState(() {
+        _isOn = widget.initialOn;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      icon: Icon(widget.iconData, size: 30),
+      color:
+          widget.isDisabled
+              ? Colors.grey
+              : (_isOn ? widget.onColor : widget.offColor),
+      onPressed:
+          widget.isDisabled
+              ? null
+              : () {
+                final newState = !_isOn;
+                setState(() {
+                  _isOn = newState;
+                });
+                if (widget.onToggle != null) widget.onToggle!(newState);
+              },
     );
   }
 }

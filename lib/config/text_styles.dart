@@ -38,9 +38,9 @@ class AppTextStyles {
     fontStyle: FontStyle.italic,
   );
   static TextStyle scoreSubtitle = TextStyle(
-    fontSize: 14,
+    fontSize: 12,
     color: ColorConstants.hintGrey,
-    fontWeight: FontWeight.w500,
+    fontWeight: FontWeight.w400,
     fontStyle: FontStyle.italic,
   );
   static TextStyle scoreCard = TextStyle(
