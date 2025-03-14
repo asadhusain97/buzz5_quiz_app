@@ -284,6 +284,8 @@ class PlayerTextField extends StatelessWidget {
           hintText: 'Enter player name',
           hintStyle: AppTextStyles.hintText,
           prefixIcon: Icon(Icons.person, size: 20.0),
+          fillColor: Colors.white24,
+          hoverColor: Colors.white30,
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(8.0),
             borderSide: BorderSide(color: ColorConstants.primaryColor),

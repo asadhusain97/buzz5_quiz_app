@@ -40,15 +40,18 @@ class AppTextStyles {
   static TextStyle scoreSubtitle = TextStyle(
     fontSize: 12,
     color: ColorConstants.hintGrey,
-    fontWeight: FontWeight.w400,
+    fontWeight: FontWeight.w600,
     fontStyle: FontStyle.italic,
   );
   static TextStyle scoreCard = TextStyle(
     fontSize: 18,
     color: ColorConstants.primaryColor,
-    fontWeight: FontWeight.w900,
-    // fontFeatures: [
-    //   FontFeature.enable('smcp'),
-    // ], // All caps but first letter bigger than others
+    fontWeight: FontWeight.w600,
+  );
+  static TextStyle gameStatTitles = TextStyle(
+    fontSize: 20,
+    color: ColorConstants.primaryColor,
+    fontStyle: FontStyle.italic,
+    fontWeight: FontWeight.w700,
   );
 }

@@ -175,28 +175,14 @@ class GameStats extends StatelessWidget {
                           : '-',
                       style: AppTextStyles.titleBig,
                     ),
-                    Text(
-                      'Accuracy',
-                      style: AppTextStyles.titleMedium.copyWith(
-                        color: ColorConstants.primaryColor,
-                        fontStyle: FontStyle.italic,
-                        fontWeight: FontWeight.w400,
-                      ),
-                    ),
+                    Text('Accuracy', style: AppTextStyles.gameStatTitles),
                   ],
                 ),
                 SizedBox(width: 30),
                 Column(
                   children: [
                     Text('$totalAttempts', style: AppTextStyles.titleBig),
-                    Text(
-                      'Total attempts',
-                      style: AppTextStyles.titleMedium.copyWith(
-                        color: ColorConstants.primaryColor,
-                        fontStyle: FontStyle.italic,
-                        fontWeight: FontWeight.w400,
-                      ),
-                    ),
+                    Text('Total attempts', style: AppTextStyles.gameStatTitles),
                   ],
                 ),
               ],
@@ -207,14 +193,7 @@ class GameStats extends StatelessWidget {
                 Column(
                   children: [
                     Text('$wrongAnswers', style: AppTextStyles.titleBig),
-                    Text(
-                      'Wrong answers',
-                      style: AppTextStyles.titleMedium.copyWith(
-                        color: ColorConstants.primaryColor,
-                        fontStyle: FontStyle.italic,
-                        fontWeight: FontWeight.w400,
-                      ),
-                    ),
+                    Text('Wrong answers', style: AppTextStyles.gameStatTitles),
                   ],
                 ),
                 SizedBox(width: 30),
@@ -224,11 +203,7 @@ class GameStats extends StatelessWidget {
                     Text('$correctAnswers', style: AppTextStyles.titleBig),
                     Text(
                       'Correct answers',
-                      style: AppTextStyles.titleMedium.copyWith(
-                        color: ColorConstants.primaryColor,
-                        fontStyle: FontStyle.italic,
-                        fontWeight: FontWeight.w400,
-                      ),
+                      style: AppTextStyles.gameStatTitles,
                     ),
                   ],
                 ),
@@ -236,14 +211,7 @@ class GameStats extends StatelessWidget {
                 Column(
                   children: [
                     Text('$gameTime', style: AppTextStyles.titleBig),
-                    Text(
-                      'Game time',
-                      style: AppTextStyles.titleMedium.copyWith(
-                        color: ColorConstants.primaryColor,
-                        fontStyle: FontStyle.italic,
-                        fontWeight: FontWeight.w400,
-                      ),
-                    ),
+                    Text('Game time', style: AppTextStyles.gameStatTitles),
                   ],
                 ),
               ],
