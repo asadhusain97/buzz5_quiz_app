@@ -1,11 +1,12 @@
 import 'dart:convert';
 import 'package:buzz5_quiz_app/config/colors.dart';
 import 'package:buzz5_quiz_app/config/text_styles.dart';
+import 'package:buzz5_quiz_app/models/questionDone.dart';
 import 'package:buzz5_quiz_app/pages/final_page.dart';
 import 'package:buzz5_quiz_app/pages/question_page.dart';
 import 'package:buzz5_quiz_app/widgets/appbar.dart';
 import 'package:flutter/material.dart';
-import 'package:buzz5_quiz_app/models/player_provider.dart';
+import 'package:buzz5_quiz_app/models/playerProvider.dart';
 import 'package:provider/provider.dart';
 import 'package:buzz5_quiz_app/config/logger.dart';
 import 'package:buzz5_quiz_app/models/qrow.dart';
@@ -168,7 +169,7 @@ class _QuestionBoardContentState extends State<QuestionBoardContent> {
         ] else ...[
           SingleChildScrollView(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 if (hasError) ...[
                   SizedBox(height: 20),
@@ -496,72 +497,122 @@ class QSet extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: List.generate(sortedData.length, (index) {
               final item = sortedData[index];
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 2.0),
-                child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      PageRouteBuilder(
-                        pageBuilder:
-                            (context, animation, secondaryAnimation) =>
-                                QuestionPage(),
-                        settings: RouteSettings(
-                          arguments: {
-                            'setname': item['set_name'],
-                            'question': item['question'],
-                            'answer': item['answer'],
-                            'score': item['points'],
-                            'qstn_media': item['qstn_media'] ?? "",
-                            'ans_media': item['ans_media'] ?? "",
-                            'playerList':
-                                Provider.of<PlayerProvider>(
+              final String questionId =
+                  "${item['qid']}"; // Unique ID for each question
+
+              // Use Consumer to listen for changes in answered questions
+              return Consumer<AnsweredQuestionsProvider>(
+                builder: (context, answeredProvider, child) {
+                  final bool isAnswered = answeredProvider.isQuestionAnswered(
+                    questionId,
+                  );
+
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 2.0),
+                    child:
+                        isAnswered
+                            // Show tick mark if question is answered
+                            ? Container(
+                              width: 90,
+                              height: 90,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                // color: Colors.grey.shade400,
+                              ),
+                              child: Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.check,
+                                      color: Colors.green.shade300,
+                                      size: 30,
+                                    ),
+                                    Text(
+                                      item['points'].toString(),
+                                      style: AppTextStyles.buttonTextSmall
+                                          .copyWith(
+                                            color: Colors.green.shade500,
+                                          ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            )
+                            // Show regular button if not answered
+                            : ElevatedButton(
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  PageRouteBuilder(
+                                    pageBuilder:
+                                        (
+                                          context,
+                                          animation,
+                                          secondaryAnimation,
+                                        ) => QuestionPage(),
+                                    settings: RouteSettings(
+                                      arguments: {
+                                        'qid':
+                                            questionId, // Pass the questionId
+                                        'setname': item['set_name'],
+                                        'question': item['question'],
+                                        'answer': item['answer'],
+                                        'score': item['points'],
+                                        'qstn_media': item['qstn_media'] ?? "",
+                                        'ans_media': item['ans_media'] ?? "",
+                                        'playerList':
+                                            Provider.of<PlayerProvider>(
+                                                  context,
+                                                  listen: false,
+                                                ).playerList
+                                                .map((player) => player.name)
+                                                .toList(),
+                                      },
+                                    ),
+                                    transitionsBuilder: (
                                       context,
-                                      listen: false,
-                                    ).playerList
-                                    .map((player) => player.name)
-                                    .toList(),
-                          },
-                        ),
-                        transitionsBuilder: (
-                          context,
-                          animation,
-                          secondaryAnimation,
-                          child,
-                        ) {
-                          final curvedAnimation = CurvedAnimation(
-                            parent: animation,
-                            curve: Curves.easeInOut,
-                          );
-                          return SlideTransition(
-                            position: Tween<Offset>(
-                              begin: const Offset(0, 1),
-                              end: Offset.zero,
-                            ).animate(curvedAnimation),
-                            child: child,
-                          );
-                        },
-                      ),
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(45),
-                    ),
-                    padding: EdgeInsets.all(0),
-                  ),
-                  child: Container(
-                    width: 90,
-                    height: 90,
-                    decoration: BoxDecoration(shape: BoxShape.circle),
-                    child: Center(
-                      child: Text(
-                        item['points'].toString(),
-                        style: AppTextStyles.buttonTextBig,
-                      ),
-                    ),
-                  ),
-                ),
+                                      animation,
+                                      secondaryAnimation,
+                                      child,
+                                    ) {
+                                      final curvedAnimation = CurvedAnimation(
+                                        parent: animation,
+                                        curve: Curves.easeInOut,
+                                      );
+                                      return SlideTransition(
+                                        position: Tween<Offset>(
+                                          begin: const Offset(0, 1),
+                                          end: Offset.zero,
+                                        ).animate(curvedAnimation),
+                                        child: child,
+                                      );
+                                    },
+                                  ),
+                                );
+                              },
+                              style: ElevatedButton.styleFrom(
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(45),
+                                ),
+                                padding: EdgeInsets.all(0),
+                              ),
+                              child: Container(
+                                width: 90,
+                                height: 90,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    item['points'].toString(),
+                                    style: AppTextStyles.buttonTextBig,
+                                  ),
+                                ),
+                              ),
+                            ),
+                  );
+                },
               );
             }),
           ),

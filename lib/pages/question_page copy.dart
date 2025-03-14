@@ -3,7 +3,7 @@ import 'package:buzz5_quiz_app/config/text_styles.dart';
 import 'package:flutter/material.dart';
 import 'package:buzz5_quiz_app/config/logger.dart';
 import 'package:provider/provider.dart';
-import 'package:buzz5_quiz_app/models/player_provider.dart';
+import 'package:buzz5_quiz_app/models/playerProvider.dart';
 import 'package:buzz5_quiz_app/models/player.dart';
 
 class QuestionPage extends StatefulWidget {

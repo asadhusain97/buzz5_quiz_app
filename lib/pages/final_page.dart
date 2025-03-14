@@ -6,7 +6,7 @@ import 'package:buzz5_quiz_app/pages/joingame_page.dart';
 import 'package:buzz5_quiz_app/widgets/appbar.dart';
 import 'package:flutter/material.dart';
 import 'package:buzz5_quiz_app/config/logger.dart';
-import 'package:buzz5_quiz_app/models/player_provider.dart';
+import 'package:buzz5_quiz_app/models/playerProvider.dart';
 import 'package:provider/provider.dart';
 
 class FinalPage extends StatelessWidget {

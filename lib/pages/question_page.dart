@@ -1,9 +1,10 @@
 import 'package:buzz5_quiz_app/config/colors.dart';
 import 'package:buzz5_quiz_app/config/text_styles.dart';
+import 'package:buzz5_quiz_app/models/questionDone.dart';
 import 'package:flutter/material.dart';
 import 'package:buzz5_quiz_app/config/logger.dart';
 import 'package:provider/provider.dart';
-import 'package:buzz5_quiz_app/models/player_provider.dart';
+import 'package:buzz5_quiz_app/models/playerProvider.dart';
 import 'package:buzz5_quiz_app/models/player.dart';
 
 class QuestionPage extends StatefulWidget {
@@ -354,9 +355,24 @@ class DoneButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Extract the questionId from arguments
+    final args =
+        ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    final String questionId = args?['qid'] ?? "";
+
     return ElevatedButton(
       style: ElevatedButton.styleFrom(minimumSize: Size(150, 40)),
       onPressed: () {
+        if (questionId.isNotEmpty) {
+          // Mark this question as answered
+          Provider.of<AnsweredQuestionsProvider>(
+            context,
+            listen: false,
+          ).markQuestionAsAnswered(questionId);
+
+          AppLogger.i("Question $questionId marked as answered");
+        }
+        // Return to previous screen
         Navigator.of(context).pop();
       },
       child: Text("Done"),
