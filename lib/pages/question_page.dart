@@ -233,14 +233,10 @@ class _QuestionPageState extends State<QuestionPage> {
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Expanded(
-            child: Center(
-              child: Text(
-                displayText,
-                style: AppTextStyles.titleMedium,
-                textAlign: TextAlign.center,
-              ),
-            ),
+          Text(
+            displayText,
+            style: AppTextStyles.titleMedium,
+            textAlign: TextAlign.center,
           ),
           SizedBox(width: 50), // Fixed 50 spacing
           SimplerNetworkImage(imageUrl: mediaUrl),
