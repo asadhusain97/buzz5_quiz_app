@@ -18,7 +18,7 @@ class _QuestionPageState extends State<QuestionPage> {
   bool _showAnswer = false;
   late String setname;
   late String question;
-  late String answer;
+  late dynamic answer;
   late String qstnMedia;
   late String ansMedia;
   late int score;
@@ -91,7 +91,7 @@ class _QuestionPageState extends State<QuestionPage> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             // Question section with intelligent layout based on content
-            _buildContentSection(question, qstnMedia),
+            _buildQuestionSection(question, qstnMedia),
             SizedBox(height: 40),
             Center(
               child: Padding(
@@ -143,24 +143,6 @@ class _QuestionPageState extends State<QuestionPage> {
                                       setState(() {
                                         buttonState.setCorrect(isOn);
                                       });
-                                      // // Then handle the score through the provider
-                                      // final playerProvider =
-                                      //     Provider.of<PlayerProvider>(
-                                      //       context,
-                                      //       listen: false,
-                                      //     );
-                                      // if (isOn) {
-                                      //   // Add points through provider
-                                      //   playerProvider.addPointToPlayer(
-                                      //     player,
-                                      //     score,
-                                      //   );
-                                      // } else {
-                                      //   // Remove points through provider
-                                      //   playerProvider.undoLastPointForPlayer(
-                                      //     player,
-                                      //   );
-                                      // }
                                     },
                                   ),
                                   SizedBox(
@@ -192,24 +174,6 @@ class _QuestionPageState extends State<QuestionPage> {
                                       setState(() {
                                         buttonState.setWrong(isOn);
                                       });
-                                      // // Then handle the score through the provider
-                                      // final playerProvider =
-                                      //     Provider.of<PlayerProvider>(
-                                      //       context,
-                                      //       listen: false,
-                                      //     );
-                                      // if (isOn) {
-                                      //   // Add points through provider
-                                      //   playerProvider.addPointToPlayer(
-                                      //     player,
-                                      //     negScore,
-                                      //   );
-                                      // } else {
-                                      //   // Remove points through provider
-                                      //   playerProvider.undoLastPointForPlayer(
-                                      //     player,
-                                      //   );
-                                      // }
                                     },
                                   ),
                                 ],
@@ -246,17 +210,19 @@ class _QuestionPageState extends State<QuestionPage> {
   }
 
   // Helper method to build content section (question or answer)
-  Widget _buildContentSection(String text, String mediaUrl) {
-    if (text.isEmpty && mediaUrl.isEmpty) {
+  Widget _buildQuestionSection(dynamic text, String mediaUrl) {
+    String displayText = text.toString(); // Convert text to string if it's not
+
+    if (displayText.isEmpty && mediaUrl.isEmpty) {
       return Text("I have no question for you.."); // Empty space if no content
-    } else if (text.isEmpty && mediaUrl.isNotEmpty) {
+    } else if (displayText.isEmpty && mediaUrl.isNotEmpty) {
       // Only image, center it
       return Center(child: SimplerNetworkImage(imageUrl: mediaUrl));
-    } else if (text.isNotEmpty && mediaUrl.isEmpty) {
+    } else if (displayText.isNotEmpty && mediaUrl.isEmpty) {
       // Only text, center it
       return Center(
         child: Text(
-          text,
+          displayText,
           style: AppTextStyles.titleMedium,
           textAlign: TextAlign.center,
         ),
@@ -267,14 +233,10 @@ class _QuestionPageState extends State<QuestionPage> {
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Expanded(
-            child: Center(
-              child: Text(
-                text,
-                style: AppTextStyles.titleMedium,
-                textAlign: TextAlign.center,
-              ),
-            ),
+          Text(
+            displayText,
+            style: AppTextStyles.titleMedium,
+            textAlign: TextAlign.center,
           ),
           SizedBox(width: 50), // Fixed 50 spacing
           SimplerNetworkImage(imageUrl: mediaUrl),
@@ -284,8 +246,9 @@ class _QuestionPageState extends State<QuestionPage> {
   }
 
   // Helper method to build the answer section with "Done" button
-  Widget _buildAnswerSection(String text, String mediaUrl) {
-    if (text.isEmpty && mediaUrl.isEmpty) {
+  Widget _buildAnswerSection(dynamic text, String mediaUrl) {
+    String displayText = text.toString(); // Convert text to string if it's not
+    if (displayText.isEmpty && mediaUrl.isEmpty) {
       return Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -299,7 +262,7 @@ class _QuestionPageState extends State<QuestionPage> {
           ),
         ],
       );
-    } else if (text.isEmpty && mediaUrl.isNotEmpty) {
+    } else if (displayText.isEmpty && mediaUrl.isNotEmpty) {
       return Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -313,12 +276,12 @@ class _QuestionPageState extends State<QuestionPage> {
           ),
         ],
       );
-    } else if (text.isNotEmpty && mediaUrl.isEmpty) {
+    } else if (displayText.isNotEmpty && mediaUrl.isEmpty) {
       return Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text(
-            text,
+            displayText,
             style: AppTextStyles.titleMedium,
             textAlign: TextAlign.center,
           ),
@@ -338,7 +301,7 @@ class _QuestionPageState extends State<QuestionPage> {
         SimplerNetworkImage(imageUrl: mediaUrl),
         SizedBox(width: 50),
         Text(
-          text,
+          displayText,
           style: AppTextStyles.titleMedium,
           textAlign: TextAlign.center,
         ),
