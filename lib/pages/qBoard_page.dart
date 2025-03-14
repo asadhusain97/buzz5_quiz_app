@@ -402,16 +402,17 @@ class Leaderboard extends StatelessWidget {
                                 isLastPositivePlayer
                                     ? Colors.green
                                     : Colors.grey,
+                            width: 2,
                           ),
                           borderRadius: BorderRadius.circular(8.0),
                         ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(player.name, style: AppTextStyles.body),
+                            Text(player.name, style: AppTextStyles.scoreCard),
                             Text(
                               '${player.score}',
-                              style: AppTextStyles.bodyBig,
+                              style: AppTextStyles.scoreCard,
                             ),
                           ],
                         ),
