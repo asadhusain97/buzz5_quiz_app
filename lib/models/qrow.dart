@@ -10,7 +10,7 @@ class QRow {
   final int points;
   final String question;
   final String qstnMedia;
-  final String answer;
+  final dynamic answer;
   final String ansMedia;
 
   QRow({
