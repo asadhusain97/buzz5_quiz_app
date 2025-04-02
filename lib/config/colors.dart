@@ -14,18 +14,35 @@ Color hexToColor(String hex) {
 }
 
 class ColorConstants {
-  static Color primaryContainerColor = Color(0xFF293CA0);
-  static Color primaryColor = Color(0xFFBAC3FF);
-  static Color secondaryColor = Color(0xFFAEC6FF);
-  static Color secondaryContainerColor = Color(0xFF14448D);
-  static Color tertiaryColor = Color(0xFFA9CDCF);
-  static Color tertiaryContainerColor = Color(0xFF2A4C4E);
-  static Color errorColor = Color(0xFFFFB4AB);
-  static Color errorContainerColor = Color(0xFF93000A);
-  static Color lightTextColor = hexToColor('#F6F7EB');
-  static Color darkTextColor = hexToColor('#0D1931');
-  static Color hintGrey = hexToColor('#B8BECC');
-  static Color correctAnsBtn = Colors.lightGreen.shade300;
-  static Color wrongAnsBtn = Colors.red.shade300;
-  static Color ansBtn = Colors.grey.shade600;
+  // Primary purple shades
+  static Color primaryColor = hexToColor('#6C63FF'); // Vibrant purple
+  static Color primaryContainerColor = hexToColor('#4A3F9F'); // Deeper purple
+
+  // Secondary blue shades
+  static Color secondaryColor = hexToColor('#7BB5FF'); // Soft blue
+  static Color secondaryContainerColor = hexToColor('#3A83E0'); // Deeper blue
+
+  // Tertiary accents
+  static Color tertiaryColor = hexToColor('#E0E4FF'); // Light lilac
+  static Color tertiaryContainerColor = hexToColor('#8A8EDA'); // Muted purple
+
+  // Feedback colors
+  static Color errorColor = hexToColor('#FF7C9C'); // Soft red
+  static Color errorContainerColor = hexToColor('#CF3868'); // Deeper red
+  static Color successColor = hexToColor('#6BCB77'); // Mint green
+
+  // Text colors
+  static Color lightTextColor = hexToColor('#FFFFFF'); // Pure white
+  static Color darkTextColor = hexToColor('#1A1A2E'); // Deep navy
+  static Color hintGrey = hexToColor('#B8BECC'); // Soft grey
+
+  // Button colors
+  static Color correctAnsBtn = hexToColor('#6BCB77'); // Mint green
+  static Color wrongAnsBtn = hexToColor('#FF7C9C'); // Soft red
+  static Color ansBtn = hexToColor('#6C63FF'); // Primary purple
+
+  // Background colors
+  static Color backgroundColor = hexToColor('#FAFAFA'); // Off-white
+  static Color surfaceColor = hexToColor('#FFFFFF'); // Pure white
+  static Color cardColor = hexToColor('#F5F5FF'); // Very soft purple
 }
