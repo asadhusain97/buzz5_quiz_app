@@ -34,7 +34,7 @@ class ColorConstants {
   // Text colors
   static Color lightTextColor = hexToColor('#FFFFFF'); // Pure white
   static Color darkTextColor = hexToColor('#1A1A2E'); // Deep navy
-  static Color hintGrey = hexToColor('#B8BECC'); // Soft grey
+  static Color hintGrey = hexToColor('#717C98'); // Soft grey
 
   // Button colors
   static Color correctAnsBtn = hexToColor('#6BCB77'); // Mint green

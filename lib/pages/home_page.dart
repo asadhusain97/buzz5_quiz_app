@@ -4,6 +4,7 @@ import 'package:buzz5_quiz_app/pages/instructions_page.dart';
 import 'package:buzz5_quiz_app/pages/joingame_page.dart';
 import 'package:flutter/material.dart';
 import 'package:buzz5_quiz_app/config/logger.dart';
+import 'package:buzz5_quiz_app/widgets/app_background.dart';
 
 class HomePage extends StatelessWidget {
   final Function(bool) onThemeChanged;
@@ -49,17 +50,7 @@ class HomePage extends StatelessWidget {
         ],
         elevation: 0,
       ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Theme.of(context).scaffoldBackgroundColor,
-              ColorConstants.tertiaryColor.withOpacity(0.3),
-            ],
-          ),
-        ),
+      body: AppBackground(
         child: Center(
           child: Padding(
             padding: const EdgeInsets.all(24.0),
