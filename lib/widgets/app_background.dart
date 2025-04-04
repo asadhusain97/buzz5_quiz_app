@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:buzz5_quiz_app/config/colors.dart';
+import 'dart:ui';
 
 class AppBackground extends StatelessWidget {
   final Widget child;
@@ -8,24 +8,36 @@ class AppBackground extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors:
-              Theme.of(context).brightness == Brightness.light
-                  ? [
-                    ColorConstants.backgroundColor,
-                    ColorConstants.darkTextColor,
-                  ] // Light theme gradient (white to dark)
-                  : [
-                    ColorConstants.darkTextColor,
-                    ColorConstants.backgroundColor,
-                  ], // Dark theme gradient
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        // Background image
+        Container(
+          decoration: BoxDecoration(
+            image: DecorationImage(
+              image: AssetImage(
+                Theme.of(context).brightness == Brightness.light
+                    ? 'images/light_background.png'
+                    : 'images/dark_background.png',
+              ),
+              fit: BoxFit.cover,
+            ),
+          ),
         ),
-      ),
-      child: child,
+        // Blur layer
+        BackdropFilter(
+          filter: ImageFilter.blur(
+            sigmaX:
+                7.0, // Horizontal blur amount (adjust for desired blur level)
+            sigmaY: 7.0, // Vertical blur amount (adjust for desired blur level)
+          ),
+          child: Container(
+            color: Colors.transparent, // Important to keep transparent
+          ),
+        ),
+        // Content layer
+        child,
+      ],
     );
   }
 }

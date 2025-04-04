@@ -4,6 +4,7 @@ import 'package:buzz5_quiz_app/pages/final_page.dart';
 import 'package:buzz5_quiz_app/pages/qBoard_page.dart';
 import 'package:buzz5_quiz_app/pages/question_page.dart';
 import 'package:buzz5_quiz_app/widgets/appbar.dart';
+import 'package:buzz5_quiz_app/widgets/base_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -42,7 +43,7 @@ class InstructionsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     AppLogger.i("InstructionsPage built");
-    return Scaffold(
+    return BasePage(
       appBar: AppBar(
         title: Text(
           'Instructions',
@@ -59,7 +60,7 @@ class InstructionsPage extends StatelessWidget {
         ),
         elevation: 0,
       ),
-      body: Container(
+      child: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,

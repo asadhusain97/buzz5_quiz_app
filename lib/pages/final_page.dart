@@ -4,6 +4,7 @@ import 'package:buzz5_quiz_app/pages/home_page.dart';
 import 'package:buzz5_quiz_app/pages/instructions_page.dart';
 import 'package:buzz5_quiz_app/pages/joingame_page.dart';
 import 'package:buzz5_quiz_app/widgets/appbar.dart';
+import 'package:buzz5_quiz_app/widgets/base_page.dart';
 import 'package:flutter/material.dart';
 import 'package:buzz5_quiz_app/config/logger.dart';
 import 'package:buzz5_quiz_app/models/playerProvider.dart';
@@ -15,9 +16,9 @@ class FinalPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     AppLogger.i("FinalPage built");
-    return Scaffold(
+    return BasePage(
       appBar: CustomAppBar(title: 'Well Played!', showBackButton: true),
-      body: Padding(
+      child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
