@@ -1,9 +1,6 @@
 import 'package:buzz5_quiz_app/config/colors.dart';
-import 'package:buzz5_quiz_app/config/text_styles.dart';
-import 'package:buzz5_quiz_app/pages/final_page.dart';
 import 'package:buzz5_quiz_app/pages/qBoard_page.dart';
-import 'package:buzz5_quiz_app/pages/question_page.dart';
-import 'package:buzz5_quiz_app/widgets/appbar.dart';
+import 'package:buzz5_quiz_app/widgets/base_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -13,7 +10,6 @@ import 'package:provider/provider.dart';
 import 'package:buzz5_quiz_app/config/logger.dart';
 
 const String howToPlayMD = """
-  ## How to Play
   - Enter **unique** player names
   - **Choose a round** on the next page, and the **question board** will load accordingly
   - The board has **5 sets** of **5 questions**, each with varying difficulty and points
@@ -23,7 +19,6 @@ const String howToPlayMD = """
   - The player **retains control** to pick the next question until another player scores
   """;
 const String aboutThisGameMD = """
-  ## About This Game
   This game is inspired by the **[Buzzing with Kvizzing](https://youtu.be/Tku6Mk5zMjE?si=_zex3Ixa9kQFhGNO)** video series by *Kumar Varun*.
 
   All **questions and answers** are stored and updated from [**this sheet**](https://docs.google.com/spreadsheets/d/149cG62dE_5H9JYmNYoJ_h0w5exYSFNY-HvX8Yq-HZrI/edit?usp=sharing).
@@ -44,56 +39,196 @@ class InstructionsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     AppLogger.i("InstructionsPage built");
-    return Scaffold(
-      appBar: CustomAppBar(title: "Instructions", showBackButton: true),
-      body: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(
-              left: 40,
-              bottom: 10,
-              right: 10,
-              top: 10,
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
+    return BasePage(
+      appBar: AppBar(
+        title: Text(
+          'Instructions',
+          style: TextStyle(
+            color: ColorConstants.lightTextColor,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.5,
+            fontSize: 24,
+          ),
+        ),
+        backgroundColor: ColorConstants.primaryContainerColor,
+        leading: IconButton(
+          icon: Icon(
+            Icons.arrow_back,
+            color: ColorConstants.lightTextColor,
+            size: 24,
+          ),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        elevation: 0,
+      ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          if (constraints.maxWidth > 900) {
+            // Desktop layout
+            return Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                MarkdownBody(
-                  data: howToPlayMD,
-                  selectable: false,
-                  styleSheet: MarkdownStyleSheet(
-                    h2: AppTextStyles.titleBig,
-                    p: AppTextStyles.bodySmall,
-                  ),
-                ),
-                SizedBox(height: 60),
-                MarkdownBody(
-                  data: aboutThisGameMD,
-                  selectable: false,
-                  onTapLink: (text, href, title) {
-                    if (href != null) {
-                      _launchURL(href);
-                    }
-                  },
-                  styleSheet: MarkdownStyleSheet(
-                    h2: AppTextStyles.titleBig,
-                    p: AppTextStyles.bodySmall,
-                  ),
-                ),
-                SizedBox(height: 60),
-                Text(
-                  "Get ready, think fast, and have fun! 🎉",
-                  style: AppTextStyles.titleBig,
-                ),
+                _buildInstructionsPanel(context),
+                _buildPlayerFormPanel(context),
               ],
-            ),
-          ),
-          Flexible(child: PlayerNameForm()),
-        ],
+            );
+          } else {
+            // Mobile/tablet layout
+            return SingleChildScrollView(
+              child: Column(
+                children: [
+                  _buildInstructionsPanel(context),
+                  _buildPlayerFormPanel(context),
+                ],
+              ),
+            );
+          }
+        },
       ),
+    );
+  }
+
+  Widget _buildInstructionsPanel(BuildContext context) {
+    return Expanded(
+      flex: 1,
+      child: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color:
+                      Theme.of(context).brightness == Brightness.dark
+                          ? ColorConstants.darkCardColor
+                          : ColorConstants.cardColor,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: ColorConstants.primaryContainerColor,
+                      blurRadius: 20,
+                      offset: Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.lightbulb_outline,
+                          color: ColorConstants.primaryColor,
+                          size: 24,
+                        ),
+                        SizedBox(width: 10),
+                        Text(
+                          "How to Play",
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: ColorConstants.primaryColor,
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 16),
+                    MarkdownBody(
+                      data: howToPlayMD,
+                      styleSheet: MarkdownStyleSheet(
+                        p: TextStyle(
+                          fontSize: 16,
+                          height: 1.6,
+                          color:
+                              Theme.of(context).brightness == Brightness.dark
+                                  ? ColorConstants.lightTextColor
+                                  : ColorConstants.darkTextColor,
+                        ),
+                        strong: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(height: 24),
+              Container(
+                padding: EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color:
+                      Theme.of(context).brightness == Brightness.dark
+                          ? ColorConstants.darkCardColor
+                          : ColorConstants.cardColor,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: ColorConstants.primaryContainerColor,
+                      blurRadius: 20,
+                      offset: Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.info_outline,
+                          color: ColorConstants.secondaryContainerColor,
+                          size: 24,
+                        ),
+                        SizedBox(width: 10),
+                        Text(
+                          "About This Game",
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: ColorConstants.secondaryContainerColor,
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 16),
+                    MarkdownBody(
+                      data: aboutThisGameMD,
+                      onTapLink: (text, href, title) {
+                        if (href != null) {
+                          _launchURL(href);
+                        }
+                      },
+                      styleSheet: MarkdownStyleSheet(
+                        p: TextStyle(
+                          fontSize: 16,
+                          height: 1.6,
+                          color:
+                              Theme.of(context).brightness == Brightness.dark
+                                  ? ColorConstants.lightTextColor
+                                  : ColorConstants.darkTextColor,
+                        ),
+                        a: TextStyle(
+                          color: ColorConstants.secondaryContainerColor,
+                          decoration: TextDecoration.underline,
+                        ),
+                        strong: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(height: 24),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPlayerFormPanel(BuildContext context) {
+    return Expanded(
+      flex: 1,
+      child: Container(padding: EdgeInsets.all(24), child: PlayerNameForm()),
     );
   }
 }
@@ -165,104 +300,233 @@ class PlayerNameForm extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     AppLogger.i("PlayerNameForm built");
-    return SizedBox(
-      width: 600.0,
-      height: 800.0,
-      child: Padding(
-        padding: const EdgeInsets.only(
-          left: 10,
-          bottom: 150,
-          right: 40,
-          top: 10,
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: <Widget>[
-            Padding(
-              padding: const EdgeInsets.only(
-                left: 0,
-                bottom: 0,
-                right: 0,
-                top: 0,
-              ),
-              child: Text(
-                "Enter player names",
-                style: AppTextStyles.titleMedium,
-              ),
+    return Container(
+      constraints: BoxConstraints(maxWidth: 600),
+      decoration: BoxDecoration(
+        color:
+            Theme.of(context).brightness == Brightness.dark
+                ? ColorConstants.darkCardColor
+                : ColorConstants.cardColor,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: ColorConstants.primaryColor,
+            blurRadius: 25,
+            offset: Offset(0, 8),
+          ),
+        ],
+      ),
+      padding: EdgeInsets.all(24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          Container(
+            padding: EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: ColorConstants.primaryColor,
+              borderRadius: BorderRadius.circular(12),
             ),
-            SizedBox(height: 40),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              crossAxisAlignment: CrossAxisAlignment.center,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Column(
-                  children: [
-                    PlayerTextField(controller: _player1Controller),
-                    SizedBox(height: 10),
-                    PlayerTextField(controller: _player2Controller),
-                    SizedBox(height: 10),
-                    PlayerTextField(controller: _player3Controller),
-                    SizedBox(height: 10),
-                    PlayerTextField(controller: _player4Controller),
-                  ],
+                Icon(
+                  Icons.people_alt_rounded,
+                  color: ColorConstants.primaryColor,
+                  size: 28,
                 ),
-                Column(
-                  children: [
-                    PlayerTextField(controller: _player5Controller),
-                    SizedBox(height: 10),
-                    PlayerTextField(controller: _player6Controller),
-                    SizedBox(height: 10),
-                    PlayerTextField(controller: _player7Controller),
-                    SizedBox(height: 10),
-                    PlayerTextField(controller: _player8Controller),
-                  ],
+                SizedBox(width: 12),
+                Text(
+                  "Enter player names",
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: ColorConstants.surfaceColor,
+                  ),
                 ),
               ],
             ),
-            SizedBox(height: 40),
-            Padding(
-              padding: const EdgeInsets.only(
-                left: 0,
-                bottom: 0,
-                right: 0,
-                top: 0,
+          ),
+          SizedBox(height: 24),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              if (constraints.maxWidth > 500) {
+                // Two-column layout for wider screens
+                return Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        children: [
+                          PlayerTextField(
+                            controller: _player1Controller,
+                            playerNumber: 1,
+                          ),
+                          SizedBox(height: 16),
+                          PlayerTextField(
+                            controller: _player2Controller,
+                            playerNumber: 2,
+                          ),
+                          SizedBox(height: 16),
+                          PlayerTextField(
+                            controller: _player3Controller,
+                            playerNumber: 3,
+                          ),
+                          SizedBox(height: 16),
+                          PlayerTextField(
+                            controller: _player4Controller,
+                            playerNumber: 4,
+                          ),
+                        ],
+                      ),
+                    ),
+                    SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        children: [
+                          PlayerTextField(
+                            controller: _player5Controller,
+                            playerNumber: 5,
+                          ),
+                          SizedBox(height: 16),
+                          PlayerTextField(
+                            controller: _player6Controller,
+                            playerNumber: 6,
+                          ),
+                          SizedBox(height: 16),
+                          PlayerTextField(
+                            controller: _player7Controller,
+                            playerNumber: 7,
+                          ),
+                          SizedBox(height: 16),
+                          PlayerTextField(
+                            controller: _player8Controller,
+                            playerNumber: 8,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                );
+              } else {
+                // Single-column layout for narrower screens
+                return Column(
+                  children: [
+                    PlayerTextField(
+                      controller: _player1Controller,
+                      playerNumber: 1,
+                    ),
+                    SizedBox(height: 16),
+                    PlayerTextField(
+                      controller: _player2Controller,
+                      playerNumber: 2,
+                    ),
+                    SizedBox(height: 16),
+                    PlayerTextField(
+                      controller: _player3Controller,
+                      playerNumber: 3,
+                    ),
+                    SizedBox(height: 16),
+                    PlayerTextField(
+                      controller: _player4Controller,
+                      playerNumber: 4,
+                    ),
+                    SizedBox(height: 16),
+                    PlayerTextField(
+                      controller: _player5Controller,
+                      playerNumber: 5,
+                    ),
+                    SizedBox(height: 16),
+                    PlayerTextField(
+                      controller: _player6Controller,
+                      playerNumber: 6,
+                    ),
+                    SizedBox(height: 16),
+                    PlayerTextField(
+                      controller: _player7Controller,
+                      playerNumber: 7,
+                    ),
+                    SizedBox(height: 16),
+                    PlayerTextField(
+                      controller: _player8Controller,
+                      playerNumber: 8,
+                    ),
+                  ],
+                );
+              }
+            },
+          ),
+          SizedBox(height: 32),
+          Container(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () {
+                if (_validateUniqueNames()) {
+                  _resetGameState(context);
+                  _addPlayersToProvider(context);
+                  Provider.of<PlayerProvider>(
+                    context,
+                    listen: false,
+                  ).setGameStartTime(DateTime.now());
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => QuestionBoardPage(),
+                    ),
+                  );
+                } else {
+                  AppLogger.w("Player names are not unique");
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.warning_amber_rounded,
+                            color: Colors.white,
+                          ),
+                          SizedBox(width: 8),
+                          Text(
+                            'Player names must be unique',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                      backgroundColor: ColorConstants.errorContainerColor,
+                      behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      margin: EdgeInsets.all(12),
+                    ),
+                  );
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: ColorConstants.primaryColor,
+                foregroundColor: ColorConstants.lightTextColor,
+                padding: EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 3,
               ),
-              child: ElevatedButton(
-                onPressed: () {
-                  if (_validateUniqueNames()) {
-                    _resetGameState(context);
-                    _addPlayersToProvider(context);
-                    // Record the game start time now
-                    Provider.of<PlayerProvider>(
-                      context,
-                      listen: false,
-                    ).setGameStartTime(DateTime.now());
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => QuestionBoardPage(),
-                      ),
-                    );
-                  } else {
-                    AppLogger.w("Player names are not unique");
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          'Player names must be unique',
-                          style: AppTextStyles.caption,
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                    );
-                  }
-                },
-                style: ElevatedButton.styleFrom(minimumSize: Size(250, 60)),
-                child: Text("Lets Go!", style: AppTextStyles.buttonTextBig),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.play_circle_filled, size: 28),
+                  SizedBox(width: 8),
+                  Text(
+                    "Let's Go!",
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+                ],
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -270,30 +534,52 @@ class PlayerNameForm extends StatelessWidget {
 
 class PlayerTextField extends StatelessWidget {
   final TextEditingController controller;
-  const PlayerTextField({super.key, required this.controller});
+  final int playerNumber;
+
+  const PlayerTextField({
+    super.key,
+    required this.controller,
+    required this.playerNumber,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: 200.0,
-      height: 40.0,
+    return Container(
       child: TextFormField(
         controller: controller,
         maxLength: 15,
+        style: TextStyle(
+          color: ColorConstants.darkTextColor,
+          fontWeight: FontWeight.w500,
+        ),
         decoration: InputDecoration(
-          hintText: 'Enter player name',
-          hintStyle: AppTextStyles.hintText,
-          prefixIcon: Icon(Icons.person, size: 20.0),
-          fillColor: Colors.white24,
-          hoverColor: Colors.white30,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8.0),
-            borderSide: BorderSide(color: ColorConstants.primaryColor),
+          hintText: 'Player $playerNumber',
+          hintStyle: TextStyle(
+            color: ColorConstants.hintGrey,
+            fontWeight: FontWeight.w500,
+          ),
+          prefixIcon: Icon(
+            Icons.person_rounded,
+            color: ColorConstants.primaryColor,
+            size: 20,
+          ),
+          filled: true,
+          fillColor: ColorConstants.backgroundColor,
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(
+              color: ColorConstants.tertiaryColor,
+              width: 1.5,
+            ),
           ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8.0),
-            borderSide: BorderSide(color: ColorConstants.secondaryColor),
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(
+              color: ColorConstants.primaryColor,
+              width: 2,
+            ),
           ),
+          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
           counterText: '',
         ),
       ),

@@ -4,6 +4,7 @@ import 'package:buzz5_quiz_app/pages/instructions_page.dart';
 import 'package:buzz5_quiz_app/pages/joingame_page.dart';
 import 'package:flutter/material.dart';
 import 'package:buzz5_quiz_app/config/logger.dart';
+import 'package:buzz5_quiz_app/widgets/app_background.dart';
 
 class HomePage extends StatelessWidget {
   final Function(bool) onThemeChanged;
@@ -13,42 +14,98 @@ class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     AppLogger.i("HomePage built");
+
     return Scaffold(
       appBar: AppBar(
         title: Text(
           'Buzz5 Quiz',
-          style: TextStyle(color: ColorConstants.lightTextColor),
+          style: TextStyle(
+            color: ColorConstants.lightTextColor,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.5,
+            fontSize: 24,
+          ),
         ),
-        backgroundColor: ColorConstants.primaryContainerColor,
+        // backgroundColor: ColorConstants.primaryContainerColor,
         actions: [
-          Row(
-            children: [
-              Text(
-                'Dark Theme',
-                style: TextStyle(color: ColorConstants.lightTextColor),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(20.0),
-                child: Switch(
+          Padding(
+            padding: const EdgeInsets.only(right: 16.0),
+            child: Row(
+              children: [
+                Icon(
+                  Theme.of(context).brightness == Brightness.dark
+                      ? Icons.dark_mode
+                      : Icons.light_mode,
+                  color: ColorConstants.lightTextColor,
+                ),
+                const SizedBox(width: 8),
+                Switch(
                   value: Theme.of(context).brightness == Brightness.dark,
                   onChanged: (value) {
                     AppLogger.i("Theme changed: ${value ? 'Dark' : 'Light'}");
                     onThemeChanged(value);
                   },
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ],
+        elevation: 0,
       ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Text('Welcome to Buzz5!', style: AppTextStyles.headingBig),
-            SizedBox(height: 120),
-            Column(
-              children: [
+      body: AppBackground(
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                // Logo/icon area updated with favicon image
+                Container(
+                  width: 120,
+                  height: 120,
+                  decoration: BoxDecoration(
+                    color: ColorConstants.primaryContainerColor,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: ColorConstants.primaryColor.withOpacity(0.3),
+                        spreadRadius: 5,
+                        blurRadius: 20,
+                        offset: Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: ClipOval(
+                    child: Image.asset(
+                      'images/bolt_transparent_simple.png',
+                      fit: BoxFit.cover,
+                      width: 120,
+                      height: 120,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 32),
+                Text(
+                  'Welcome to Buzz5!',
+                  style: TextStyle(
+                    fontSize: 34,
+                    fontWeight: FontWeight.bold,
+                    color:
+                        Theme.of(context).brightness == Brightness.dark
+                            ? ColorConstants.lightTextColor
+                            : ColorConstants.primaryContainerColor,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'The ultimate quiz experience',
+                  style: TextStyle(
+                    fontSize: 18,
+                    color: ColorConstants.hintGrey,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 64),
                 ElevatedButton(
                   onPressed: () {
                     AppLogger.i("Navigating to InstructionsPage");
@@ -59,10 +116,31 @@ class HomePage extends StatelessWidget {
                       ),
                     );
                   },
-                  style: ElevatedButton.styleFrom(minimumSize: Size(300, 80)),
-                  child: Text('Start game', style: AppTextStyles.buttonTextBig),
+                  style: ElevatedButton.styleFrom(
+                    minimumSize: Size(280, 56),
+                    backgroundColor: ColorConstants.primaryColor,
+                    foregroundColor: ColorConstants.lightTextColor,
+                    elevation: 2,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.play_arrow_rounded, size: 24),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Start Game',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                SizedBox(height: 80),
+                const SizedBox(height: 20),
                 ElevatedButton(
                   onPressed: () {
                     AppLogger.i("Navigating to JoinGamePage");
@@ -72,13 +150,32 @@ class HomePage extends StatelessWidget {
                     );
                   },
                   style: ElevatedButton.styleFrom(
-                    minimumSize: Size(300, 80), // Width and height
+                    minimumSize: Size(280, 56),
+                    backgroundColor: ColorConstants.secondaryContainerColor,
+                    foregroundColor: ColorConstants.lightTextColor,
+                    elevation: 2,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
-                  child: Text('Join Game', style: AppTextStyles.buttonTextBig),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.group_add_rounded, size: 24),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Join Game',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
-          ],
+          ),
         ),
       ),
     );

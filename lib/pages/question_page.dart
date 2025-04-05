@@ -73,9 +73,11 @@ class _QuestionPageState extends State<QuestionPage> {
               onPressed: () {
                 Navigator.of(context).pop();
               },
+              iconSize: 26,
             ),
           ),
         ],
+        backgroundColor: Color(0x00000000),
         title: Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
@@ -446,7 +448,7 @@ class SimplerNetworkImage extends StatelessWidget {
 
     return GestureDetector(
       onTap: () {
-        _showFullScreenImage(context, imageUrl);
+        _showImageOverlay(context, imageUrl);
       },
       child: SizedBox(
         height: 150,
@@ -466,68 +468,105 @@ class SimplerNetworkImage extends StatelessWidget {
               ),
             );
           },
-          errorBuilder: (context, error, stackTrace) {
-            AppLogger.e(
-              "Failed to load image from URL: $imageUrl, error: $error",
-            );
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.error, color: Colors.red),
-                  SizedBox(height: 8),
-                  Text(
-                    'Failed to load image',
-                    style: TextStyle(color: Colors.red),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ),
-            );
-          },
         ),
       ),
     );
   }
 
-  void _showFullScreenImage(BuildContext context, String imageUrl) {
-    showDialog(
-      context: context,
-      builder:
-          (context) => Dialog(
-            insetPadding: EdgeInsets.zero,
-            child: Container(
-              width: double.infinity,
-              height: double.infinity,
-              color: Colors.black,
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  // Image with pinch to zoom
-                  InteractiveViewer(
-                    panEnabled: true,
-                    boundaryMargin: EdgeInsets.all(20),
-                    minScale: 0.5,
-                    maxScale: 4,
-                    child: Image.network(imageUrl, fit: BoxFit.contain),
-                  ),
-                  // Close button
-                  Positioned(
-                    top: 20,
-                    right: 20,
-                    child: IconButton(
-                      icon: Icon(Icons.close, color: Colors.white, size: 30),
-                      onPressed: () => Navigator.of(context).pop(),
-                    ),
-                  ),
-                ],
+  void _showImageOverlay(BuildContext context, String imageUrl) {
+    final overlayState = Overlay.of(context);
+    late OverlayEntry overlayEntry;
+
+    overlayEntry = OverlayEntry(
+      builder: (context) {
+        final Size screenSize = MediaQuery.of(context).size;
+        final double maxWidth = screenSize.width * 0.8;
+        final double maxHeight = screenSize.height * 0.8;
+
+        return Stack(
+          children: [
+            // Transparent background; tap to remove overlay
+            Positioned.fill(
+              child: GestureDetector(
+                onTap: () => overlayEntry.remove(),
+                child: Container(color: Colors.transparent),
               ),
             ),
-          ),
+            // Image container centered on screen
+            Center(
+              child: Container(
+                width: maxWidth,
+                height: maxHeight,
+                constraints: BoxConstraints(
+                  maxWidth: maxWidth,
+                  maxHeight: maxHeight,
+                ),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surface,
+                  borderRadius: BorderRadius.circular(8.0),
+                  boxShadow: [
+                    BoxShadow(color: Colors.black26, blurRadius: 10.0),
+                  ],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8.0),
+                  child: Stack(
+                    children: [
+                      // Zoom-able image wrapped in Center to ensure it is centered
+                      InteractiveViewer(
+                        panEnabled: true,
+                        boundaryMargin: EdgeInsets.all(20),
+                        minScale: 0.5,
+                        maxScale: 4,
+                        child: Center(
+                          child: Image.network(
+                            imageUrl,
+                            fit: BoxFit.contain,
+                            loadingBuilder: (context, child, loadingProgress) {
+                              if (loadingProgress == null) return child;
+                              return Center(
+                                child: CircularProgressIndicator(
+                                  value:
+                                      loadingProgress.expectedTotalBytes != null
+                                          ? loadingProgress
+                                                  .cumulativeBytesLoaded /
+                                              loadingProgress
+                                                  .expectedTotalBytes!
+                                          : null,
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ),
+                      // Close button
+                      Positioned(
+                        top: 8,
+                        right: 8,
+                        child: IconButton(
+                          icon: Container(
+                            padding: EdgeInsets.all(4),
+                            child: Icon(
+                              Icons.close,
+                              color: Colors.white,
+                              size: 20,
+                            ),
+                          ),
+                          onPressed: () => overlayEntry.remove(),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
     );
+    overlayState.insert(overlayEntry);
   }
 }
-
 // New stateful widget: ToggleButton
 
 class ToggleButton extends StatefulWidget {

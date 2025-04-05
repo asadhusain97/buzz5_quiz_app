@@ -5,6 +5,7 @@ import 'package:buzz5_quiz_app/models/questionDone.dart';
 import 'package:buzz5_quiz_app/pages/final_page.dart';
 import 'package:buzz5_quiz_app/pages/question_page.dart';
 import 'package:buzz5_quiz_app/widgets/appbar.dart';
+import 'package:buzz5_quiz_app/widgets/base_page.dart';
 import 'package:flutter/material.dart';
 import 'package:buzz5_quiz_app/models/playerProvider.dart';
 import 'package:provider/provider.dart';
@@ -17,9 +18,9 @@ class QuestionBoardPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     AppLogger.i("QuestionBoardPage built");
-    return Scaffold(
+    return BasePage(
       appBar: CustomAppBar(title: "Question Board", showBackButton: true),
-      body: Padding(
+      child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -343,14 +344,16 @@ class RoundDropDown extends StatelessWidget {
             child: DropdownButtonHideUnderline(
               child: DropdownButton<String>(
                 isExpanded: true,
-                hint: Text('Select a round'),
+                hint: Center(child: Text('Select a round')),
                 value: selectedRound,
                 dropdownColor: Theme.of(context).scaffoldBackgroundColor,
                 items:
                     rounds.map((String value) {
                       return DropdownMenuItem<String>(
                         value: value,
-                        child: Text(value, style: AppTextStyles.body),
+                        child: Center(
+                          child: Text(value, style: AppTextStyles.body),
+                        ),
                       );
                     }).toList(),
                 onChanged: (String? newValue) {
@@ -397,6 +400,12 @@ class Leaderboard extends StatelessWidget {
                         margin: const EdgeInsets.symmetric(vertical: 4.0),
                         padding: const EdgeInsets.all(8.0),
                         decoration: BoxDecoration(
+                          color: Color.fromRGBO(
+                            255,
+                            255,
+                            255,
+                            0.1,
+                          ), // Translucent white
                           border: Border.all(
                             color:
                                 isLastPositivePlayer
@@ -405,6 +414,18 @@ class Leaderboard extends StatelessWidget {
                             width: 2,
                           ),
                           borderRadius: BorderRadius.circular(8.0),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Color.fromRGBO(
+                                0,
+                                0,
+                                0,
+                                0.1,
+                              ), // Translucent black
+                              blurRadius: 5,
+                              spreadRadius: 1,
+                            ),
+                          ],
                         ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -479,7 +500,7 @@ class QSet extends StatelessWidget {
           Container(
             width: 150,
             height: 80,
-            padding: EdgeInsets.symmetric(vertical: 2.0, horizontal: 2.0),
+            padding: EdgeInsets.all(8.0), // Padding inside the box
             margin: EdgeInsets.symmetric(vertical: 2.0, horizontal: 6.0),
             decoration: BoxDecoration(
               border: Border.all(color: Colors.grey.shade600, width: 1.0),
@@ -487,13 +508,19 @@ class QSet extends StatelessWidget {
             ),
             child: Center(
               child: FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Text(
-                  data.isNotEmpty ? data[0]['set_name'] : 'Default setname',
-                  style: AppTextStyles.titleMedium,
-                  textAlign: TextAlign.center,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
+                fit: BoxFit.contain,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: 130),
+                  child: Text(
+                    data.isNotEmpty
+                        ? data[0]['set_name']
+                        : 'No setname present',
+                    style: AppTextStyles.titleMedium,
+                    textAlign: TextAlign.center,
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                    softWrap: true,
+                  ),
                 ),
               ),
             ),
@@ -518,30 +545,90 @@ class QSet extends StatelessWidget {
                     child:
                         isAnswered
                             // Show tick mark if question is answered
-                            ? Container(
-                              width: 90,
-                              height: 90,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                // color: Colors.grey.shade400,
+                            ? ElevatedButton(
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  PageRouteBuilder(
+                                    pageBuilder:
+                                        (
+                                          context,
+                                          animation,
+                                          secondaryAnimation,
+                                        ) => QuestionPage(),
+                                    settings: RouteSettings(
+                                      arguments: {
+                                        'qid':
+                                            questionId, // Pass the questionId
+                                        'setname': item['set_name'],
+                                        'question': item['question'],
+                                        'answer': item['answer'],
+                                        'score': item['points'],
+                                        'qstn_media': item['qstn_media'] ?? "",
+                                        'ans_media': item['ans_media'] ?? "",
+                                        'playerList':
+                                            Provider.of<PlayerProvider>(
+                                                  context,
+                                                  listen: false,
+                                                ).playerList
+                                                .map((player) => player.name)
+                                                .toList(),
+                                      },
+                                    ),
+                                    transitionsBuilder: (
+                                      context,
+                                      animation,
+                                      secondaryAnimation,
+                                      child,
+                                    ) {
+                                      final curvedAnimation = CurvedAnimation(
+                                        parent: animation,
+                                        curve: Curves.easeInOut,
+                                      );
+                                      return SlideTransition(
+                                        position: Tween<Offset>(
+                                          begin: const Offset(0, 1),
+                                          end: Offset.zero,
+                                        ).animate(curvedAnimation),
+                                        child: child,
+                                      );
+                                    },
+                                  ),
+                                );
+                              },
+                              style: ElevatedButton.styleFrom(
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(90),
+                                ),
+                                padding: EdgeInsets.all(0),
+                                backgroundColor: Colors.transparent,
+                                shadowColor: Colors.transparent,
                               ),
-                              child: Center(
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(
-                                      Icons.check,
-                                      color: Colors.green.shade300,
-                                      size: 30,
-                                    ),
-                                    Text(
-                                      item['points'].toString(),
-                                      style: AppTextStyles.buttonTextSmall
-                                          .copyWith(
-                                            color: Colors.green.shade500,
-                                          ),
-                                    ),
-                                  ],
+                              child: Container(
+                                width: 90,
+                                height: 90,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  // color: Colors.grey.shade400,
+                                ),
+                                child: Center(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.check,
+                                        color: Colors.green.shade300,
+                                        size: 30,
+                                      ),
+                                      Text(
+                                        item['points'].toString(),
+                                        style: AppTextStyles.buttonTextSmall
+                                            .copyWith(
+                                              color: Colors.green.shade500,
+                                            ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
                             )
