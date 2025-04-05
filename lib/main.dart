@@ -12,21 +12,8 @@ void main() {
   runApp(MyApp());
 }
 
-class MyApp extends StatefulWidget {
+class MyApp extends StatelessWidget {
   const MyApp({super.key});
-
-  @override
-  _MyAppState createState() => _MyAppState();
-}
-
-class _MyAppState extends State<MyApp> {
-  ThemeMode _themeMode = ThemeMode.dark; // Default to dark theme
-
-  void _toggleTheme(bool isDarkMode) {
-    setState(() {
-      _themeMode = isDarkMode ? ThemeMode.dark : ThemeMode.light;
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -39,11 +26,8 @@ class _MyAppState extends State<MyApp> {
       child: MaterialApp(
         title: 'Buzz5 Quiz App',
         debugShowCheckedModeBanner: false,
-        themeMode: _themeMode,
-        darkTheme: AppTheme.dark,
-        theme: AppTheme.light,
-        home: HomePage(onThemeChanged: _toggleTheme),
-        // home: GSheetCheckPage(),
+        theme: ThemeData.dark(),
+        home: HomePage(),
       ),
     );
   }
