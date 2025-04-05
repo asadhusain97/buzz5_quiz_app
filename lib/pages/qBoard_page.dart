@@ -400,6 +400,12 @@ class Leaderboard extends StatelessWidget {
                         margin: const EdgeInsets.symmetric(vertical: 4.0),
                         padding: const EdgeInsets.all(8.0),
                         decoration: BoxDecoration(
+                          color: Color.fromRGBO(
+                            255,
+                            255,
+                            255,
+                            0.1,
+                          ), // Translucent white
                           border: Border.all(
                             color:
                                 isLastPositivePlayer
@@ -408,6 +414,18 @@ class Leaderboard extends StatelessWidget {
                             width: 2,
                           ),
                           borderRadius: BorderRadius.circular(8.0),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Color.fromRGBO(
+                                0,
+                                0,
+                                0,
+                                0.1,
+                              ), // Translucent black
+                              blurRadius: 5,
+                              spreadRadius: 1,
+                            ),
+                          ],
                         ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,

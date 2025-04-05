@@ -58,10 +58,29 @@ class ScoreBoard extends StatelessWidget {
                       margin: const EdgeInsets.symmetric(vertical: 2.0),
                       padding: const EdgeInsets.all(5.0),
                       decoration: BoxDecoration(
+                        color: Color.fromRGBO(
+                          255,
+                          255,
+                          255,
+                          0.1,
+                        ), // Translucent white
                         border: Border.all(
                           color: index == 0 ? Colors.yellow : Colors.grey,
+                          width: 3,
                         ),
                         borderRadius: BorderRadius.circular(8.0),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Color.fromRGBO(
+                              0,
+                              0,
+                              0,
+                              0.1,
+                            ), // Translucent black
+                            blurRadius: 5,
+                            spreadRadius: 1,
+                          ),
+                        ],
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
