@@ -1,4 +1,5 @@
 import 'package:buzz5_quiz_app/config/secrets.dart';
+import 'package:buzz5_quiz_app/widgets/base_page.dart';
 import 'package:flutter/material.dart';
 import 'package:buzz5_quiz_app/models/qrow.dart';
 
@@ -20,9 +21,9 @@ class _GSheetCheckPageState extends State<GSheetCheckPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return BasePage(
       appBar: AppBar(title: Text('GSheet Data Check')),
-      body: FutureBuilder<List<QRow>>(
+      child: FutureBuilder<List<QRow>>(
         future: _dataFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {

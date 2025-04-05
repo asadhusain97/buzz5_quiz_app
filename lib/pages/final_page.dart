@@ -1,13 +1,15 @@
 import 'package:buzz5_quiz_app/config/colors.dart';
 import 'package:buzz5_quiz_app/config/text_styles.dart';
+import 'package:buzz5_quiz_app/main.dart';
 import 'package:buzz5_quiz_app/pages/home_page.dart';
-import 'package:buzz5_quiz_app/pages/instructions_page.dart';
-import 'package:buzz5_quiz_app/pages/joingame_page.dart';
 import 'package:buzz5_quiz_app/widgets/appbar.dart';
+import 'package:buzz5_quiz_app/widgets/base_page.dart';
 import 'package:flutter/material.dart';
 import 'package:buzz5_quiz_app/config/logger.dart';
 import 'package:buzz5_quiz_app/models/playerProvider.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter/material.dart';
+import 'dart:js_interop' as html;
 
 class FinalPage extends StatelessWidget {
   const FinalPage({super.key});
@@ -15,9 +17,9 @@ class FinalPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     AppLogger.i("FinalPage built");
-    return Scaffold(
+    return BasePage(
       appBar: CustomAppBar(title: 'Well Played!', showBackButton: true),
-      body: Padding(
+      child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -56,10 +58,29 @@ class ScoreBoard extends StatelessWidget {
                       margin: const EdgeInsets.symmetric(vertical: 2.0),
                       padding: const EdgeInsets.all(5.0),
                       decoration: BoxDecoration(
+                        color: Color.fromRGBO(
+                          255,
+                          255,
+                          255,
+                          0.1,
+                        ), // Translucent white
                         border: Border.all(
                           color: index == 0 ? Colors.yellow : Colors.grey,
+                          width: 3,
                         ),
                         borderRadius: BorderRadius.circular(8.0),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Color.fromRGBO(
+                              0,
+                              0,
+                              0,
+                              0.1,
+                            ), // Translucent black
+                            blurRadius: 5,
+                            spreadRadius: 1,
+                          ),
+                        ],
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -221,12 +242,8 @@ class GameStats extends StatelessWidget {
               onPressed: () {
                 Navigator.pushAndRemoveUntil(
                   context,
-                  MaterialPageRoute(
-                    builder: (context) {
-                      return HomePage(onThemeChanged: (bool) {});
-                    },
-                  ),
-                  (Route<dynamic> route) => false,
+                  MaterialPageRoute(builder: (context) => const MyApp()),
+                  (route) => false,
                 );
               },
               style: ElevatedButton.styleFrom(

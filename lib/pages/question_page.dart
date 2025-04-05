@@ -73,9 +73,11 @@ class _QuestionPageState extends State<QuestionPage> {
               onPressed: () {
                 Navigator.of(context).pop();
               },
+              iconSize: 26,
             ),
           ),
         ],
+        backgroundColor: Color(0x00000000),
         title: Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
