@@ -1,4 +1,5 @@
 import 'package:buzz5_quiz_app/config/colors.dart';
+import 'package:buzz5_quiz_app/config/text_styles.dart';
 import 'package:flutter/material.dart';
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
@@ -14,10 +15,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     return AppBar(
-      title: Text(
-        title,
-        style: TextStyle(color: ColorConstants.lightTextColor),
-      ),
+      title: Text(title, style: AppTextStyles.titleBig),
       backgroundColor: ColorConstants.primaryContainerColor,
       leading:
           showBackButton

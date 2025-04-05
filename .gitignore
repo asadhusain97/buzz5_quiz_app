@@ -12,7 +12,7 @@
 .swiftpm/
 migrate_working_dir/
 launch.json
-.env
+*.env
 
 # IntelliJ related
 *.iml
