@@ -344,14 +344,16 @@ class RoundDropDown extends StatelessWidget {
             child: DropdownButtonHideUnderline(
               child: DropdownButton<String>(
                 isExpanded: true,
-                hint: Text('Select a round'),
+                hint: Center(child: Text('Select a round')),
                 value: selectedRound,
                 dropdownColor: Theme.of(context).scaffoldBackgroundColor,
                 items:
                     rounds.map((String value) {
                       return DropdownMenuItem<String>(
                         value: value,
-                        child: Text(value, style: AppTextStyles.body),
+                        child: Center(
+                          child: Text(value, style: AppTextStyles.body),
+                        ),
                       );
                     }).toList(),
                 onChanged: (String? newValue) {
@@ -480,7 +482,7 @@ class QSet extends StatelessWidget {
           Container(
             width: 150,
             height: 80,
-            padding: EdgeInsets.symmetric(vertical: 2.0, horizontal: 2.0),
+            padding: EdgeInsets.all(8.0), // Padding inside the box
             margin: EdgeInsets.symmetric(vertical: 2.0, horizontal: 6.0),
             decoration: BoxDecoration(
               border: Border.all(color: Colors.grey.shade600, width: 1.0),
@@ -488,13 +490,19 @@ class QSet extends StatelessWidget {
             ),
             child: Center(
               child: FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Text(
-                  data.isNotEmpty ? data[0]['set_name'] : 'Default setname',
-                  style: AppTextStyles.titleMedium,
-                  textAlign: TextAlign.center,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
+                fit: BoxFit.contain,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: 130),
+                  child: Text(
+                    data.isNotEmpty
+                        ? data[0]['set_name']
+                        : 'No setname present',
+                    style: AppTextStyles.titleMedium,
+                    textAlign: TextAlign.center,
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                    softWrap: true,
+                  ),
                 ),
               ),
             ),
@@ -572,7 +580,7 @@ class QSet extends StatelessWidget {
                               },
                               style: ElevatedButton.styleFrom(
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(45),
+                                  borderRadius: BorderRadius.circular(90),
                                 ),
                                 padding: EdgeInsets.all(0),
                                 backgroundColor: Colors.transparent,

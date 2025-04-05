@@ -23,8 +23,10 @@ class HomePage extends StatelessWidget {
             color: ColorConstants.lightTextColor,
             fontWeight: FontWeight.w600,
             letterSpacing: 0.5,
+            fontSize: 24,
           ),
         ),
+        // backgroundColor: ColorConstants.primaryContainerColor,
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 16.0),
@@ -86,7 +88,7 @@ class HomePage extends StatelessWidget {
                 Text(
                   'Welcome to Buzz5!',
                   style: TextStyle(
-                    fontSize: 32,
+                    fontSize: 34,
                     fontWeight: FontWeight.bold,
                     color:
                         Theme.of(context).brightness == Brightness.dark
@@ -98,7 +100,7 @@ class HomePage extends StatelessWidget {
                 Text(
                   'The ultimate quiz experience',
                   style: TextStyle(
-                    fontSize: 16,
+                    fontSize: 18,
                     color: ColorConstants.hintGrey,
                   ),
                   textAlign: TextAlign.center,
