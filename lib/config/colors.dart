@@ -45,4 +45,5 @@ class ColorConstants {
   static Color backgroundColor = hexToColor('#FAFAFA'); // Off-white
   static Color surfaceColor = hexToColor('#FFFFFF'); // Pure white
   static Color cardColor = hexToColor('#F5F5FF'); // Very soft purple
+  static Color darkCardColor = hexToColor('#240264'); // Persian Indigo
 }

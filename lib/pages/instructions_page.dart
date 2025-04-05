@@ -1,9 +1,5 @@
 import 'package:buzz5_quiz_app/config/colors.dart';
-import 'package:buzz5_quiz_app/config/text_styles.dart';
-import 'package:buzz5_quiz_app/pages/final_page.dart';
 import 'package:buzz5_quiz_app/pages/qBoard_page.dart';
-import 'package:buzz5_quiz_app/pages/question_page.dart';
-import 'package:buzz5_quiz_app/widgets/appbar.dart';
 import 'package:buzz5_quiz_app/widgets/base_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
@@ -51,56 +47,43 @@ class InstructionsPage extends StatelessWidget {
             color: ColorConstants.lightTextColor,
             fontWeight: FontWeight.w600,
             letterSpacing: 0.5,
+            fontSize: 24,
           ),
         ),
         backgroundColor: ColorConstants.primaryContainerColor,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: ColorConstants.lightTextColor),
+          icon: Icon(
+            Icons.arrow_back,
+            color: ColorConstants.lightTextColor,
+            size: 24,
+          ),
           onPressed: () => Navigator.of(context).pop(),
         ),
         elevation: 0,
       ),
-      child: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors:
-                Theme.of(context).brightness == Brightness.light
-                    ? [
-                      Colors.white,
-                      ColorConstants.primaryContainerColor,
-                    ] // Light theme gradient (white to dark)
-                    : [
-                      Theme.of(context).scaffoldBackgroundColor,
-                      ColorConstants.tertiaryColor,
-                    ], // Dark theme gradient
-          ),
-        ),
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            if (constraints.maxWidth > 900) {
-              // Desktop layout
-              return Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          if (constraints.maxWidth > 900) {
+            // Desktop layout
+            return Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildInstructionsPanel(context),
+                _buildPlayerFormPanel(context),
+              ],
+            );
+          } else {
+            // Mobile/tablet layout
+            return SingleChildScrollView(
+              child: Column(
                 children: [
                   _buildInstructionsPanel(context),
                   _buildPlayerFormPanel(context),
                 ],
-              );
-            } else {
-              // Mobile/tablet layout
-              return SingleChildScrollView(
-                child: Column(
-                  children: [
-                    _buildInstructionsPanel(context),
-                    _buildPlayerFormPanel(context),
-                  ],
-                ),
-              );
-            }
-          },
-        ),
+              ),
+            );
+          }
+        },
       ),
     );
   }
@@ -117,11 +100,14 @@ class InstructionsPage extends StatelessWidget {
               Container(
                 padding: EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color:
+                      Theme.of(context).brightness == Brightness.dark
+                          ? ColorConstants.darkCardColor
+                          : ColorConstants.cardColor,
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: ColorConstants.primaryColor,
+                      color: ColorConstants.primaryContainerColor,
                       blurRadius: 20,
                       offset: Offset(0, 4),
                     ),
@@ -135,7 +121,7 @@ class InstructionsPage extends StatelessWidget {
                         Icon(
                           Icons.lightbulb_outline,
                           color: ColorConstants.primaryColor,
-                          size: 28,
+                          size: 24,
                         ),
                         SizedBox(width: 10),
                         Text(
@@ -143,7 +129,7 @@ class InstructionsPage extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
-                            color: ColorConstants.primaryContainerColor,
+                            color: ColorConstants.primaryColor,
                           ),
                         ),
                       ],
@@ -155,7 +141,10 @@ class InstructionsPage extends StatelessWidget {
                         p: TextStyle(
                           fontSize: 16,
                           height: 1.6,
-                          color: ColorConstants.darkTextColor,
+                          color:
+                              Theme.of(context).brightness == Brightness.dark
+                                  ? ColorConstants.lightTextColor
+                                  : ColorConstants.darkTextColor,
                         ),
                         strong: TextStyle(fontWeight: FontWeight.bold),
                       ),
@@ -167,11 +156,14 @@ class InstructionsPage extends StatelessWidget {
               Container(
                 padding: EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color:
+                      Theme.of(context).brightness == Brightness.dark
+                          ? ColorConstants.darkCardColor
+                          : ColorConstants.cardColor,
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: ColorConstants.primaryColor.withOpacity(0.1),
+                      color: ColorConstants.primaryContainerColor,
                       blurRadius: 20,
                       offset: Offset(0, 4),
                     ),
@@ -185,7 +177,7 @@ class InstructionsPage extends StatelessWidget {
                         Icon(
                           Icons.info_outline,
                           color: ColorConstants.secondaryContainerColor,
-                          size: 28,
+                          size: 24,
                         ),
                         SizedBox(width: 10),
                         Text(
@@ -210,7 +202,10 @@ class InstructionsPage extends StatelessWidget {
                         p: TextStyle(
                           fontSize: 16,
                           height: 1.6,
-                          color: ColorConstants.darkTextColor,
+                          color:
+                              Theme.of(context).brightness == Brightness.dark
+                                  ? ColorConstants.lightTextColor
+                                  : ColorConstants.darkTextColor,
                         ),
                         a: TextStyle(
                           color: ColorConstants.secondaryContainerColor,
@@ -308,11 +303,14 @@ class PlayerNameForm extends StatelessWidget {
     return Container(
       constraints: BoxConstraints(maxWidth: 600),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color:
+            Theme.of(context).brightness == Brightness.dark
+                ? ColorConstants.darkCardColor
+                : ColorConstants.cardColor,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: ColorConstants.primaryColor.withOpacity(0.2),
+            color: ColorConstants.primaryColor,
             blurRadius: 25,
             offset: Offset(0, 8),
           ),
@@ -325,7 +323,7 @@ class PlayerNameForm extends StatelessWidget {
           Container(
             padding: EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: ColorConstants.primaryColor.withOpacity(0.1),
+              color: ColorConstants.primaryColor,
               borderRadius: BorderRadius.circular(12),
             ),
             child: Row(
@@ -342,7 +340,7 @@ class PlayerNameForm extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
-                    color: ColorConstants.primaryContainerColor,
+                    color: ColorConstants.surfaceColor,
                   ),
                 ),
               ],
@@ -555,16 +553,10 @@ class PlayerTextField extends StatelessWidget {
           fontWeight: FontWeight.w500,
         ),
         decoration: InputDecoration(
-          labelText: 'Player $playerNumber',
-          labelStyle: TextStyle(
-            color: ColorConstants.hintGrey,
-            fontWeight: FontWeight.w500,
-          ),
-          hintText: 'Enter player name',
+          hintText: 'Player $playerNumber',
           hintStyle: TextStyle(
             color: ColorConstants.hintGrey,
-            fontStyle: FontStyle.italic,
-            fontSize: 14,
+            fontWeight: FontWeight.w500,
           ),
           prefixIcon: Icon(
             Icons.person_rounded,
@@ -572,7 +564,7 @@ class PlayerTextField extends StatelessWidget {
             size: 20,
           ),
           filled: true,
-          fillColor: Colors.white,
+          fillColor: ColorConstants.backgroundColor,
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide: BorderSide(
