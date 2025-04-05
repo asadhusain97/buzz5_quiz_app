@@ -45,7 +45,7 @@ class AppTextStyles {
   );
   static TextStyle scoreCard = TextStyle(
     fontSize: 18,
-    color: ColorConstants.primaryColor,
+    color: ColorConstants.cardColor,
     fontWeight: FontWeight.w600,
   );
   static TextStyle gameStatTitles = TextStyle(

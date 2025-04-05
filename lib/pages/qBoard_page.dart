@@ -470,9 +470,17 @@ class EndGameButton extends StatelessWidget {
             MaterialPageRoute(builder: (context) => FinalPage()),
           );
         },
-        style: ElevatedButton.styleFrom(minimumSize: Size(200, 60)),
+        style: ElevatedButton.styleFrom(
+          minimumSize: Size(200, 60),
+          backgroundColor: ColorConstants.primaryContainerColor,
+        ),
         icon: Icon(Icons.emoji_events),
-        label: Text('End Game', style: AppTextStyles.buttonTextSmall),
+        label: Text(
+          'End Game',
+          style: AppTextStyles.titleSmall.copyWith(
+            color: ColorConstants.surfaceColor,
+          ),
+        ),
       ),
     );
   }
@@ -622,7 +630,7 @@ class QSet extends StatelessWidget {
                                       ),
                                       Text(
                                         item['points'].toString(),
-                                        style: AppTextStyles.buttonTextSmall
+                                        style: AppTextStyles.titleSmall
                                             .copyWith(
                                               color: Colors.green.shade500,
                                             ),
@@ -689,6 +697,8 @@ class QSet extends StatelessWidget {
                                   borderRadius: BorderRadius.circular(45),
                                 ),
                                 padding: EdgeInsets.all(0),
+                                backgroundColor:
+                                    ColorConstants.primaryContainerColor,
                               ),
                               child: Container(
                                 width: 90,
@@ -699,7 +709,9 @@ class QSet extends StatelessWidget {
                                 child: Center(
                                   child: Text(
                                     item['points'].toString(),
-                                    style: AppTextStyles.buttonTextBig,
+                                    style: AppTextStyles.titleMedium.copyWith(
+                                      color: ColorConstants.surfaceColor,
+                                    ),
                                   ),
                                 ),
                               ),
