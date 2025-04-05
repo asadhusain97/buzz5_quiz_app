@@ -1,57 +1,20 @@
 import 'package:buzz5_quiz_app/config/colors.dart';
-import 'package:buzz5_quiz_app/config/text_styles.dart';
 import 'package:buzz5_quiz_app/pages/instructions_page.dart';
 import 'package:buzz5_quiz_app/pages/joingame_page.dart';
+import 'package:buzz5_quiz_app/widgets/appbar.dart';
 import 'package:flutter/material.dart';
 import 'package:buzz5_quiz_app/config/logger.dart';
 import 'package:buzz5_quiz_app/widgets/app_background.dart';
 
 class HomePage extends StatelessWidget {
-  final Function(bool) onThemeChanged;
-
-  const HomePage({super.key, required this.onThemeChanged});
+  const HomePage({super.key});
 
   @override
   Widget build(BuildContext context) {
     AppLogger.i("HomePage built");
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          'Buzz5 Quiz',
-          style: TextStyle(
-            color: ColorConstants.lightTextColor,
-            fontWeight: FontWeight.w600,
-            letterSpacing: 0.5,
-            fontSize: 24,
-          ),
-        ),
-        // backgroundColor: ColorConstants.primaryContainerColor,
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 16.0),
-            child: Row(
-              children: [
-                Icon(
-                  Theme.of(context).brightness == Brightness.dark
-                      ? Icons.dark_mode
-                      : Icons.light_mode,
-                  color: ColorConstants.lightTextColor,
-                ),
-                const SizedBox(width: 8),
-                Switch(
-                  value: Theme.of(context).brightness == Brightness.dark,
-                  onChanged: (value) {
-                    AppLogger.i("Theme changed: ${value ? 'Dark' : 'Light'}");
-                    onThemeChanged(value);
-                  },
-                ),
-              ],
-            ),
-          ),
-        ],
-        elevation: 0,
-      ),
+      appBar: CustomAppBar(title: "Buzz-5 quiz", showBackButton: false),
       body: AppBackground(
         child: Center(
           child: Padding(
@@ -59,7 +22,6 @@ class HomePage extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
-                // Logo/icon area updated with favicon image
                 Container(
                   width: 120,
                   height: 120,
@@ -68,7 +30,7 @@ class HomePage extends StatelessWidget {
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: ColorConstants.primaryColor.withOpacity(0.3),
+                        color: ColorConstants.primaryColor,
                         spreadRadius: 5,
                         blurRadius: 20,
                         offset: Offset(0, 4),
@@ -98,7 +60,7 @@ class HomePage extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  'The ultimate quiz experience',
+                  'The jeopardy style ultimate quiz experience',
                   style: TextStyle(
                     fontSize: 18,
                     color: ColorConstants.hintGrey,
