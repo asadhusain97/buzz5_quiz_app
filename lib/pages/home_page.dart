@@ -14,7 +14,7 @@ class HomePage extends StatelessWidget {
     AppLogger.i("HomePage built");
 
     return Scaffold(
-      appBar: CustomAppBar(title: "Buzz-5 quiz", showBackButton: false),
+      appBar: CustomAppBar(title: "Buzz5 quiz", showBackButton: false),
       body: AppBackground(
         child: Center(
           child: Padding(
