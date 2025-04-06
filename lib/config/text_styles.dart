@@ -39,13 +39,13 @@ class AppTextStyles {
   );
   static TextStyle scoreSubtitle = TextStyle(
     fontSize: 12,
-    color: ColorConstants.hintGrey,
+    color: ColorConstants.surfaceColor,
     fontWeight: FontWeight.w600,
     fontStyle: FontStyle.italic,
   );
   static TextStyle scoreCard = TextStyle(
     fontSize: 18,
-    color: ColorConstants.primaryColor,
+    color: ColorConstants.cardColor,
     fontWeight: FontWeight.w600,
   );
   static TextStyle gameStatTitles = TextStyle(

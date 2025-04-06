@@ -77,7 +77,7 @@ class _QuestionPageState extends State<QuestionPage> {
             ),
           ),
         ],
-        backgroundColor: Color(0x00000000),
+        backgroundColor: Colors.transparent,
         title: Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
@@ -125,7 +125,9 @@ class _QuestionPageState extends State<QuestionPage> {
                           return Center(
                             child: Container(
                               decoration: BoxDecoration(
-                                border: Border.all(color: Colors.grey),
+                                border: Border.all(
+                                  color: ColorConstants.primaryContainerColor,
+                                ),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Row(
@@ -139,7 +141,7 @@ class _QuestionPageState extends State<QuestionPage> {
                                     isDisabled: buttonState.correctDisabled,
                                     iconData: Icons.check,
                                     onColor: ColorConstants.correctAnsBtn,
-                                    offColor: ColorConstants.ansBtn,
+                                    offColor: ColorConstants.cardColor,
                                     onToggle: (isOn) {
                                       // force update the UI
                                       setState(() {
@@ -170,7 +172,7 @@ class _QuestionPageState extends State<QuestionPage> {
                                     isDisabled: buttonState.wrongDisabled,
                                     iconData: Icons.cancel_outlined,
                                     onColor: ColorConstants.wrongAnsBtn,
-                                    offColor: ColorConstants.ansBtn,
+                                    offColor: ColorConstants.cardColor,
                                     onToggle: (isOn) {
                                       // force update the UI
                                       setState(() {
@@ -198,8 +200,16 @@ class _QuestionPageState extends State<QuestionPage> {
                     _showAnswer = !_showAnswer;
                   });
                 },
-                style: ElevatedButton.styleFrom(minimumSize: Size(150, 40)),
-                child: Text("Show Answer"),
+                style: ElevatedButton.styleFrom(
+                  minimumSize: Size(180, 60),
+                  backgroundColor: ColorConstants.primaryContainerColor,
+                ),
+                child: Text(
+                  "Show Answer",
+                  style: AppTextStyles.titleSmall.copyWith(
+                    color: ColorConstants.surfaceColor,
+                  ),
+                ),
               ),
             ),
             SizedBox(height: 30),
@@ -386,7 +396,10 @@ class DoneButton extends StatelessWidget {
     final String questionId = args?['qid'] ?? "";
 
     return ElevatedButton(
-      style: ElevatedButton.styleFrom(minimumSize: Size(150, 40)),
+      style: ElevatedButton.styleFrom(
+        minimumSize: Size(120, 60),
+        backgroundColor: ColorConstants.primaryColor,
+      ),
       onPressed: () {
         // Process all player scores based on button states
         final playerProvider = Provider.of<PlayerProvider>(
@@ -423,7 +436,12 @@ class DoneButton extends StatelessWidget {
         // Return to previous screen
         Navigator.of(context).pop();
       },
-      child: Text("Done"),
+      child: Text(
+        "Done",
+        style: AppTextStyles.titleSmall.copyWith(
+          color: ColorConstants.surfaceColor,
+        ),
+      ),
     );
   }
 }

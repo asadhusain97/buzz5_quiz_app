@@ -1,5 +1,7 @@
 import 'package:buzz5_quiz_app/config/colors.dart';
+import 'package:buzz5_quiz_app/config/text_styles.dart';
 import 'package:buzz5_quiz_app/pages/qBoard_page.dart';
+import 'package:buzz5_quiz_app/widgets/appbar.dart';
 import 'package:buzz5_quiz_app/widgets/base_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
@@ -40,27 +42,7 @@ class InstructionsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     AppLogger.i("InstructionsPage built");
     return BasePage(
-      appBar: AppBar(
-        title: Text(
-          'Instructions',
-          style: TextStyle(
-            color: ColorConstants.lightTextColor,
-            fontWeight: FontWeight.w600,
-            letterSpacing: 0.5,
-            fontSize: 24,
-          ),
-        ),
-        backgroundColor: ColorConstants.primaryContainerColor,
-        leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back,
-            color: ColorConstants.lightTextColor,
-            size: 24,
-          ),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        elevation: 0,
-      ),
+      appBar: CustomAppBar(title: "Instructions", showBackButton: true),
       child: LayoutBuilder(
         builder: (context, constraints) {
           if (constraints.maxWidth > 900) {
@@ -120,7 +102,7 @@ class InstructionsPage extends StatelessWidget {
                       children: [
                         Icon(
                           Icons.lightbulb_outline,
-                          color: ColorConstants.primaryColor,
+                          color: ColorConstants.surfaceColor,
                           size: 24,
                         ),
                         SizedBox(width: 10),
@@ -129,7 +111,7 @@ class InstructionsPage extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
-                            color: ColorConstants.primaryColor,
+                            color: ColorConstants.surfaceColor,
                           ),
                         ),
                       ],
@@ -176,7 +158,7 @@ class InstructionsPage extends StatelessWidget {
                       children: [
                         Icon(
                           Icons.info_outline,
-                          color: ColorConstants.secondaryContainerColor,
+                          color: ColorConstants.surfaceColor,
                           size: 24,
                         ),
                         SizedBox(width: 10),
@@ -185,7 +167,7 @@ class InstructionsPage extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
-                            color: ColorConstants.secondaryContainerColor,
+                            color: ColorConstants.surfaceColor,
                           ),
                         ),
                       ],
@@ -323,7 +305,7 @@ class PlayerNameForm extends StatelessWidget {
           Container(
             padding: EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: ColorConstants.primaryColor,
+              color: Colors.transparent,
               borderRadius: BorderRadius.circular(12),
             ),
             child: Row(
@@ -331,15 +313,13 @@ class PlayerNameForm extends StatelessWidget {
               children: [
                 Icon(
                   Icons.people_alt_rounded,
-                  color: ColorConstants.primaryColor,
+                  color: ColorConstants.surfaceColor,
                   size: 28,
                 ),
                 SizedBox(width: 12),
                 Text(
                   "Enter player names",
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
+                  style: AppTextStyles.titleMedium.copyWith(
                     color: ColorConstants.surfaceColor,
                   ),
                 ),
@@ -457,7 +437,7 @@ class PlayerNameForm extends StatelessWidget {
           ),
           SizedBox(height: 32),
           Container(
-            width: double.infinity,
+            width: 200,
             child: ElevatedButton(
               onPressed: () {
                 if (_validateUniqueNames()) {
@@ -518,10 +498,7 @@ class PlayerNameForm extends StatelessWidget {
                 children: [
                   Icon(Icons.play_circle_filled, size: 28),
                   SizedBox(width: 8),
-                  Text(
-                    "Let's Go!",
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                  ),
+                  Text("Let's Go!", style: AppTextStyles.titleMedium),
                 ],
               ),
             ),

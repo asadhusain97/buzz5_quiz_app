@@ -1,15 +1,12 @@
 import 'package:buzz5_quiz_app/config/colors.dart';
 import 'package:buzz5_quiz_app/config/text_styles.dart';
 import 'package:buzz5_quiz_app/main.dart';
-import 'package:buzz5_quiz_app/pages/home_page.dart';
 import 'package:buzz5_quiz_app/widgets/appbar.dart';
 import 'package:buzz5_quiz_app/widgets/base_page.dart';
 import 'package:flutter/material.dart';
 import 'package:buzz5_quiz_app/config/logger.dart';
 import 'package:buzz5_quiz_app/models/playerProvider.dart';
 import 'package:provider/provider.dart';
-import 'package:flutter/material.dart';
-import 'dart:js_interop' as html;
 
 class FinalPage extends StatelessWidget {
   const FinalPage({super.key});
@@ -248,8 +245,14 @@ class GameStats extends StatelessWidget {
               },
               style: ElevatedButton.styleFrom(
                 minimumSize: Size(150, 50), // Set the minimum size
+                backgroundColor: ColorConstants.primaryContainerColor,
               ),
-              child: Text('Play Again'),
+              child: Text(
+                'Play Again',
+                style: AppTextStyles.titleSmall.copyWith(
+                  color: ColorConstants.surfaceColor,
+                ),
+              ),
             ),
           ],
         );

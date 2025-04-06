@@ -66,10 +66,10 @@ flutter:
   uses-material-design: true
 
   # To add assets to your application, add an assets section, like this:
-assets:
-  - images/bolt_transparent.png
-  - images/dark_background.png
-  - images/light_background.png
+  assets:
+    - assets/images/bolt_transparent_simple.png
+    - assets/images/dark_background.png
+    - assets/images/light_background.png
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
