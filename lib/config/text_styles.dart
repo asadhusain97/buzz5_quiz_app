@@ -39,7 +39,7 @@ class AppTextStyles {
   );
   static TextStyle scoreSubtitle = TextStyle(
     fontSize: 12,
-    color: ColorConstants.hintGrey,
+    color: ColorConstants.surfaceColor,
     fontWeight: FontWeight.w600,
     fontStyle: FontStyle.italic,
   );
