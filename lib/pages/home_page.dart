@@ -39,7 +39,7 @@ class HomePage extends StatelessWidget {
                   ),
                   child: ClipOval(
                     child: Image.asset(
-                      'images/bolt_transparent_simple.png',
+                      'assets/images/bolt_transparent_simple.png',
                       fit: BoxFit.cover,
                       width: 120,
                       height: 120,
