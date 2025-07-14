@@ -43,21 +43,24 @@ class _ProfilePageState extends State<ProfilePage> {
       );
 
       if (image != null) {
-        // TODO: Implement Firebase Storage upload
         // For now, show a placeholder message
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Photo upload feature coming soon!')),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Photo upload feature coming soon!')),
+          );
+        }
         AppLogger.i('Image selected: ${image.path}');
       }
     } catch (e) {
       AppLogger.e('Error picking image: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Failed to pick image'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to pick image'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -74,21 +77,25 @@ class _ProfilePageState extends State<ProfilePage> {
       setState(() {
         _isEditing = false;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Profile updated successfully!'),
-          backgroundColor: Colors.green,
-        ),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            authProvider.errorMessage ?? 'Failed to update profile',
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Profile updated successfully!'),
+            backgroundColor: Colors.green,
           ),
-          backgroundColor: Colors.red,
-        ),
-      );
+        );
+      }
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              authProvider.errorMessage ?? 'Failed to update profile',
+            ),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -144,8 +151,9 @@ class _ProfilePageState extends State<ProfilePage> {
                               ),
                               boxShadow: [
                                 BoxShadow(
-                                  color: ColorConstants.primaryColor
-                                      .withOpacity(0.3),
+                                  color: ColorConstants.primaryColor.withValues(
+                                    alpha: 0.3,
+                                  ),
                                   blurRadius: 10,
                                   offset: const Offset(0, 4),
                                 ),
@@ -215,7 +223,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         border: Border.all(
                           color: Theme.of(
                             context,
-                          ).colorScheme.outline.withOpacity(0.2),
+                          ).colorScheme.outline.withValues(alpha: 0.2),
                         ),
                       ),
                       child: Column(
@@ -354,6 +362,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                   await authProvider.signOut();
                                   if (mounted) {
                                     Navigator.of(
+                                      // ignore: use_build_context_synchronously
                                       context,
                                     ).pushNamedAndRemoveUntil(
                                       '/',

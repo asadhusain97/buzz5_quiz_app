@@ -33,7 +33,7 @@ class AuthService {
       return result;
     } on FirebaseAuthException catch (e) {
       AppLogger.e('Sign in error: ${e.message}');
-      throw e;
+      rethrow;
     } catch (e) {
       AppLogger.e('Unexpected sign in error: $e');
       throw Exception('An unexpected error occurred during sign in');
@@ -74,7 +74,7 @@ class AuthService {
       return result;
     } on FirebaseAuthException catch (e) {
       AppLogger.e('Registration error: ${e.message}');
-      throw e;
+      rethrow;
     } catch (e) {
       AppLogger.e('Unexpected registration error: $e');
       throw Exception('An unexpected error occurred during registration');
@@ -99,7 +99,7 @@ class AuthService {
       AppLogger.i('Password reset email sent to: $email');
     } on FirebaseAuthException catch (e) {
       AppLogger.e('Password reset error: ${e.message}');
-      throw e;
+      rethrow;
     } catch (e) {
       AppLogger.e('Unexpected password reset error: $e');
       throw Exception('Failed to send password reset email');

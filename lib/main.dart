@@ -1,9 +1,9 @@
 import 'package:buzz5_quiz_app/config/logger.dart';
-import 'package:buzz5_quiz_app/models/questionDone.dart';
+import 'package:buzz5_quiz_app/models/question_done.dart';
 import 'package:flutter/material.dart';
 import 'package:buzz5_quiz_app/widgets/auth_gate.dart';
 import 'package:provider/provider.dart';
-import 'package:buzz5_quiz_app/models/playerProvider.dart';
+import 'package:buzz5_quiz_app/models/player_provider.dart';
 import 'package:buzz5_quiz_app/models/auth_provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';

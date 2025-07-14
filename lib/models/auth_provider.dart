@@ -1,6 +1,5 @@
 import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:buzz5_quiz_app/models/app_user.dart';
 import 'package:buzz5_quiz_app/services/auth_service.dart';

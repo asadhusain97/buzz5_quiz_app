@@ -1,13 +1,12 @@
-import 'dart:convert';
 import 'package:buzz5_quiz_app/config/colors.dart';
 import 'package:buzz5_quiz_app/config/text_styles.dart';
-import 'package:buzz5_quiz_app/models/questionDone.dart';
+import 'package:buzz5_quiz_app/models/question_done.dart';
 import 'package:buzz5_quiz_app/pages/final_page.dart';
 import 'package:buzz5_quiz_app/pages/question_page.dart';
 import 'package:buzz5_quiz_app/widgets/appbar.dart';
 import 'package:buzz5_quiz_app/widgets/base_page.dart';
 import 'package:flutter/material.dart';
-import 'package:buzz5_quiz_app/models/playerProvider.dart';
+import 'package:buzz5_quiz_app/models/player_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:buzz5_quiz_app/config/logger.dart';
 import 'package:buzz5_quiz_app/models/qrow.dart';
@@ -36,6 +35,7 @@ class QuestionBoardContent extends StatefulWidget {
   const QuestionBoardContent({super.key});
 
   @override
+  // ignore: library_private_types_in_public_api
   _QuestionBoardContentState createState() => _QuestionBoardContentState();
 }
 
@@ -105,6 +105,7 @@ class _QuestionBoardContentState extends State<QuestionBoardContent> {
 
       // Show error snackbar
       if (context.mounted) {
+        // ignore: use_build_context_synchronously
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Failed to load questions: ${e.toString()}'),

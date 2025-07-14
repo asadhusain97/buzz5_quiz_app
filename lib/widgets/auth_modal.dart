@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:buzz5_quiz_app/models/auth_provider.dart';
 
 class AuthModal extends StatefulWidget {
-  const AuthModal({Key? key}) : super(key: key);
+  const AuthModal({super.key});
 
   @override
   State<AuthModal> createState() => _AuthModalState();
@@ -99,7 +99,7 @@ class _AuthModalState extends State<AuthModal>
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.3),
+                color: Colors.black.withValues(alpha: 0.3),
                 blurRadius: 20,
                 offset: const Offset(0, 10),
               ),
@@ -112,7 +112,7 @@ class _AuthModalState extends State<AuthModal>
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                  color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
                   borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(16),
                     topRight: Radius.circular(16),
@@ -139,7 +139,7 @@ class _AuthModalState extends State<AuthModal>
               Container(
                 margin: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surfaceVariant,
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: TabBar(
