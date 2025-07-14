@@ -1,18 +1,25 @@
-import 'package:buzz5_quiz_app/config/app_theme.dart';
 import 'package:buzz5_quiz_app/config/logger.dart';
 import 'package:buzz5_quiz_app/models/questionDone.dart';
 import 'package:flutter/material.dart';
 import 'package:buzz5_quiz_app/widgets/auth_gate.dart';
-// import 'package:flutter/rendering.dart';
 import 'package:provider/provider.dart';
 import 'package:buzz5_quiz_app/models/playerProvider.dart';
 import 'package:buzz5_quiz_app/models/auth_provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Load environment variables
+  try {
+    await dotenv.load(fileName: ".env"); // Load environment variables
+  } catch (e) {
+    AppLogger.e('Error loading .env file: $e'); // Print error if any
+    rethrow;
+  }
 
   try {
     await Firebase.initializeApp(
@@ -22,9 +29,7 @@ void main() async {
 
     // Initialize App Check after Firebase
     await FirebaseAppCheck.instance.activate(
-      webProvider: ReCaptchaV3Provider(
-        '6Lf8UIIrAAAAAC7EmBoC6IwdoAwoEZAjkeAYm62V',
-      ),
+      webProvider: ReCaptchaV3Provider(dotenv.env['RECAPTCHA_SITE_KEY']!),
       androidProvider: AndroidProvider.debug,
       appleProvider: AppleProvider.debug,
     );
@@ -35,7 +40,7 @@ void main() async {
   }
 
   // debugPaintSizeEnabled = true;
-  runApp(MyApp());
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
