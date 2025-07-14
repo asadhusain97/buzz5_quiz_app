@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head>
   <!--
     If you are serving your web app in a path other than the root, change the
@@ -17,6 +18,7 @@
   <base href="$FLUTTER_BASE_HREF">
 
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
   <meta name="description" content="A new Flutter project.">
 
@@ -27,12 +29,53 @@
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
 
   <!-- Favicon -->
-  <link rel="icon" type="image/png" href="favicon.png"/>
+  <link rel="icon" type="image/png" href="favicon.png" />
 
   <title>buzz5_quiz_app</title>
   <link rel="manifest" href="manifest.json">
+
+  <script type="module">
+    // Import the functions you need from the SDKs you need
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+    import { getAuth } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+    import { getFirestore } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+    import { getStorage } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-storage.js";
+    import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app-check.js";
+    // TODO: Add SDKs for Firebase products that you want to use
+    // https://firebase.google.com/docs/web/setup#available-libraries
+
+    // Your web app's Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyDTv68PGt-8k5zYmiar6MkRm4XaLhKqQ14",
+      authDomain: "buzz5quiz.firebaseapp.com",
+      databaseURL: "https://buzz5quiz-default-rtdb.firebaseio.com",
+      projectId: "buzz5quiz",
+      storageBucket: "buzz5quiz.firebasestorage.app",
+      messagingSenderId: "1057835105317",
+      appId: "1:1057835105317:web:e8151cbc08f2595b1553cc"
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+
+    try {
+      // Initialize App Check (you'll need to add your reCAPTCHA site key)
+      const appCheck = initializeAppCheck(app, {
+        provider: new ReCaptchaV3Provider('6Lf8UIIrAAAAAC7EmBoC6IwdoAwoEZAjkeAYm62V'),
+        isTokenAutoRefreshEnabled: true
+      });
+    } catch (error) {
+      console.warn('App Check initialization failed:', error);
+    }
+
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    const storage = getStorage(app);
+  </script>
 </head>
+
 <body>
   <script src="flutter_bootstrap.js" async></script>
 </body>
+
 </html>
