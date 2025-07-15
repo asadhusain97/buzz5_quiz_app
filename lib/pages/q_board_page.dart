@@ -295,6 +295,9 @@ class _QuestionBoardContentState extends State<QuestionBoardContent> {
                                           'qstn_media': qrow.qstnMedia,
                                           'answer': qrow.answer,
                                           'ans_media': qrow.ansMedia,
+                                          'set_meaning': qrow.setMeaning,
+                                          'example_question': qrow.exampleQuestion,
+                                          'example_answer': qrow.exampleAnswer,
                                         },
                                       )
                                       .toList();
@@ -506,29 +509,38 @@ class QSet extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.center,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            width: 150,
-            height: 80,
-            padding: EdgeInsets.all(8.0), // Padding inside the box
-            margin: EdgeInsets.symmetric(vertical: 2.0, horizontal: 6.0),
-            decoration: BoxDecoration(
-              border: Border.all(color: Colors.grey.shade600, width: 1.0),
-              borderRadius: BorderRadius.circular(8.0),
-            ),
-            child: Center(
-              child: FittedBox(
-                fit: BoxFit.contain,
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(maxWidth: 130),
-                  child: Text(
-                    data.isNotEmpty
-                        ? data[0]['set_name']
-                        : 'No setname present',
-                    style: AppTextStyles.titleMedium,
-                    textAlign: TextAlign.center,
-                    maxLines: 3,
-                    overflow: TextOverflow.ellipsis,
-                    softWrap: true,
+          InkWell(
+            onTap: () {
+              if (data.isNotEmpty) {
+                _showSetInfoPopup(context, data[0]);
+              }
+            },
+            borderRadius: BorderRadius.circular(8.0),
+            hoverColor: ColorConstants.primaryColor.withValues(alpha: 0.1),
+            child: Container(
+              width: 150,
+              height: 80,
+              padding: EdgeInsets.all(8.0), // Padding inside the box
+              margin: EdgeInsets.symmetric(vertical: 2.0, horizontal: 6.0),
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.grey.shade600, width: 1.0),
+                borderRadius: BorderRadius.circular(8.0),
+              ),
+              child: Center(
+                child: FittedBox(
+                  fit: BoxFit.contain,
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(maxWidth: 130),
+                    child: Text(
+                      data.isNotEmpty
+                          ? data[0]['set_name']
+                          : 'No setname present',
+                      style: AppTextStyles.titleMedium,
+                      textAlign: TextAlign.center,
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                      softWrap: true,
+                    ),
                   ),
                 ),
               ),
@@ -724,6 +736,121 @@ class QSet extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  void _showSetInfoPopup(BuildContext context, Map<String, dynamic> setData) {
+    // Helper function to truncate text to 500 characters
+    String truncateText(String text, int maxLength) {
+      if (text.length <= maxLength) return text;
+      return '${text.substring(0, maxLength)}...';
+    }
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
+          backgroundColor: ColorConstants.darkCardColor,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16.0),
+          ),
+          child: Container(
+            width: 400,
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header
+                Center(
+                  child: Text(
+                    setData['set_name'] ?? 'Category Info',
+                    style: AppTextStyles.titleMedium.copyWith(
+                      color: ColorConstants.lightTextColor,
+                    ),
+                  ),
+                ),
+                
+                const SizedBox(height: 24),
+                
+                // Meaning Section
+                Text(
+                  'Meaning',
+                  style: AppTextStyles.titleSmall.copyWith(
+                    color: ColorConstants.secondaryColor,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  truncateText(setData['set_meaning'] ?? 'No meaning available', 500),
+                  style: AppTextStyles.body.copyWith(
+                    color: ColorConstants.lightTextColor,
+                  ),
+                ),
+                
+                const SizedBox(height: 20),
+                
+                // Example Question Section
+                Text(
+                  'Example Question',
+                  style: AppTextStyles.titleSmall.copyWith(
+                    color: ColorConstants.secondaryColor,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  truncateText(setData['example_question'] ?? 'No example question available', 500),
+                  style: AppTextStyles.body.copyWith(
+                    color: ColorConstants.lightTextColor,
+                  ),
+                ),
+                
+                const SizedBox(height: 20),
+                
+                // Example Answer Section
+                Text(
+                  'Example Answer',
+                  style: AppTextStyles.titleSmall.copyWith(
+                    color: ColorConstants.secondaryColor,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  truncateText(setData['example_answer'] ?? 'No example answer available', 500),
+                  style: AppTextStyles.body.copyWith(
+                    color: ColorConstants.lightTextColor,
+                  ),
+                ),
+                
+                const SizedBox(height: 24),
+                
+                // Close Button
+                Center(
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: ColorConstants.primaryContainerColor,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 32,
+                        vertical: 12,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8.0),
+                      ),
+                    ),
+                    child: Text(
+                      'Close',
+                      style: AppTextStyles.titleSmall.copyWith(
+                        color: ColorConstants.lightTextColor,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }
