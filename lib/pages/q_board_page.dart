@@ -295,9 +295,12 @@ class _QuestionBoardContentState extends State<QuestionBoardContent> {
                                           'qstn_media': qrow.qstnMedia,
                                           'answer': qrow.answer,
                                           'ans_media': qrow.ansMedia,
-                                          'set_meaning': qrow.setMeaning,
-                                          'example_question': qrow.exampleQuestion,
-                                          'example_answer': qrow.exampleAnswer,
+                                          'set_explanation':
+                                              qrow.setExplanation,
+                                          'set_example_question':
+                                              qrow.setExampleQuestion,
+                                          'set_example_answer':
+                                              qrow.setExampleAnswer,
                                         },
                                       )
                                       .toList();
@@ -434,7 +437,14 @@ class Leaderboard extends StatelessWidget {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(player.name, style: AppTextStyles.scoreCard),
+                            Expanded(
+                              child: Text(
+                                player.name,
+                                style: AppTextStyles.scoreCard,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            SizedBox(width: 8),
                             Text(
                               '${player.score}',
                               style: AppTextStyles.scoreCard,
@@ -770,26 +780,29 @@ class QSet extends StatelessWidget {
                     ),
                   ),
                 ),
-                
+
                 const SizedBox(height: 24),
-                
-                // Meaning Section
+
+                // Explanation Section
                 Text(
-                  'Meaning',
+                  'Explanation',
                   style: AppTextStyles.titleSmall.copyWith(
                     color: ColorConstants.secondaryColor,
                   ),
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  truncateText(setData['set_meaning'] ?? 'No meaning available', 500),
+                  truncateText(
+                    setData['set_explanation'] ?? 'No explanation available',
+                    500,
+                  ),
                   style: AppTextStyles.body.copyWith(
                     color: ColorConstants.lightTextColor,
                   ),
                 ),
-                
+
                 const SizedBox(height: 20),
-                
+
                 // Example Question Section
                 Text(
                   'Example Question',
@@ -799,14 +812,18 @@ class QSet extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  truncateText(setData['example_question'] ?? 'No example question available', 500),
+                  truncateText(
+                    setData['set_example_question'] ??
+                        'No example question available',
+                    500,
+                  ),
                   style: AppTextStyles.body.copyWith(
                     color: ColorConstants.lightTextColor,
                   ),
                 ),
-                
+
                 const SizedBox(height: 20),
-                
+
                 // Example Answer Section
                 Text(
                   'Example Answer',
@@ -816,14 +833,18 @@ class QSet extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  truncateText(setData['example_answer'] ?? 'No example answer available', 500),
+                  truncateText(
+                    setData['set_example_answer'] ??
+                        'No example answer available',
+                    500,
+                  ),
                   style: AppTextStyles.body.copyWith(
                     color: ColorConstants.lightTextColor,
                   ),
                 ),
-                
+
                 const SizedBox(height: 24),
-                
+
                 // Close Button
                 Center(
                   child: ElevatedButton(
