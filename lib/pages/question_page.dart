@@ -1,16 +1,16 @@
 import 'package:buzz5_quiz_app/config/colors.dart';
 import 'package:buzz5_quiz_app/config/text_styles.dart';
-import 'package:buzz5_quiz_app/models/questionDone.dart';
+import 'package:buzz5_quiz_app/models/question_done.dart';
 import 'package:flutter/material.dart';
 import 'package:buzz5_quiz_app/config/logger.dart';
 import 'package:provider/provider.dart';
-import 'package:buzz5_quiz_app/models/playerProvider.dart';
-import 'package:buzz5_quiz_app/models/player.dart';
+import 'package:buzz5_quiz_app/models/player_provider.dart';
 
 class QuestionPage extends StatefulWidget {
   const QuestionPage({super.key});
 
   @override
+  // ignore: library_private_types_in_public_api
   _QuestionPageState createState() => _QuestionPageState();
 }
 
@@ -596,16 +596,17 @@ class ToggleButton extends StatefulWidget {
   final ValueChanged<bool>? onToggle; // returns the new isOn value
 
   const ToggleButton({
-    Key? key,
+    super.key,
     this.initialOn = false,
     this.isDisabled = false,
     required this.iconData,
     required this.onColor,
     required this.offColor,
     this.onToggle,
-  }) : super(key: key);
+  });
 
   @override
+  // ignore: library_private_types_in_public_api
   _ToggleButtonState createState() => _ToggleButtonState();
 }
 

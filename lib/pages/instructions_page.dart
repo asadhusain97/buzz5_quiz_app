@@ -1,13 +1,13 @@
 import 'package:buzz5_quiz_app/config/colors.dart';
 import 'package:buzz5_quiz_app/config/text_styles.dart';
-import 'package:buzz5_quiz_app/pages/qBoard_page.dart';
+import 'package:buzz5_quiz_app/pages/q_board_page.dart';
 import 'package:buzz5_quiz_app/widgets/appbar.dart';
 import 'package:buzz5_quiz_app/widgets/base_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:buzz5_quiz_app/models/player.dart';
-import 'package:buzz5_quiz_app/models/playerProvider.dart';
+import 'package:buzz5_quiz_app/models/player_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:buzz5_quiz_app/config/logger.dart';
 
@@ -436,7 +436,7 @@ class PlayerNameForm extends StatelessWidget {
             },
           ),
           SizedBox(height: 32),
-          Container(
+          SizedBox(
             width: 200,
             child: ElevatedButton(
               onPressed: () {
@@ -521,44 +521,39 @@ class PlayerTextField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      child: TextFormField(
-        controller: controller,
-        maxLength: 15,
-        style: TextStyle(
-          color: ColorConstants.darkTextColor,
+    return TextFormField(
+      controller: controller,
+      maxLength: 15,
+      style: TextStyle(
+        color: ColorConstants.darkTextColor,
+        fontWeight: FontWeight.w500,
+      ),
+      decoration: InputDecoration(
+        hintText: 'Player $playerNumber',
+        hintStyle: TextStyle(
+          color: ColorConstants.hintGrey,
           fontWeight: FontWeight.w500,
         ),
-        decoration: InputDecoration(
-          hintText: 'Player $playerNumber',
-          hintStyle: TextStyle(
-            color: ColorConstants.hintGrey,
-            fontWeight: FontWeight.w500,
-          ),
-          prefixIcon: Icon(
-            Icons.person_rounded,
-            color: ColorConstants.primaryColor,
-            size: 20,
-          ),
-          filled: true,
-          fillColor: ColorConstants.backgroundColor,
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(
-              color: ColorConstants.tertiaryColor,
-              width: 1.5,
-            ),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(
-              color: ColorConstants.primaryColor,
-              width: 2,
-            ),
-          ),
-          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-          counterText: '',
+        prefixIcon: Icon(
+          Icons.person_rounded,
+          color: ColorConstants.primaryColor,
+          size: 20,
         ),
+        filled: true,
+        fillColor: ColorConstants.backgroundColor,
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(
+            color: ColorConstants.tertiaryColor,
+            width: 1.5,
+          ),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: ColorConstants.primaryColor, width: 2),
+        ),
+        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        counterText: '',
       ),
     );
   }

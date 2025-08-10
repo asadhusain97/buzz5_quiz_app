@@ -39,7 +39,7 @@ class QRow {
 
   static Future<List<QRow>> fetchAll({http.Client? client}) async {
     client ??= http.Client();
-    final response = await client.get(Uri.parse(Secrets.GSheetAPI));
+    final response = await client.get(Uri.parse(Secrets.gSheetAPI));
 
     if (response.statusCode == 200) {
       List<dynamic> data = json.decode(response.body);

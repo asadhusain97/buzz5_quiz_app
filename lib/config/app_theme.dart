@@ -22,7 +22,6 @@ abstract final class AppTheme {
       onTertiaryContainer: ColorConstants.lightTextColor,
       error: ColorConstants.errorColor,
       errorContainer: ColorConstants.errorContainerColor,
-      background: ColorConstants.backgroundColor,
       surface: ColorConstants.surfaceColor,
     ),
     scaffoldBackgroundColor: ColorConstants.backgroundColor,
@@ -52,15 +51,15 @@ abstract final class AppTheme {
       style: TextButton.styleFrom(foregroundColor: ColorConstants.primaryColor),
     ),
     switchTheme: SwitchThemeData(
-      thumbColor: MaterialStateProperty.resolveWith((states) {
-        if (states.contains(MaterialState.selected)) {
+      thumbColor: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.selected)) {
           return ColorConstants.primaryColor;
         }
         return Colors.grey;
       }),
-      trackColor: MaterialStateProperty.resolveWith((states) {
-        if (states.contains(MaterialState.selected)) {
-          return ColorConstants.primaryColor.withOpacity(0.5);
+      trackColor: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.selected)) {
+          return ColorConstants.primaryColor.withValues(alpha: 0.5);
         }
         return Colors.grey.shade300;
       }),
@@ -86,7 +85,6 @@ abstract final class AppTheme {
       tertiaryContainer: ColorConstants.tertiaryContainerColor,
       onTertiaryContainer: ColorConstants.lightTextColor,
       error: ColorConstants.errorColor,
-      background: hexToColor('#121212'),
       surface: hexToColor('#1E1E1E'),
     ),
     scaffoldBackgroundColor: hexToColor('#121212'),
@@ -116,15 +114,15 @@ abstract final class AppTheme {
       style: TextButton.styleFrom(foregroundColor: ColorConstants.primaryColor),
     ),
     switchTheme: SwitchThemeData(
-      thumbColor: MaterialStateProperty.resolveWith((states) {
-        if (states.contains(MaterialState.selected)) {
+      thumbColor: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.selected)) {
           return ColorConstants.primaryColor;
         }
         return Colors.grey;
       }),
-      trackColor: MaterialStateProperty.resolveWith((states) {
-        if (states.contains(MaterialState.selected)) {
-          return ColorConstants.primaryColor.withOpacity(0.5);
+      trackColor: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.selected)) {
+          return ColorConstants.primaryColor.withValues(alpha: 0.5);
         }
         return Colors.grey.shade300;
       }),
