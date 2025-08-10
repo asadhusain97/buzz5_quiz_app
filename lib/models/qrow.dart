@@ -31,15 +31,21 @@ class QRow {
   });
 
   factory QRow.fromJson(Map<String, dynamic> json) {
+    int parseInt(dynamic value) {
+      if (value is int) return value;
+      if (value is String) return int.tryParse(value) ?? 0;
+      return 0;
+    }
+
     return QRow(
-      qid: json['qid'],
-      round: json['round'],
-      setName: json['set_name'],
-      points: json['points'],
-      question: json['question'],
-      qstnMedia: json['qstn_media'],
+      qid: parseInt(json['qid']),
+      round: json['round'] ?? '',
+      setName: json['set_name'] ?? '',
+      points: parseInt(json['points']),
+      question: json['question'] ?? '',
+      qstnMedia: json['qstn_media'] ?? '',
       answer: json['answer'],
-      ansMedia: json['ans_media'],
+      ansMedia: json['ans_media'] ?? '',
       setExplanation:
           json['set_explanation'] ??
           "This category covers various topics and themes.",

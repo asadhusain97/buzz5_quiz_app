@@ -6,7 +6,7 @@ import 'package:buzz5_quiz_app/services/auth_service.dart';
 import 'package:buzz5_quiz_app/config/logger.dart';
 
 class AuthProvider extends ChangeNotifier {
-  final AuthService _authService = AuthService();
+  final AuthService _authService;
   AppUser? _user;
   bool _isLoading = false;
   String? _errorMessage;
@@ -17,12 +17,11 @@ class AuthProvider extends ChangeNotifier {
   String? get errorMessage => _errorMessage;
   bool get isAuthenticated => _user != null;
 
-  AuthProvider() {
-    _initializeAuth();
-  }
+  AuthProvider({AuthService? authService})
+    : _authService = authService ?? AuthService();
 
   // Initialize authentication state listener
-  void _initializeAuth() {
+  void initialize() {
     // Check if Firebase is initialized before setting up auth listener
     try {
       Firebase.app(); // This will throw if not initialized

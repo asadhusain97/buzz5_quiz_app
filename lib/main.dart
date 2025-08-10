@@ -52,7 +52,14 @@ class MyApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => PlayerProvider()),
         ChangeNotifierProvider(create: (_) => AnsweredQuestionsProvider()),
-        ChangeNotifierProvider(create: (_) => AuthProvider()),
+        ChangeNotifierProvider(
+          create: (_) {
+            final provider = AuthProvider();
+            // Ensure auth listener starts only after Firebase initialization
+            provider.initialize();
+            return provider;
+          },
+        ),
         // ...other providers
       ],
       child: MaterialApp(
