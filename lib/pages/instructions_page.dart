@@ -24,6 +24,7 @@ const String aboutThisGameMD = """
   This game is inspired by the **[Buzzing with Kvizzing](https://youtu.be/Tku6Mk5zMjE?si=_zex3Ixa9kQFhGNO)** video series by *Kumar Varun*.
 
   All **questions and answers** are stored and updated from [**this sheet**](https://docs.google.com/spreadsheets/d/149cG62dE_5H9JYmNYoJ_h0w5exYSFNY-HvX8Yq-HZrI/edit?usp=sharing).
+  Another option to submit your sets is to fill this [google form](https://docs.google.com/forms/d/e/1FAIpQLSfG_o2qm05MU1upotKMPmZIeILzn8RnaWdST0f56JaQ_NLueA/viewform). 
   """;
 
 class InstructionsPage extends StatelessWidget {
