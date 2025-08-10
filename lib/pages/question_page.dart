@@ -1,16 +1,17 @@
 import 'package:buzz5_quiz_app/config/colors.dart';
 import 'package:buzz5_quiz_app/config/text_styles.dart';
-import 'package:buzz5_quiz_app/models/questionDone.dart';
+import 'package:buzz5_quiz_app/models/question_done.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:buzz5_quiz_app/config/logger.dart';
 import 'package:provider/provider.dart';
-import 'package:buzz5_quiz_app/models/playerProvider.dart';
-import 'package:buzz5_quiz_app/models/player.dart';
+import 'package:buzz5_quiz_app/models/player_provider.dart';
 
 class QuestionPage extends StatefulWidget {
   const QuestionPage({super.key});
 
   @override
+  // ignore: library_private_types_in_public_api
   _QuestionPageState createState() => _QuestionPageState();
 }
 
@@ -25,6 +26,154 @@ class _QuestionPageState extends State<QuestionPage> {
   late int negScore;
   // Track button states for each player
   Map<String, PlayerButtonState> playerButtonStates = {};
+
+  // Track custom award points per player for this question
+  Map<String, int> customAwardPoints = {};
+
+  // Method to show award point edit dialog
+  void _showAwardPointDialog(String playerName) {
+    final TextEditingController controller = TextEditingController();
+    controller.text =
+        customAwardPoints[playerName]?.toString() ?? score.toString();
+
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder:
+          (context) => Stack(
+            children: [
+              // Transparent background that can be tapped to close
+              GestureDetector(
+                onTap: () => Navigator.of(context).pop(),
+                child: Container(
+                  color: Colors.transparent,
+                  child: SizedBox.expand(),
+                ),
+              ),
+              // Actual dialog content
+              Center(
+                child: Material(
+                  color: Colors.transparent,
+                  child: Container(
+                    constraints: BoxConstraints(minWidth: 200, maxWidth: 500),
+                    padding: EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: ColorConstants.darkCardColor,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.3),
+                          blurRadius: 10,
+                          offset: Offset(0, 5),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                'Change reward points for $playerName',
+                                style: AppTextStyles.titleMedium.copyWith(
+                                  color: ColorConstants.lightTextColor,
+                                ),
+                                overflow: TextOverflow.visible,
+                              ),
+                            ),
+                            IconButton(
+                              onPressed: () => Navigator.of(context).pop(),
+                              icon: Icon(
+                                Icons.close,
+                                color: ColorConstants.lightTextColor,
+                              ),
+                              iconSize: 20,
+                              padding: EdgeInsets.zero,
+                              constraints: BoxConstraints(),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 20),
+                        Row(
+                          children: [
+                            SizedBox(
+                              width: 80,
+                              child: TextField(
+                                controller: controller,
+                                keyboardType: TextInputType.number,
+                                inputFormatters: [
+                                  FilteringTextInputFormatter.allow(
+                                    RegExp(r'^-?\d*'),
+                                  ),
+                                ],
+                                decoration: InputDecoration(
+                                  border: OutlineInputBorder(
+                                    borderSide: BorderSide(
+                                      color: ColorConstants.tertiaryColor,
+                                    ),
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderSide: BorderSide(
+                                      color: ColorConstants.tertiaryColor,
+                                    ),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderSide: BorderSide(
+                                      color: ColorConstants.primaryColor,
+                                    ),
+                                  ),
+                                  hintText: 'Points',
+                                  hintStyle: TextStyle(
+                                    color: ColorConstants.hintGrey,
+                                  ),
+                                  filled: true,
+                                  fillColor: ColorConstants.surfaceColor,
+                                  contentPadding: EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 16,
+                                  ),
+                                ),
+                                style: AppTextStyles.body.copyWith(
+                                  color: ColorConstants.darkTextColor,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                            SizedBox(width: 20),
+                            SizedBox(
+                              width: 100, // Fixed width for the button
+                              height: 48, // Match text field height
+                              child: ElevatedButton(
+                                onPressed: () {
+                                  final points =
+                                      int.tryParse(controller.text) ?? score;
+                                  setState(() {
+                                    customAwardPoints[playerName] = points;
+                                  });
+                                  Navigator.of(context).pop();
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: ColorConstants.primaryColor,
+                                  foregroundColor:
+                                      ColorConstants.lightTextColor,
+                                ),
+                                child: Text('Done'),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+    );
+  }
 
   @override
   void didChangeDependencies() {
@@ -41,10 +190,12 @@ class _QuestionPageState extends State<QuestionPage> {
     score = args?['score'] ?? 1;
     negScore = score * -1;
 
-    // Initialize button states for each player
+    // Initialize button states for each player (only if they don't exist)
     final playerProvider = Provider.of<PlayerProvider>(context, listen: false);
     for (var player in playerProvider.playerList) {
-      playerButtonStates[player.name] = PlayerButtonState();
+      if (!playerButtonStates.containsKey(player.name)) {
+        playerButtonStates[player.name] = PlayerButtonState();
+      }
     }
 
     // Log media URLs for debugging
@@ -156,13 +307,12 @@ class _QuestionPageState extends State<QuestionPage> {
                                         left: 2,
                                         right: 2,
                                       ),
-                                      child: FittedBox(
-                                        fit: BoxFit.scaleDown,
-                                        child: Text(
-                                          player.name,
-                                          style: AppTextStyles.scoreCard,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
+                                      child: _PlayerNameWithHover(
+                                        playerName: player.name,
+                                        onEditTap:
+                                            () => _showAwardPointDialog(
+                                              player.name,
+                                            ),
                                       ),
                                     ),
                                   ),
@@ -271,6 +421,7 @@ class _QuestionPageState extends State<QuestionPage> {
             playerButtonStates: playerButtonStates,
             score: score,
             negScore: negScore,
+            customAwardPoints: customAwardPoints,
           ),
         ],
       );
@@ -285,6 +436,7 @@ class _QuestionPageState extends State<QuestionPage> {
             playerButtonStates: playerButtonStates,
             score: score,
             negScore: negScore,
+            customAwardPoints: customAwardPoints,
           ),
         ],
       );
@@ -303,6 +455,7 @@ class _QuestionPageState extends State<QuestionPage> {
             playerButtonStates: playerButtonStates,
             score: score,
             negScore: negScore,
+            customAwardPoints: customAwardPoints,
           ),
         ],
       );
@@ -323,6 +476,7 @@ class _QuestionPageState extends State<QuestionPage> {
           playerButtonStates: playerButtonStates,
           score: score,
           negScore: negScore,
+          customAwardPoints: customAwardPoints,
         ),
       ],
     );
@@ -381,12 +535,14 @@ class DoneButton extends StatelessWidget {
     required this.playerButtonStates,
     required this.score,
     required this.negScore,
+    required this.customAwardPoints,
   });
 
   final BuildContext context;
   final Map<String, PlayerButtonState> playerButtonStates;
   final int score;
   final int negScore;
+  final Map<String, int> customAwardPoints;
 
   @override
   Widget build(BuildContext context) {
@@ -412,13 +568,18 @@ class DoneButton extends StatelessWidget {
           final buttonState = playerButtonStates[player.name];
           if (buttonState != null) {
             if (buttonState.correctOn) {
-              // Add positive points for correct answer
-              playerProvider.addPointToPlayer(player, score);
-              AppLogger.i("Added $score points to ${player.name}");
+              // Use custom award points if set, otherwise use default score
+              final pointsToAdd = customAwardPoints[player.name] ?? score;
+              playerProvider.addPointToPlayer(player, pointsToAdd);
+              AppLogger.i("Added $pointsToAdd points to ${player.name}");
             } else if (buttonState.wrongOn) {
-              // Add negative points for wrong answer
-              playerProvider.addPointToPlayer(player, negScore);
-              AppLogger.i("Added $negScore points to ${player.name}");
+              // Use negative custom award points if set, otherwise use default negScore
+              final pointsToSubtract =
+                  customAwardPoints[player.name] != null
+                      ? -customAwardPoints[player.name]!
+                      : negScore;
+              playerProvider.addPointToPlayer(player, pointsToSubtract);
+              AppLogger.i("Added $pointsToSubtract points to ${player.name}");
             }
           }
         }
@@ -596,16 +757,17 @@ class ToggleButton extends StatefulWidget {
   final ValueChanged<bool>? onToggle; // returns the new isOn value
 
   const ToggleButton({
-    Key? key,
+    super.key,
     this.initialOn = false,
     this.isDisabled = false,
     required this.iconData,
     required this.onColor,
     required this.offColor,
     this.onToggle,
-  }) : super(key: key);
+  });
 
   @override
+  // ignore: library_private_types_in_public_api
   _ToggleButtonState createState() => _ToggleButtonState();
 }
 
@@ -648,6 +810,58 @@ class _ToggleButtonState extends State<ToggleButton> {
                 });
                 if (widget.onToggle != null) widget.onToggle!(newState);
               },
+    );
+  }
+}
+
+class _PlayerNameWithHover extends StatefulWidget {
+  final String playerName;
+  final VoidCallback onEditTap;
+
+  const _PlayerNameWithHover({
+    required this.playerName,
+    required this.onEditTap,
+  });
+
+  @override
+  State<_PlayerNameWithHover> createState() => _PlayerNameWithHoverState();
+}
+
+class _PlayerNameWithHoverState extends State<_PlayerNameWithHover> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Flexible(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                widget.playerName,
+                style: AppTextStyles.scoreCard,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ),
+          if (_isHovered)
+            GestureDetector(
+              onTap: widget.onEditTap,
+              child: Padding(
+                padding: EdgeInsets.only(left: 4),
+                child: Icon(
+                  Icons.edit,
+                  size: 16,
+                  color: ColorConstants.secondaryColor,
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }

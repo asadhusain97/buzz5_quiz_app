@@ -1,4 +1,3 @@
-import 'package:buzz5_quiz_app/config/secrets.dart';
 import 'package:buzz5_quiz_app/widgets/base_page.dart';
 import 'package:flutter/material.dart';
 import 'package:buzz5_quiz_app/models/qrow.dart';
@@ -7,6 +6,7 @@ class GSheetCheckPage extends StatefulWidget {
   const GSheetCheckPage({super.key});
 
   @override
+  // ignore: library_private_types_in_public_api
   _GSheetCheckPageState createState() => _GSheetCheckPageState();
 }
 

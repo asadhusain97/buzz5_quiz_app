@@ -5,7 +5,7 @@ import 'package:buzz5_quiz_app/widgets/appbar.dart';
 import 'package:buzz5_quiz_app/widgets/base_page.dart';
 import 'package:flutter/material.dart';
 import 'package:buzz5_quiz_app/config/logger.dart';
-import 'package:buzz5_quiz_app/models/playerProvider.dart';
+import 'package:buzz5_quiz_app/models/player_provider.dart';
 import 'package:provider/provider.dart';
 
 class FinalPage extends StatelessWidget {
@@ -228,7 +228,7 @@ class GameStats extends StatelessWidget {
                 SizedBox(width: 30),
                 Column(
                   children: [
-                    Text('$gameTime', style: AppTextStyles.titleBig),
+                    Text(gameTime, style: AppTextStyles.titleBig),
                     Text('Game time', style: AppTextStyles.gameStatTitles),
                   ],
                 ),

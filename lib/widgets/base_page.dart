@@ -11,7 +11,7 @@ class BasePage extends StatelessWidget {
   final Color? scaffoldBackgroundColor;
 
   const BasePage({
-    Key? key,
+    super.key,
     required this.child,
     this.appBar,
     this.bottomNavigationBar,
@@ -19,7 +19,7 @@ class BasePage extends StatelessWidget {
     this.floatingActionButtonLocation,
     this.extendBodyBehindAppBar = false,
     this.scaffoldBackgroundColor = Colors.transparent,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
