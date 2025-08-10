@@ -12,6 +12,9 @@ class QRow {
   final String qstnMedia;
   final dynamic answer;
   final String ansMedia;
+  final String setExplanation;
+  final String setExampleQuestion;
+  final String setExampleAnswer;
 
   QRow({
     required this.qid,
@@ -22,6 +25,9 @@ class QRow {
     required this.qstnMedia,
     required this.answer,
     required this.ansMedia,
+    this.setExplanation = "This category covers various topics and themes.",
+    this.setExampleQuestion = "What is an example question from this category?",
+    this.setExampleAnswer = "This would be an example answer.",
   });
 
   factory QRow.fromJson(Map<String, dynamic> json) {
@@ -34,6 +40,14 @@ class QRow {
       qstnMedia: json['qstn_media'],
       answer: json['answer'],
       ansMedia: json['ans_media'],
+      setExplanation:
+          json['set_explanation'] ??
+          "This category covers various topics and themes.",
+      setExampleQuestion:
+          json['set_example_question'] ??
+          "What is an example question from this category?",
+      setExampleAnswer:
+          json['set_example_answer'] ?? "This would be an example answer.",
     );
   }
 
