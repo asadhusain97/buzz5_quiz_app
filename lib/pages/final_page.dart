@@ -37,7 +37,7 @@ class ScoreBoard extends StatelessWidget {
       builder: (context, playerProvider, child) {
         return SizedBox(
           width: 300,
-          height: 800,
+          height: 900,
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,

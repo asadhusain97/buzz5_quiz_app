@@ -240,6 +240,8 @@ class PlayerNameForm extends StatelessWidget {
   final _player6Controller = TextEditingController();
   final _player7Controller = TextEditingController();
   final _player8Controller = TextEditingController();
+  final _player9Controller = TextEditingController();
+  final _player10Controller = TextEditingController();
 
   bool _validateUniqueNames() {
     final names =
@@ -252,6 +254,8 @@ class PlayerNameForm extends StatelessWidget {
           _player6Controller.text.trim(),
           _player7Controller.text.trim(),
           _player8Controller.text.trim(),
+          _player9Controller.text.trim(),
+          _player10Controller.text.trim(),
         ].where((name) => name.isNotEmpty).toList(); // Filter out empty names
 
     final uniqueNames = names.toSet();
@@ -270,6 +274,8 @@ class PlayerNameForm extends StatelessWidget {
       _player6Controller.text.trim(),
       _player7Controller.text.trim(),
       _player8Controller.text.trim(),
+      _player9Controller.text.trim(),
+      _player10Controller.text.trim(),
     ];
 
     final nonEmptyNames = names.where((name) => name.isNotEmpty).toList();
@@ -370,6 +376,11 @@ class PlayerNameForm extends StatelessWidget {
                             controller: _player4Controller,
                             playerNumber: 4,
                           ),
+                          SizedBox(height: 16),
+                          PlayerTextField(
+                            controller: _player5Controller,
+                            playerNumber: 5,
+                          ),
                         ],
                       ),
                     ),
@@ -377,11 +388,6 @@ class PlayerNameForm extends StatelessWidget {
                     Expanded(
                       child: Column(
                         children: [
-                          PlayerTextField(
-                            controller: _player5Controller,
-                            playerNumber: 5,
-                          ),
-                          SizedBox(height: 16),
                           PlayerTextField(
                             controller: _player6Controller,
                             playerNumber: 6,
@@ -395,6 +401,16 @@ class PlayerNameForm extends StatelessWidget {
                           PlayerTextField(
                             controller: _player8Controller,
                             playerNumber: 8,
+                          ),
+                          SizedBox(height: 16),
+                          PlayerTextField(
+                            controller: _player9Controller,
+                            playerNumber: 9,
+                          ),
+                          SizedBox(height: 16),
+                          PlayerTextField(
+                            controller: _player10Controller,
+                            playerNumber: 10,
                           ),
                         ],
                       ),
@@ -443,6 +459,16 @@ class PlayerNameForm extends StatelessWidget {
                     PlayerTextField(
                       controller: _player8Controller,
                       playerNumber: 8,
+                    ),
+                    SizedBox(height: 16),
+                    PlayerTextField(
+                      controller: _player9Controller,
+                      playerNumber: 9,
+                    ),
+                    SizedBox(height: 16),
+                    PlayerTextField(
+                      controller: _player10Controller,
+                      playerNumber: 10,
                     ),
                   ],
                 );

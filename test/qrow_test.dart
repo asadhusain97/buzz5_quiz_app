@@ -3,8 +3,13 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'dart:convert';
 import 'package:buzz5_quiz_app/models/qrow.dart';
+import 'package:buzz5_quiz_app/config/app_config.dart';
 
 void main() {
+  setUpAll(() async {
+    // Initialize AppConfig for tests
+    await AppConfig.initialize();
+  });
   group('QRow.fetchAll', () {
     test(
       'returns a list of QRow if the http call completes successfully',
