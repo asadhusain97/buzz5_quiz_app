@@ -12,13 +12,17 @@ import 'package:provider/provider.dart';
 import 'package:buzz5_quiz_app/config/logger.dart';
 
 const String howToPlayMD = """
-  - Enter **unique** player names
-  - **Choose a round** on the next page, and the **question board** will load accordingly
-  - The board has **5 sets** of **5 questions**, each with varying difficulty and points
-  - A **random** player starts _(yellow border indicates the player in control of the board)_  
-  - The selected player/ player in control **chooses a question from a set**  
-  - **Be quick** to buzz to answer and earn points, but beware of **negative points** for wrong answers  
-  - The player **retains control** to pick the next question until another player scores
+  Who is a Reader? YOU. (The person who'll act as Quiz Emcee, and will conduct the quiz and 'read' the questions)
+  - Enter unique player names
+  - Create a Game on a **[Buzzer app](https://buzzin.live/)** and get all the players to join 
+  - On the next page, 'Select a Board' and the questions will load accordingly
+  - Each Board has 5 sets of 5 questions; each with increasing difficulty from 10 to 50 points
+  - Click on the set name to learn about what the set means and see example question (if available)
+  - A random player starts the game (Green border indicates the player in control of the board)
+  - The player in control chooses a question tile. (All questions are open for everyone for answering)
+  - A player retains control to pick the next question, until another player scores
+  - Wrong answers get negative points
+  - The reader/Quiz Emcee can grant part points to players by clicking on their name during a specific question
   """;
 const String aboutThisGameMD = """
   This game is inspired by the **[Buzzing with Kvizzing](https://youtu.be/Tku6Mk5zMjE?si=_zex3Ixa9kQFhGNO)** video series by *Kumar Varun*.
@@ -43,7 +47,7 @@ class InstructionsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     AppLogger.i("InstructionsPage built");
     return BasePage(
-      appBar: CustomAppBar(title: "Instructions", showBackButton: true),
+      appBar: CustomAppBar(title: "Set up", showBackButton: true),
       child: LayoutBuilder(
         builder: (context, constraints) {
           if (constraints.maxWidth > 900) {
@@ -108,7 +112,7 @@ class InstructionsPage extends StatelessWidget {
                         ),
                         SizedBox(width: 10),
                         Text(
-                          "How to Play",
+                          "Instructions for the Reader",
                           style: TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
@@ -120,6 +124,11 @@ class InstructionsPage extends StatelessWidget {
                     SizedBox(height: 16),
                     MarkdownBody(
                       data: howToPlayMD,
+                      onTapLink: (text, href, title) {
+                        if (href != null) {
+                          _launchURL(href);
+                        }
+                      },
                       styleSheet: MarkdownStyleSheet(
                         p: TextStyle(
                           fontSize: 16,
@@ -128,6 +137,10 @@ class InstructionsPage extends StatelessWidget {
                               Theme.of(context).brightness == Brightness.dark
                                   ? ColorConstants.lightTextColor
                                   : ColorConstants.darkTextColor,
+                        ),
+                        a: TextStyle(
+                          color: ColorConstants.secondaryContainerColor,
+                          decoration: TextDecoration.underline,
                         ),
                         strong: TextStyle(fontWeight: FontWeight.bold),
                       ),

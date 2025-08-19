@@ -803,45 +803,49 @@ class QSet extends StatelessWidget {
 
                 const SizedBox(height: 20),
 
-                // Example Question Section
-                Text(
-                  'Example Question',
-                  style: AppTextStyles.titleSmall.copyWith(
-                    color: ColorConstants.secondaryColor,
+                // Example Question Section - only show if data exists
+                if (setData['set_example_question'] != null &&
+                    setData['set_example_question']
+                        .toString()
+                        .trim()
+                        .isNotEmpty) ...[
+                  Text(
+                    'Example Question',
+                    style: AppTextStyles.titleSmall.copyWith(
+                      color: ColorConstants.secondaryColor,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  truncateText(
-                    setData['set_example_question'] ??
-                        'No example question available',
-                    500,
+                  const SizedBox(height: 8),
+                  Text(
+                    truncateText(setData['set_example_question'], 500),
+                    style: AppTextStyles.body.copyWith(
+                      color: ColorConstants.lightTextColor,
+                    ),
                   ),
-                  style: AppTextStyles.body.copyWith(
-                    color: ColorConstants.lightTextColor,
-                  ),
-                ),
+                ],
 
                 const SizedBox(height: 20),
 
-                // Example Answer Section
-                Text(
-                  'Example Answer',
-                  style: AppTextStyles.titleSmall.copyWith(
-                    color: ColorConstants.secondaryColor,
+                // Example Answer Section - only show if data exists
+                if (setData['set_example_answer'] != null &&
+                    setData['set_example_answer']
+                        .toString()
+                        .trim()
+                        .isNotEmpty) ...[
+                  Text(
+                    'Example Answer',
+                    style: AppTextStyles.titleSmall.copyWith(
+                      color: ColorConstants.secondaryColor,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  truncateText(
-                    setData['set_example_answer'] ??
-                        'No example answer available',
-                    500,
+                  const SizedBox(height: 8),
+                  Text(
+                    truncateText(setData['set_example_answer'], 500),
+                    style: AppTextStyles.body.copyWith(
+                      color: ColorConstants.lightTextColor,
+                    ),
                   ),
-                  style: AppTextStyles.body.copyWith(
-                    color: ColorConstants.lightTextColor,
-                  ),
-                ),
+                ],
 
                 const SizedBox(height: 24),
 
