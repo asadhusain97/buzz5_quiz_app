@@ -1,6 +1,7 @@
 # buzz5_quiz_app
 
 Welcome to buzz5_quiz_app – a place to host quizzes among friends!
+Go to the [app](https://buzz5quiz.netlify.app/)
 Learn more about the project [here](https://asadhusain97.github.io/projects/flutterquizapp.html)
 
 ## Overview
