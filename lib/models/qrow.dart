@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:buzz5_quiz_app/config/secrets.dart';
+import 'package:buzz5_quiz_app/config/app_config.dart';
 import 'package:http/http.dart' as http;
 
 class QRow {
@@ -59,7 +59,7 @@ class QRow {
 
   static Future<List<QRow>> fetchAll({http.Client? client}) async {
     client ??= http.Client();
-    final response = await client.get(Uri.parse(Secrets.gSheetAPI));
+    final response = await client.get(Uri.parse(AppConfig.googleSheetApiKey));
 
     if (response.statusCode == 200) {
       List<dynamic> data = json.decode(response.body);

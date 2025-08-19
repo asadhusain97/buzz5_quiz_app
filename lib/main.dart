@@ -1,4 +1,5 @@
 import 'package:buzz5_quiz_app/config/logger.dart';
+import 'package:buzz5_quiz_app/config/app_config.dart';
 import 'package:buzz5_quiz_app/models/question_done.dart';
 import 'package:flutter/material.dart';
 import 'package:buzz5_quiz_app/widgets/auth_gate.dart';
@@ -7,35 +8,61 @@ import 'package:buzz5_quiz_app/models/player_provider.dart';
 import 'package:buzz5_quiz_app/models/auth_provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Load environment variables
-  try {
-    await dotenv.load(fileName: ".env"); // Load environment variables
-  } catch (e) {
-    AppLogger.e('Error loading .env file: $e'); // Print error if any
-    rethrow;
+  // Initialize your application configuration
+  await AppConfig.initialize();
+
+  // Debug: Log all environment variable values (redacted for security)
+  AppLogger.i(
+    'Firebase API Key: ${AppConfig.firebaseApiKey.isNotEmpty ? '[CONFIGURED]' : '[MISSING]'}',
+  );
+  AppLogger.i(
+    'Firebase Project ID: ${AppConfig.firebaseProjectId.isNotEmpty ? AppConfig.firebaseProjectId : '[MISSING]'}',
+  );
+  AppLogger.i(
+    'Firebase Auth Domain: ${AppConfig.firebaseAuthDomain.isNotEmpty ? AppConfig.firebaseAuthDomain : '[MISSING]'}',
+  );
+
+  // Check Firebase configuration specifically
+  if (!AppConfig.isFirebaseConfigValid) {
+    AppLogger.e(
+      'Missing Firebase environment variables: ${AppConfig.missingFirebaseVariables.join(', ')}',
+    );
+    AppLogger.e('Firebase initialization will likely fail!');
+  } else {
+    AppLogger.i('All Firebase environment variables are configured');
   }
 
   try {
+    AppLogger.i('Attempting Firebase initialization...');
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
     AppLogger.i('Firebase initialized successfully');
 
-    // Initialize App Check after Firebase
-    await FirebaseAppCheck.instance.activate(
-      webProvider: ReCaptchaV3Provider(dotenv.env['RECAPTCHA_SITE_KEY']!),
-      androidProvider: AndroidProvider.debug,
-      appleProvider: AppleProvider.debug,
-    );
-    AppLogger.i('App Check initialized successfully');
+    // Initialize App Check after Firebase - only if ReCAPTCHA key is available
+    final String recaptchaKey = AppConfig.recaptchaKey;
+    if (recaptchaKey.isNotEmpty) {
+      await FirebaseAppCheck.instance.activate(
+        webProvider: ReCaptchaV3Provider(recaptchaKey),
+        androidProvider: AndroidProvider.debug,
+        appleProvider: AppleProvider.debug,
+      );
+      AppLogger.i('App Check initialized successfully');
+    } else {
+      AppLogger.w(
+        'ReCAPTCHA site key not provided, skipping App Check initialization',
+      );
+    }
   } catch (e) {
     AppLogger.e('CRITICAL ERROR initializing Firebase/App Check: $e');
+    AppLogger.e(
+      'This is likely due to missing or invalid environment variables',
+    );
     // Still run the app to show error message to user
   }
 
