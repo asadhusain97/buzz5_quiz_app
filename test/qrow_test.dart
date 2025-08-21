@@ -8,7 +8,7 @@ import 'package:buzz5_quiz_app/config/app_config.dart';
 void main() {
   setUpAll(() async {
     // Initialize AppConfig for tests
-    await AppConfig.initialize();
+    AppConfig.initialize();
   });
   group('QRow.fetchAll', () {
     test(

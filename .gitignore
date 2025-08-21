@@ -18,6 +18,7 @@ launch.json
 .env.*.local
 CLAUDE.md
 .github/
+dev.json
 
 # IntelliJ related
 *.iml

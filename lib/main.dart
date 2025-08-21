@@ -14,7 +14,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Initialize your application configuration
-  await AppConfig.initialize();
+  AppConfig.initialize();
 
   // Debug: Log all environment variable values (redacted for security)
   AppLogger.i(
