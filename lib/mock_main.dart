@@ -10,8 +10,33 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
 import 'firebase_options.dart';
 
+import 'dart:developer' as developer;
+
+const String apiUrl = String.fromEnvironment(
+  'API_URL',
+  defaultValue:
+      'https://api.buzz5.com/fallback', // A default value is crucial for stability.
+);
+
+const String apiKey = String.fromEnvironment('API_KEY');
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // --- DEBUGGING BLOCK ---
+  developer.log('=== FLUTTER ENVIRONMENT DEBUG ===');
+  developer.log('API_URL: $apiUrl');
+  developer.log(
+    'API_KEY: ${apiKey.isEmpty ? 'MISSING/EMPTY' : 'LOADED (${apiKey.length} chars)'}',
+  );
+  developer.log('API_KEY value: "$apiKey"');
+
+  // Also use developer.log
+  developer.log('API_URL: $apiUrl', name: 'ENV_DEBUG');
+  developer.log(
+    'API_KEY: ${apiKey.isEmpty ? 'MISSING' : 'LOADED'}',
+    name: 'ENV_DEBUG',
+  );
 
   // Initialize your application configuration
   AppConfig.initialize();
