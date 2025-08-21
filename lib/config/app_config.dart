@@ -1,6 +1,3 @@
-import 'package:flutter/foundation.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
-
 class AppConfig {
   // All secrets
   static late final String firebaseApiKey;
@@ -16,40 +13,22 @@ class AppConfig {
   /// Initializes the application configuration.
   ///
   /// This method must be called before accessing any configuration variables.
-  /// It loads variables from a .env file in debug mode, and from
-  /// --dart-define arguments in release mode.
-  static Future<void> initialize() async {
-    if (kDebugMode) {
-      // In debug mode, load from the .env file
-      await dotenv.load(fileName: ".env");
-      firebaseApiKey = dotenv.env['FIREBASE_API_KEY'] ?? '';
-      firebaseAppId = dotenv.env['FIREBASE_APP_ID'] ?? '';
-      firebaseMessagingSenderId =
-          dotenv.env['FIREBASE_MESSAGING_SENDER_ID'] ?? '';
-      firebaseProjectId = dotenv.env['FIREBASE_PROJECT_ID'] ?? '';
-      firebaseAuthDomain = dotenv.env['FIREBASE_AUTH_DOMAIN'] ?? '';
-      firebaseDatabaseUrl = dotenv.env['FIREBASE_DATABASE_URL'] ?? '';
-      firebaseStorageBucket = dotenv.env['FIREBASE_STORAGE_BUCKET'] ?? '';
-      googleSheetApiKey = dotenv.env['GOOGLE_SHEET_API_KEY'] ?? '';
-      recaptchaKey = dotenv.env['RECAPTCHA_SITE_KEY'] ?? '';
-    } else {
-      // In release mode, load from compile-time environment variables
-      firebaseApiKey = const String.fromEnvironment('FIREBASE_API_KEY');
-      firebaseAppId = const String.fromEnvironment('FIREBASE_APP_ID');
-      firebaseMessagingSenderId = const String.fromEnvironment(
-        'FIREBASE_MESSAGING_SENDER_ID',
-      );
-      firebaseProjectId = const String.fromEnvironment('FIREBASE_PROJECT_ID');
-      firebaseAuthDomain = const String.fromEnvironment('FIREBASE_AUTH_DOMAIN');
-      firebaseDatabaseUrl = const String.fromEnvironment(
-        'FIREBASE_DATABASE_URL',
-      );
-      firebaseStorageBucket = const String.fromEnvironment(
-        'FIREBASE_STORAGE_BUCKET',
-      );
-      googleSheetApiKey = const String.fromEnvironment('GOOGLE_SHEET_API_KEY');
-      recaptchaKey = const String.fromEnvironment('RECAPTCHA_SITE_KEY');
-    }
+  /// It loads variables from compile-time environment variables.
+  static void initialize() {
+    // In release mode, load from compile-time environment variables
+    firebaseApiKey = const String.fromEnvironment('FIREBASE_API_KEY');
+    firebaseAppId = const String.fromEnvironment('FIREBASE_APP_ID');
+    firebaseMessagingSenderId = const String.fromEnvironment(
+      'FIREBASE_MESSAGING_SENDER_ID',
+    );
+    firebaseProjectId = const String.fromEnvironment('FIREBASE_PROJECT_ID');
+    firebaseAuthDomain = const String.fromEnvironment('FIREBASE_AUTH_DOMAIN');
+    firebaseDatabaseUrl = const String.fromEnvironment('FIREBASE_DATABASE_URL');
+    firebaseStorageBucket = const String.fromEnvironment(
+      'FIREBASE_STORAGE_BUCKET',
+    );
+    googleSheetApiKey = const String.fromEnvironment('GOOGLE_SHEET_API_KEY');
+    recaptchaKey = const String.fromEnvironment('RECAPTCHA_SITE_KEY');
   }
 
   // Firebase-specific validation (core Firebase functionality)
