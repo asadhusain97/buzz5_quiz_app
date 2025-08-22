@@ -375,34 +375,76 @@ class _QuestionPageState extends State<QuestionPage> {
   Widget _buildQuestionSection(dynamic text, String mediaUrl) {
     String displayText = text.toString(); // Convert text to string if it's not
 
+    // Define consistent maximum width for the entire question section
+    const double maxSectionWidth = 800.0;
+    const double maxTextWidth = 400.0;
+
     if (displayText.isEmpty && mediaUrl.isEmpty) {
-      return Text("I have no question for you.."); // Empty space if no content
-    } else if (displayText.isEmpty && mediaUrl.isNotEmpty) {
-      // Only image, center it
-      return Center(child: SimplerNetworkImage(imageUrl: mediaUrl));
-    } else if (displayText.isNotEmpty && mediaUrl.isEmpty) {
-      // Only text, center it
-      return Center(
-        child: Text(
-          displayText,
-          style: AppTextStyles.titleMedium,
-          textAlign: TextAlign.center,
-        ),
-      );
-    } else {
-      // Both text and image, show side by side with 50 spacing
-      return Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Text(
-            displayText,
+      // Case 1: Nothing - show default message in centered container
+      return Container(
+        constraints: BoxConstraints(maxWidth: maxSectionWidth),
+        child: Center(
+          child: Text(
+            "I have no question for you..",
             style: AppTextStyles.titleMedium,
             textAlign: TextAlign.center,
           ),
-          SizedBox(width: 50), // Fixed 50 spacing
-          SimplerNetworkImage(imageUrl: mediaUrl),
-        ],
+        ),
+      );
+    } else if (displayText.isEmpty && mediaUrl.isNotEmpty) {
+      // Case 2: Only image - center the image in consistent container
+      return Container(
+        constraints: BoxConstraints(maxWidth: maxSectionWidth),
+        child: Center(
+          child: SimplerNetworkImage(imageUrl: mediaUrl),
+        ),
+      );
+    } else if (displayText.isNotEmpty && mediaUrl.isEmpty) {
+      // Case 3: Only text - text with proper wrapping in centered container
+      return Container(
+        constraints: BoxConstraints(maxWidth: maxSectionWidth),
+        child: Center(
+          child: Container(
+            constraints: BoxConstraints(maxWidth: maxTextWidth),
+            child: Text(
+              displayText,
+              style: AppTextStyles.titleMedium,
+              textAlign: TextAlign.center,
+              softWrap: true,
+              overflow: TextOverflow.visible,
+            ),
+          ),
+        ),
+      );
+    } else {
+      // Case 4: Both text and image - side by side with proper text wrapping
+      return Container(
+        constraints: BoxConstraints(maxWidth: maxSectionWidth),
+        child: Center(
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // Text container with flexible width
+              Flexible(
+                flex: 1,
+                child: Container(
+                  constraints: BoxConstraints(maxWidth: maxTextWidth),
+                  child: Text(
+                    displayText,
+                    style: AppTextStyles.titleMedium,
+                    textAlign: TextAlign.center,
+                    softWrap: true,
+                    overflow: TextOverflow.visible,
+                  ),
+                ),
+              ),
+              SizedBox(width: 50), // Fixed spacing
+              // Image container
+              SimplerNetworkImage(imageUrl: mediaUrl),
+            ],
+          ),
+        ),
       );
     }
   }
