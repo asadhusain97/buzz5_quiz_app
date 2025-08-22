@@ -1,100 +1,114 @@
-import 'package:buzz5_quiz_app/config/logger.dart';
-import 'package:buzz5_quiz_app/config/app_config.dart';
-import 'package:buzz5_quiz_app/models/question_done.dart';
 import 'package:flutter/material.dart';
-import 'package:buzz5_quiz_app/widgets/auth_gate.dart';
-import 'package:provider/provider.dart';
-import 'package:buzz5_quiz_app/models/player_provider.dart';
-import 'package:buzz5_quiz_app/models/auth_provider.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_app_check/firebase_app_check.dart';
-import 'firebase_options.dart';
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-
-  // Initialize your application configuration
-  AppConfig.initialize();
-
-  // Debug: Log all environment variable values (redacted for security)
-  AppLogger.i(
-    'Firebase API Key: ${AppConfig.firebaseApiKey.isNotEmpty ? '[CONFIGURED]' : '[MISSING]'}',
+void main() {
+  // Read compile-time env via --dart-define
+  const appEnv = String.fromEnvironment(
+    'FIREBASE_PROJECT_ID',
+    defaultValue: 'not-set',
   );
-  AppLogger.i(
-    'Firebase Project ID: ${AppConfig.firebaseProjectId.isNotEmpty ? AppConfig.firebaseProjectId : '[MISSING]'}',
-  );
-  AppLogger.i(
-    'Firebase Auth Domain: ${AppConfig.firebaseAuthDomain.isNotEmpty ? AppConfig.firebaseAuthDomain : '[MISSING]'}',
+  const apiBaseUrl = String.fromEnvironment(
+    'FIREBASE_AUTH_DOMAIN',
+    defaultValue: 'not-set',
   );
 
-  // Check Firebase configuration specifically
-  if (!AppConfig.isFirebaseConfigValid) {
-    AppLogger.e(
-      'Missing Firebase environment variables: ${AppConfig.missingFirebaseVariables.join(', ')}',
-    );
-    AppLogger.e('Firebase initialization will likely fail!');
-  } else {
-    AppLogger.i('All Firebase environment variables are configured');
-  }
+  // Log for terminal verification
+  debugPrint('[Config] APP_ENV=$appEnv');
+  debugPrint('[Config] API_BASE_URL=$apiBaseUrl');
 
-  try {
-    AppLogger.i('Attempting Firebase initialization...');
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
-    AppLogger.i('Firebase initialized successfully');
-
-    // Initialize App Check after Firebase - only if ReCAPTCHA key is available
-    final String recaptchaKey = AppConfig.recaptchaKey;
-    if (recaptchaKey.isNotEmpty) {
-      await FirebaseAppCheck.instance.activate(
-        webProvider: ReCaptchaV3Provider(recaptchaKey),
-        androidProvider: AndroidProvider.debug,
-        appleProvider: AppleProvider.debug,
-      );
-      AppLogger.i('App Check initialized successfully');
-    } else {
-      AppLogger.w(
-        'ReCAPTCHA site key not provided, skipping App Check initialization',
-      );
-    }
-  } catch (e) {
-    AppLogger.e('CRITICAL ERROR initializing Firebase/App Check: $e');
-    AppLogger.e(
-      'This is likely due to missing or invalid environment variables',
-    );
-    // Still run the app to show error message to user
-  }
-
-  // debugPaintSizeEnabled = true;
-  runApp(const MyApp());
+  runApp(MyApp(appEnv: appEnv, apiBaseUrl: apiBaseUrl));
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final String appEnv;
+  final String apiBaseUrl;
+  const MyApp({super.key, required this.appEnv, required this.apiBaseUrl});
 
   @override
   Widget build(BuildContext context) {
-    return MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => PlayerProvider()),
-        ChangeNotifierProvider(create: (_) => AnsweredQuestionsProvider()),
-        ChangeNotifierProvider(
-          create: (_) {
-            final provider = AuthProvider();
-            // Ensure auth listener starts only after Firebase initialization
-            provider.initialize();
-            return provider;
-          },
+    return MaterialApp(
+      title: 'Config Smoke Test',
+      theme: ThemeData(colorSchemeSeed: Colors.indigo, useMaterial3: true),
+      home: HomePage(appEnv: appEnv, apiBaseUrl: apiBaseUrl),
+      debugShowCheckedModeBanner: false,
+    );
+  }
+}
+
+class HomePage extends StatelessWidget {
+  final String appEnv;
+  final String apiBaseUrl;
+  const HomePage({super.key, required this.appEnv, required this.apiBaseUrl});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 600),
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'Buzz5 Config Test',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 28, fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Reading compile-time configs via String.fromEnvironment',
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 24),
+                Card(
+                  elevation: 0,
+                  color: Theme.of(context).colorScheme.surfaceVariant,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      children: [
+                        _ConfigRow(label: 'APP_ENV', value: appEnv),
+                        const SizedBox(height: 8),
+                        _ConfigRow(label: 'API_BASE_URL', value: apiBaseUrl),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
-        // ...other providers
-      ],
-      child: MaterialApp(
-        title: 'Buzz5 Quiz App',
-        debugShowCheckedModeBanner: false,
-        theme: ThemeData.dark(),
-        home: const AuthGate(),
       ),
+    );
+  }
+}
+
+class _ConfigRow extends StatelessWidget {
+  final String label;
+  final String value;
+  const _ConfigRow({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    final isSet = value != 'not-set' && value.trim().isNotEmpty;
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Text('$label: ', style: const TextStyle(fontWeight: FontWeight.w600)),
+        Flexible(
+          child: Text(
+            value,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color:
+                  isSet
+                      ? Theme.of(context).colorScheme.primary
+                      : Theme.of(context).colorScheme.error,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

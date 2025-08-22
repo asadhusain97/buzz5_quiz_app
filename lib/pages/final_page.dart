@@ -1,6 +1,6 @@
 import 'package:buzz5_quiz_app/config/colors.dart';
 import 'package:buzz5_quiz_app/config/text_styles.dart';
-import 'package:buzz5_quiz_app/main.dart';
+import 'package:buzz5_quiz_app/original_main.dart';
 import 'package:buzz5_quiz_app/widgets/appbar.dart';
 import 'package:buzz5_quiz_app/widgets/base_page.dart';
 import 'package:flutter/material.dart';
