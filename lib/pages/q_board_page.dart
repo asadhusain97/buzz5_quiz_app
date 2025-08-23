@@ -160,7 +160,7 @@ class _QuestionBoardContentState extends State<QuestionBoardContent> {
                   CircularProgressIndicator(),
                   SizedBox(height: 24),
                   Text(
-                    'Loading questions...',
+                    'Loading boards...',
                     style: AppTextStyles.bodyBig,
                     textAlign: TextAlign.center,
                   ),
@@ -185,7 +185,7 @@ class _QuestionBoardContentState extends State<QuestionBoardContent> {
                             Icon(Icons.error_outline, color: Colors.red),
                             SizedBox(width: 8),
                             Text(
-                              'Error loading questions',
+                              'Error loading boards',
                               style: AppTextStyles.bodyBig.copyWith(
                                 color: Colors.red,
                               ),
@@ -344,7 +344,7 @@ class RoundDropDown extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.center,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text('Choose Round:', style: AppTextStyles.bodyBig),
+          Text('Select a Board:', style: AppTextStyles.bodyBig),
           SizedBox(height: 12),
           Container(
             padding: EdgeInsets.symmetric(horizontal: 10.0),
