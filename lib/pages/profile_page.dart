@@ -130,223 +130,41 @@ class _ProfilePageState extends State<ProfilePage> {
               child: Form(
                 key: _formKey,
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     const SizedBox(height: 20),
 
-                    // Profile Photo Section
-                    GestureDetector(
-                      onTap: _pickAndUploadImage,
-                      child: Stack(
-                        children: [
-                          Container(
-                            width: 120,
-                            height: 120,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: ColorConstants.primaryContainerColor,
-                              border: Border.all(
-                                color: ColorConstants.primaryColor,
-                                width: 3,
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: ColorConstants.primaryColor.withValues(
-                                    alpha: 0.3,
-                                  ),
-                                  blurRadius: 10,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ],
-                            ),
-                            child: ClipOval(
-                              child:
-                                  user.hasProfilePhoto
-                                      ? Image.network(
-                                        user.photoURL,
-                                        fit: BoxFit.cover,
-                                        errorBuilder: (
-                                          context,
-                                          error,
-                                          stackTrace,
-                                        ) {
-                                          return _buildInitialsAvatar(
-                                            user.initials,
-                                          );
-                                        },
-                                      )
-                                      : _buildInitialsAvatar(user.initials),
-                            ),
-                          ),
-                          Positioned(
-                            bottom: 0,
-                            right: 0,
-                            child: Container(
-                              width: 36,
-                              height: 36,
-                              decoration: BoxDecoration(
-                                color: ColorConstants.primaryColor,
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: Theme.of(context).colorScheme.surface,
-                                  width: 2,
-                                ),
-                              ),
-                              child: const Icon(
-                                Icons.camera_alt,
-                                color: Colors.white,
-                                size: 16,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    const SizedBox(height: 12),
-                    Text(
-                      'Tap to change photo',
-                      style: TextStyle(
-                        color: ColorConstants.hintGrey,
-                        fontSize: 14,
-                      ),
-                    ),
-
-                    const SizedBox(height: 40),
-
-                    // Profile Information Card
-                    Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.surface,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.outline.withValues(alpha: 0.2),
-                        ),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    // Responsive layout: horizontal on larger screens, vertical on smaller
+                    LayoutBuilder(
+                      builder: (context, constraints) {
+                        final isLargeScreen = constraints.maxWidth > 768;
+                        
+                        if (isLargeScreen) {
+                          // Horizontal layout: photo left, details right
+                          return Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
-                                'Profile Information',
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: ColorConstants.lightTextColor,
-                                ),
+                              // Profile Photo Section
+                              _buildProfilePhotoSection(),
+                              const SizedBox(width: 40),
+                              // Profile Information Card
+                              Expanded(
+                                child: _buildProfileInfoCard(context, authProvider, user),
                               ),
-                              if (!_isEditing)
-                                IconButton(
-                                  onPressed: () {
-                                    setState(() {
-                                      _isEditing = true;
-                                    });
-                                  },
-                                  icon: const Icon(Icons.edit),
-                                  iconSize: 20,
-                                ),
                             ],
-                          ),
-
-                          const SizedBox(height: 20),
-
-                          // Display Name Field
-                          if (_isEditing) ...[
-                            TextFormField(
-                              controller: _displayNameController,
-                              decoration: const InputDecoration(
-                                labelText: 'Display Name',
-                                prefixIcon: Icon(Icons.person),
-                              ),
-                              validator: (value) {
-                                if (value == null || value.trim().isEmpty) {
-                                  return 'Display name cannot be empty';
-                                }
-                                return null;
-                              },
-                            ),
-                          ] else ...[
-                            _buildInfoRow(
-                              'Display Name',
-                              user.displayName.isNotEmpty
-                                  ? user.displayName
-                                  : 'Not set',
-                              Icons.person,
-                            ),
-                          ],
-
-                          const SizedBox(height: 16),
-
-                          // Email (Read-only)
-                          _buildInfoRow('Email', user.email, Icons.email),
-
-                          const SizedBox(height: 16),
-
-                          // Account Created Date
-                          _buildInfoRow(
-                            'Member Since',
-                            user.createdAt != null
-                                ? '${user.createdAt!.day}/${user.createdAt!.month}/${user.createdAt!.year}'
-                                : 'Unknown',
-                            Icons.calendar_today,
-                          ),
-
-                          const SizedBox(height: 16),
-
-                          // Last Login
-                          _buildInfoRow(
-                            'Last Login',
-                            user.lastLogin != null
-                                ? '${user.lastLogin!.day}/${user.lastLogin!.month}/${user.lastLogin!.year}'
-                                : 'Unknown',
-                            Icons.login,
-                          ),
-
-                          if (_isEditing) ...[
-                            const SizedBox(height: 24),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: OutlinedButton(
-                                    onPressed: _cancelEdit,
-                                    child: const Text('Cancel'),
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: ElevatedButton(
-                                    onPressed:
-                                        authProvider.isLoading
-                                            ? null
-                                            : _updateProfile,
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor:
-                                          ColorConstants.primaryColor,
-                                      foregroundColor:
-                                          ColorConstants.lightTextColor,
-                                    ),
-                                    child:
-                                        authProvider.isLoading
-                                            ? const SizedBox(
-                                              height: 16,
-                                              width: 16,
-                                              child: CircularProgressIndicator(
-                                                strokeWidth: 2,
-                                              ),
-                                            )
-                                            : const Text('Save'),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ],
-                      ),
+                          );
+                        } else {
+                          // Vertical layout: photo above, details below
+                          return Column(
+                            children: [
+                              // Profile Photo Section
+                              _buildProfilePhotoSection(),
+                              const SizedBox(height: 40),
+                              // Profile Information Card
+                              _buildProfileInfoCard(context, authProvider, user),
+                            ],
+                          );
+                        }
+                      },
                     ),
 
                     const SizedBox(height: 40),
@@ -388,6 +206,227 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
         );
       },
+    );
+  }
+
+  Widget _buildProfilePhotoSection() {
+    return Consumer<AuthProvider>(
+      builder: (context, authProvider, child) {
+        final user = authProvider.user!;
+        
+        return Column(
+          children: [
+            GestureDetector(
+              onTap: _pickAndUploadImage,
+              child: Stack(
+                children: [
+                  Container(
+                    width: 120,
+                    height: 120,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: ColorConstants.primaryContainerColor,
+                      border: Border.all(
+                        color: ColorConstants.primaryColor,
+                        width: 3,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: ColorConstants.primaryColor.withValues(
+                            alpha: 0.3,
+                          ),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: ClipOval(
+                      child: user.hasProfilePhoto
+                          ? Image.network(
+                            user.photoURL,
+                            fit: BoxFit.cover,
+                            errorBuilder: (
+                              context,
+                              error,
+                              stackTrace,
+                            ) {
+                              return _buildInitialsAvatar(
+                                user.initials,
+                              );
+                            },
+                          )
+                          : _buildInitialsAvatar(user.initials),
+                    ),
+                  ),
+                  Positioned(
+                    bottom: 0,
+                    right: 0,
+                    child: Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: ColorConstants.primaryColor,
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: Theme.of(context).colorScheme.surface,
+                          width: 2,
+                        ),
+                      ),
+                      child: const Icon(
+                        Icons.camera_alt,
+                        color: Colors.white,
+                        size: 16,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Tap to change photo',
+              style: TextStyle(
+                color: ColorConstants.hintGrey,
+                fontSize: 14,
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildProfileInfoCard(BuildContext context, AuthProvider authProvider, dynamic user) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Theme.of(
+            context,
+          ).colorScheme.outline.withValues(alpha: 0.2),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Profile Information',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: ColorConstants.lightTextColor,
+                ),
+              ),
+              if (!_isEditing)
+                IconButton(
+                  onPressed: () {
+                    setState(() {
+                      _isEditing = true;
+                    });
+                  },
+                  icon: const Icon(Icons.edit),
+                  iconSize: 20,
+                ),
+            ],
+          ),
+
+          const SizedBox(height: 20),
+
+          // Display Name Field
+          if (_isEditing) ...[
+            TextFormField(
+              controller: _displayNameController,
+              decoration: const InputDecoration(
+                labelText: 'Display Name',
+                prefixIcon: Icon(Icons.person),
+              ),
+              validator: (value) {
+                if (value == null || value.trim().isEmpty) {
+                  return 'Display name cannot be empty';
+                }
+                return null;
+              },
+            ),
+          ] else ...[
+            _buildInfoRow(
+              'Display Name',
+              user.displayName.isNotEmpty
+                  ? user.displayName
+                  : 'Not set',
+              Icons.person,
+            ),
+          ],
+
+          const SizedBox(height: 16),
+
+          // Email (Read-only)
+          _buildInfoRow('Email', user.email, Icons.email),
+
+          const SizedBox(height: 16),
+
+          // Account Created Date
+          _buildInfoRow(
+            'Member Since',
+            user.createdAt != null
+                ? '${user.createdAt!.day}/${user.createdAt!.month}/${user.createdAt!.year}'
+                : 'Unknown',
+            Icons.calendar_today,
+          ),
+
+          const SizedBox(height: 16),
+
+          // Last Login
+          _buildInfoRow(
+            'Last Login',
+            user.lastLogin != null
+                ? '${user.lastLogin!.day}/${user.lastLogin!.month}/${user.lastLogin!.year}'
+                : 'Unknown',
+            Icons.login,
+          ),
+
+          if (_isEditing) ...[
+            const SizedBox(height: 24),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: _cancelEdit,
+                    child: const Text('Cancel'),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: authProvider.isLoading
+                        ? null
+                        : _updateProfile,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor:
+                          ColorConstants.primaryColor,
+                      foregroundColor:
+                          ColorConstants.lightTextColor,
+                    ),
+                    child: authProvider.isLoading
+                        ? const SizedBox(
+                          height: 16,
+                          width: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                          ),
+                        )
+                        : const Text('Save'),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
     );
   }
 
