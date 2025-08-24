@@ -3,6 +3,7 @@ import 'package:buzz5_quiz_app/config/app_config.dart';
 import 'package:buzz5_quiz_app/models/question_done.dart';
 import 'package:flutter/material.dart';
 import 'package:buzz5_quiz_app/widgets/auth_gate.dart';
+import 'package:buzz5_quiz_app/pages/forgot_password_page.dart';
 import 'package:provider/provider.dart';
 import 'package:buzz5_quiz_app/models/player_provider.dart';
 import 'package:buzz5_quiz_app/models/auth_provider.dart';
@@ -94,6 +95,9 @@ class MyApp extends StatelessWidget {
         debugShowCheckedModeBanner: false,
         theme: ThemeData.dark(),
         home: const AuthGate(),
+        routes: {
+          '/forgot-password': (context) => const ForgotPasswordPage(),
+        },
       ),
     );
   }
