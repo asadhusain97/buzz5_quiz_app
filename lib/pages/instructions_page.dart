@@ -224,7 +224,12 @@ class InstructionsPage extends StatelessWidget {
   Widget _buildPlayerFormPanel(BuildContext context) {
     return Expanded(
       flex: 1,
-      child: Container(padding: EdgeInsets.all(24), child: PlayerNameForm()),
+      child: SingleChildScrollView(
+        child: Container(
+          padding: EdgeInsets.all(24),
+          child: PlayerNameForm(),
+        ),
+      ),
     );
   }
 }
@@ -543,6 +548,7 @@ class PlayerNameForm extends StatelessWidget {
               ),
             ),
           ),
+          SizedBox(height: 24), // Extra bottom padding to ensure button is always accessible
         ],
       ),
     );
