@@ -7,6 +7,7 @@ import 'package:buzz5_quiz_app/widgets/appbar.dart';
 import 'package:buzz5_quiz_app/widgets/base_page.dart';
 import 'package:flutter/material.dart';
 import 'package:buzz5_quiz_app/models/player_provider.dart';
+import 'package:buzz5_quiz_app/models/room_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:buzz5_quiz_app/config/logger.dart';
 import 'package:buzz5_quiz_app/models/qrow.dart';
@@ -224,13 +225,15 @@ class _QuestionBoardContentState extends State<QuestionBoardContent> {
                       rounds: uniqueRounds,
                     ),
                   ),
-                  SizedBox(height: 50),
+                  SizedBox(height: 30),
                   if (selectedRound != null) ...[
                     Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
+                        RoomCodeDisplay(),
+                        SizedBox(height: 30),
                         Leaderboard(),
-                        SizedBox(height: 60),
+                        SizedBox(height: 45),
                         EndGameButton(),
                       ],
                     ),
@@ -873,6 +876,82 @@ class QSet extends StatelessWidget {
                 ),
               ],
             ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class RoomCodeDisplay extends StatelessWidget {
+  const RoomCodeDisplay({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<RoomProvider>(
+      builder: (context, roomProvider, child) {
+        // Only show room code if there's an active room
+        if (!roomProvider.hasActiveRoom || roomProvider.currentRoom == null) {
+          return SizedBox.shrink();
+        }
+
+        final room = roomProvider.currentRoom!;
+
+        return Container(
+          padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          decoration: BoxDecoration(
+            color: Colors.transparent,
+            borderRadius: BorderRadius.circular(25),
+            border: Border.all(color: ColorConstants.primaryColor, width: 2),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.3),
+                blurRadius: 12,
+                offset: Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.doorbell,
+                    color: ColorConstants.primaryContainerColor,
+                    size: 20,
+                  ),
+                  SizedBox(width: 8),
+                  Text(
+                    'Room Code',
+                    style: TextStyle(
+                      color: ColorConstants.surfaceColor,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 6),
+              SelectableText(
+                room.formattedRoomCode,
+                style: TextStyle(
+                  color: ColorConstants.primaryContainerColor,
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 2.0,
+                ),
+              ),
+              SizedBox(height: 4),
+              Text(
+                'Join the room using the code above',
+                style: TextStyle(
+                  color: ColorConstants.lightTextColor,
+                  fontSize: 11,
+                ),
+              ),
+            ],
           ),
         );
       },

@@ -8,6 +8,7 @@ import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:buzz5_quiz_app/models/player.dart';
 import 'package:buzz5_quiz_app/models/player_provider.dart';
+import 'package:buzz5_quiz_app/models/room_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:buzz5_quiz_app/config/logger.dart';
 
@@ -224,14 +225,21 @@ class InstructionsPage extends StatelessWidget {
   Widget _buildPlayerFormPanel(BuildContext context) {
     return Expanded(
       flex: 1,
-      child: Container(padding: EdgeInsets.all(24), child: PlayerNameForm()),
+      child: SingleChildScrollView(
+        child: Container(padding: EdgeInsets.all(24), child: PlayerNameForm()),
+      ),
     );
   }
 }
 
-class PlayerNameForm extends StatelessWidget {
-  PlayerNameForm({super.key});
+class PlayerNameForm extends StatefulWidget {
+  const PlayerNameForm({super.key});
 
+  @override
+  State<PlayerNameForm> createState() => _PlayerNameFormState();
+}
+
+class _PlayerNameFormState extends State<PlayerNameForm> {
   final _player1Controller = TextEditingController();
   final _player2Controller = TextEditingController();
   final _player3Controller = TextEditingController();
@@ -322,6 +330,65 @@ class PlayerNameForm extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
+          // Room Configuration Section
+          Consumer<RoomProvider>(
+            builder: (context, roomProvider, child) {
+              return Container(
+                padding: EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: ColorConstants.primaryColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: ColorConstants.primaryColor.withValues(alpha: 0.3),
+                    width: 1,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.doorbell,
+                      color: ColorConstants.primaryColor,
+                      size: 36,
+                    ),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Host a Room",
+                            style: AppTextStyles.titleSmall.copyWith(
+                              color: ColorConstants.surfaceColor,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          SizedBox(height: 4),
+                          Text(
+                            "Create a room for others to join with a buzzer",
+                            style: TextStyle(
+                              color: ColorConstants.lightTextColor,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Switch(
+                      value: roomProvider.hostRoom,
+                      onChanged: (value) {
+                        roomProvider.setHostRoom(value);
+                      },
+                      activeColor: ColorConstants.primaryColor,
+                      activeTrackColor: ColorConstants.primaryColor.withValues(
+                        alpha: 0.3,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+          SizedBox(height: 24),
           Container(
             padding: EdgeInsets.all(12),
             decoration: BoxDecoration(
@@ -479,7 +546,7 @@ class PlayerNameForm extends StatelessWidget {
           SizedBox(
             width: 200,
             child: ElevatedButton(
-              onPressed: () {
+              onPressed: () async {
                 if (_validateUniqueNames()) {
                   _resetGameState(context);
                   _addPlayersToProvider(context);
@@ -487,12 +554,54 @@ class PlayerNameForm extends StatelessWidget {
                     context,
                     listen: false,
                   ).setGameStartTime(DateTime.now());
-                  Navigator.push(
+
+                  // Create room if hosting is enabled
+                  final roomProvider = Provider.of<RoomProvider>(
                     context,
-                    MaterialPageRoute(
-                      builder: (context) => QuestionBoardPage(),
-                    ),
+                    listen: false,
                   );
+                  if (roomProvider.hostRoom) {
+                    final success = await roomProvider.createRoom();
+                    if (!mounted) return;
+                    if (!success && roomProvider.error != null) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.error_outline, color: Colors.white),
+                              SizedBox(width: 8),
+                              Flexible(
+                                child: Text(
+                                  roomProvider.error!,
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          backgroundColor: ColorConstants.errorContainerColor,
+                          behavior: SnackBarBehavior.floating,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          margin: EdgeInsets.all(12),
+                        ),
+                      );
+                      return;
+                    }
+                  }
+
+                  if (mounted) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => QuestionBoardPage(),
+                      ),
+                    );
+                  }
                 } else {
                   AppLogger.w("Player names are not unique");
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -543,6 +652,9 @@ class PlayerNameForm extends StatelessWidget {
               ),
             ),
           ),
+          SizedBox(
+            height: 24,
+          ), // Extra bottom padding to ensure button is always accessible
         ],
       ),
     );
