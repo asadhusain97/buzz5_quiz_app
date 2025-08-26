@@ -172,6 +172,7 @@ class RoomPlayer {
   final int joinedAt;
   final int buzzCount;
   final bool isConnected;
+  final int? lastSeen;
 
   RoomPlayer({
     required this.playerId,
@@ -180,6 +181,7 @@ class RoomPlayer {
     required this.joinedAt,
     this.buzzCount = 0,
     this.isConnected = true,
+    this.lastSeen,
   });
 
   factory RoomPlayer.fromMap(Map<String, dynamic> data, String playerId) {
@@ -190,6 +192,7 @@ class RoomPlayer {
       joinedAt: data['joinedAt'] ?? DateTime.now().millisecondsSinceEpoch,
       buzzCount: data['buzzCount'] ?? 0,
       isConnected: data['isConnected'] ?? true,
+      lastSeen: data['lastSeen'],
     );
   }
 
@@ -200,6 +203,7 @@ class RoomPlayer {
       'joinedAt': joinedAt,
       'buzzCount': buzzCount,
       'isConnected': isConnected,
+      'lastSeen': lastSeen,
     };
   }
 
@@ -210,6 +214,7 @@ class RoomPlayer {
     int? joinedAt,
     int? buzzCount,
     bool? isConnected,
+    int? lastSeen,
   }) {
     return RoomPlayer(
       playerId: playerId ?? this.playerId,
@@ -218,6 +223,7 @@ class RoomPlayer {
       joinedAt: joinedAt ?? this.joinedAt,
       buzzCount: buzzCount ?? this.buzzCount,
       isConnected: isConnected ?? this.isConnected,
+      lastSeen: lastSeen ?? this.lastSeen,
     );
   }
 }

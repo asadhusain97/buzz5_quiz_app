@@ -3,12 +3,15 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:buzz5_quiz_app/models/room.dart';
 import 'package:buzz5_quiz_app/config/logger.dart';
+import 'dart:async';
 
 class RoomProvider with ChangeNotifier {
   Room? _currentRoom;
   bool _hostRoom = true; // Default to hosting a room
   bool _isCreatingRoom = false;
   String? _error;
+  List<RoomPlayer> _roomPlayers = [];
+  StreamSubscription? _playersSubscription;
   
   // Database reference
   final DatabaseReference _database = FirebaseDatabase.instance.ref();
@@ -18,6 +21,8 @@ class RoomProvider with ChangeNotifier {
   bool get isCreatingRoom => _isCreatingRoom;
   String? get error => _error;
   bool get hasActiveRoom => _currentRoom != null && _currentRoom!.isActive;
+  List<RoomPlayer> get roomPlayers => _roomPlayers;
+  int get playerCount => _roomPlayers.length;
 
   // Toggle room hosting
   void setHostRoom(bool value) {
@@ -27,7 +32,7 @@ class RoomProvider with ChangeNotifier {
   }
 
   // Create a new room
-  Future<bool> createRoom() async {
+  Future<bool> createRoom({List<String>? hostPlayerNames}) async {
     if (_isCreatingRoom) return false;
     
     _isCreatingRoom = true;
@@ -60,6 +65,16 @@ class RoomProvider with ChangeNotifier {
       // Set room info
       await roomRef.child('roomInfo').set(room.toRoomInfo());
       
+      // Store allowed player names for validation during join
+      if (hostPlayerNames != null && hostPlayerNames.isNotEmpty) {
+        final allowedPlayersMap = <String, bool>{};
+        for (final playerName in hostPlayerNames) {
+          allowedPlayersMap[playerName.toLowerCase()] = true;
+        }
+        await roomRef.child('allowedPlayers').set(allowedPlayersMap);
+        AppLogger.i("Stored allowed player names: $hostPlayerNames");
+      }
+      
       // Initialize empty game state
       final gameState = GameState();
       await roomRef.child('gameState').set(gameState.toMap());
@@ -75,6 +90,13 @@ class RoomProvider with ChangeNotifier {
 
       _currentRoom = room;
       AppLogger.i("Room created successfully: $roomCode with ID: $roomId");
+      
+      // Set up presence tracking for the host
+      await _setupPresenceTracking(roomId, user.uid);
+      
+      // Start listening for player changes
+      _startListeningToPlayers();
+      
       return true;
 
     } catch (e) {
@@ -108,8 +130,8 @@ class RoomProvider with ChangeNotifier {
     }
   }
 
-  // Join an existing room
-  Future<bool> joinRoom(String roomCode) async {
+  // Join an existing room with player name validation
+  Future<bool> joinRoom(String roomCode, {String? playerName}) async {
     try {
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) {
@@ -118,32 +140,122 @@ class RoomProvider with ChangeNotifier {
       }
 
       final room = await getRoomByCode(roomCode);
-      if (room != null && room.isActive && !room.isExpired) {
-        // Add player to room
-        final player = RoomPlayer(
-          playerId: user.uid,
-          name: user.displayName ?? user.email?.split('@')[0] ?? 'Player',
-          joinedAt: DateTime.now().millisecondsSinceEpoch,
-        );
-        
-        await _database
-            .child('rooms')
-            .child(room.roomId)
-            .child('players')
-            .child(user.uid)
-            .set(player.toMap());
-        
-        _currentRoom = room;
-        AppLogger.i("Joined room: $roomCode");
-        notifyListeners();
-        return true;
+      if (room == null) {
+        _error = "Room not found";
+        return false;
       }
-      return false;
+      
+      if (!room.isActive || room.isExpired) {
+        _error = "Room is no longer active";
+        return false;
+      }
+
+      // Validate player name if provided
+      if (playerName != null && playerName.trim().isNotEmpty) {
+        final isValidPlayerName = await _validatePlayerName(room.roomId, playerName.trim());
+        if (!isValidPlayerName) {
+          _error = "Player name '$playerName' is not allowed in this room. Please check with the host.";
+          AppLogger.w("Player name validation failed for: $playerName in room: $roomCode");
+          return false;
+        }
+      }
+
+      // Add player to room
+      final player = RoomPlayer(
+        playerId: user.uid,
+        name: playerName?.trim() ?? user.displayName ?? user.email?.split('@')[0] ?? 'Player',
+        joinedAt: DateTime.now().millisecondsSinceEpoch,
+      );
+      
+      await _database
+          .child('rooms')
+          .child(room.roomId)
+          .child('players')
+          .child(user.uid)
+          .set(player.toMap());
+      
+      _currentRoom = room;
+      AppLogger.i("Joined room: $roomCode with player name: ${player.name}");
+      
+      // Set up presence tracking for this player
+      await _setupPresenceTracking(room.roomId, user.uid);
+      
+      // Start listening for player changes
+      _startListeningToPlayers();
+      
+      notifyListeners();
+      return true;
     } catch (e) {
       _error = "Failed to join room: $e";
       AppLogger.e("Error joining room: $e");
       notifyListeners();
       return false;
+    }
+  }
+
+  // Validate if a player name is allowed in the room
+  Future<bool> _validatePlayerName(String roomId, String playerName) async {
+    try {
+      final snapshot = await _database
+          .child('rooms')
+          .child(roomId)
+          .child('allowedPlayers')
+          .get();
+      
+      if (!snapshot.exists) {
+        // If no allowed players are set, allow any name (backward compatibility)
+        AppLogger.i("No allowed players restriction for room: $roomId");
+        return true;
+      }
+      
+      final allowedPlayers = Map<String, dynamic>.from(snapshot.value as Map);
+      final normalizedPlayerName = playerName.toLowerCase();
+      
+      final isAllowed = allowedPlayers.containsKey(normalizedPlayerName);
+      AppLogger.i("Player name validation for '$playerName': ${isAllowed ? 'ALLOWED' : 'DENIED'}");
+      
+      return isAllowed;
+    } catch (e) {
+      AppLogger.e("Error validating player name: $e");
+      // On error, allow the player to join (fail-safe)
+      return true;
+    }
+  }
+
+  // Set up Firebase presence tracking for a player
+  Future<void> _setupPresenceTracking(String roomId, String playerId) async {
+    try {
+      final playerRef = _database
+          .child('rooms')
+          .child(roomId)
+          .child('players')
+          .child(playerId);
+
+      // Create presence references
+      final connectedRef = _database.child('.info/connected');
+      final presenceRef = playerRef.child('isConnected');
+      final lastSeenRef = playerRef.child('lastSeen');
+
+      // Listen for connection state changes
+      connectedRef.onValue.listen((event) {
+        final connected = event.snapshot.value == true;
+        if (connected) {
+          // Set player as connected
+          presenceRef.set(true);
+          lastSeenRef.set(DateTime.now().millisecondsSinceEpoch);
+          
+          // Set up disconnect handler - this will trigger when connection is lost
+          presenceRef.onDisconnect().set(false);
+          lastSeenRef.onDisconnect().set(DateTime.now().millisecondsSinceEpoch);
+          
+          AppLogger.i("Presence tracking set up for player $playerId in room $roomId");
+        } else {
+          // Connection lost - this will be handled by onDisconnect() automatically
+          AppLogger.i("Connection lost for player $playerId");
+        }
+      });
+    } catch (e) {
+      AppLogger.e("Error setting up presence tracking: $e");
     }
   }
 
@@ -171,18 +283,94 @@ class RoomProvider with ChangeNotifier {
     }
   }
 
+  // Start listening to real-time player changes
+  void _startListeningToPlayers() {
+    if (_currentRoom == null) return;
+    
+    // Cancel any existing subscription
+    _playersSubscription?.cancel();
+    
+    final playersRef = _database
+        .child('rooms')
+        .child(_currentRoom!.roomId)
+        .child('players');
+    
+    AppLogger.i("Starting to listen for player changes in room: ${_currentRoom!.roomId}");
+    
+    _playersSubscription = playersRef.onValue.listen((event) {
+      final data = event.snapshot.value;
+      final newPlayers = <RoomPlayer>[];
+      
+      if (data != null && data is Map) {
+        final playersMap = Map<String, dynamic>.from(data);
+        for (final entry in playersMap.entries) {
+          final playerId = entry.key;
+          final playerData = Map<String, dynamic>.from(entry.value);
+          final player = RoomPlayer.fromMap(playerData, playerId);
+          newPlayers.add(player);
+        }
+      }
+      
+      // Sort players by join time (host first)
+      newPlayers.sort((a, b) {
+        if (a.isHost && !b.isHost) return -1;
+        if (!a.isHost && b.isHost) return 1;
+        return a.joinedAt.compareTo(b.joinedAt);
+      });
+      
+      _roomPlayers = newPlayers;
+      AppLogger.i("Player count updated: ${_roomPlayers.length} players in room");
+      notifyListeners();
+    });
+  }
+
+  // Stop listening to player changes
+  void _stopListeningToPlayers() {
+    _playersSubscription?.cancel();
+    _playersSubscription = null;
+    _roomPlayers.clear();
+    AppLogger.i("Stopped listening for player changes");
+  }
+
   // End/close current room
   Future<void> endRoom() async {
     if (_currentRoom != null) {
       await updateRoomStatus(RoomStatus.ended);
       AppLogger.i("Room ended: ${_currentRoom!.roomId}");
     }
+    _stopListeningToPlayers();
     _currentRoom = null;
     notifyListeners();
   }
 
-  // Clear current room (for leaving)
+  // Leave current room (removes player from Firebase and clears local state)
+  Future<void> leaveRoom() async {
+    if (_currentRoom == null) return;
+    
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        // Remove player from the room in Firebase
+        await _database
+            .child('rooms')
+            .child(_currentRoom!.roomId)
+            .child('players')
+            .child(user.uid)
+            .remove();
+        
+        AppLogger.i("Removed player ${user.uid} from room ${_currentRoom!.roomId}");
+      }
+    } catch (e) {
+      AppLogger.e("Error removing player from room: $e");
+    }
+    
+    // Clear local state
+    clearRoom();
+  }
+
+  // Clear current room (for internal use)
   void clearRoom() {
+    _stopListeningToPlayers();
     _currentRoom = null;
     AppLogger.i("Cleared current room");
     notifyListeners();
@@ -190,6 +378,7 @@ class RoomProvider with ChangeNotifier {
 
   // Reset all room data
   void reset() {
+    _stopListeningToPlayers();
     _currentRoom = null;
     _hostRoom = true;
     _isCreatingRoom = false;
@@ -202,5 +391,19 @@ class RoomProvider with ChangeNotifier {
   void clearError() {
     _error = null;
     notifyListeners();
+  }
+
+  // Force refresh player list (useful for refresh button)
+  void refreshPlayerList() {
+    if (_currentRoom != null) {
+      AppLogger.i("Force refreshing player list for room: ${_currentRoom!.roomId}");
+      notifyListeners();
+    }
+  }
+  
+  @override
+  void dispose() {
+    _stopListeningToPlayers();
+    super.dispose();
   }
 }

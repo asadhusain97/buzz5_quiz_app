@@ -547,6 +547,9 @@ class _PlayerNameFormState extends State<PlayerNameForm> {
             width: 200,
             child: ElevatedButton(
               onPressed: () async {
+                final navigator = Navigator.of(context);
+                final scaffoldMessenger = ScaffoldMessenger.of(context);
+                
                 if (_validateUniqueNames()) {
                   _resetGameState(context);
                   _addPlayersToProvider(context);
@@ -561,15 +564,36 @@ class _PlayerNameFormState extends State<PlayerNameForm> {
                     listen: false,
                   );
                   if (roomProvider.hostRoom) {
-                    final success = await roomProvider.createRoom();
+                    // Get the player names to store for validation
+                    final playerNames = [
+                      _player1Controller.text.trim(),
+                      _player2Controller.text.trim(),
+                      _player3Controller.text.trim(),
+                      _player4Controller.text.trim(),
+                      _player5Controller.text.trim(),
+                      _player6Controller.text.trim(),
+                      _player7Controller.text.trim(),
+                      _player8Controller.text.trim(),
+                      _player9Controller.text.trim(),
+                      _player10Controller.text.trim(),
+                    ].where((name) => name.isNotEmpty).toList();
+                    
+                    final success = await roomProvider.createRoom(
+                      hostPlayerNames: playerNames.isNotEmpty ? playerNames : null,
+                    );
                     if (!mounted) return;
                     if (!success && roomProvider.error != null) {
-                      ScaffoldMessenger.of(context).showSnackBar(
+                      scaffoldMessenger.showSnackBar(
                         SnackBar(
                           content: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
-                              Icon(Icons.error_outline, color: Colors.white),
+                              Icon(
+                                Icons.error_outline, 
+                                color: Colors.white,
+                                size: 20,
+                              ),
                               SizedBox(width: 8),
                               Flexible(
                                 child: Text(
@@ -577,6 +601,7 @@ class _PlayerNameFormState extends State<PlayerNameForm> {
                                   style: TextStyle(
                                     fontSize: 14,
                                     fontWeight: FontWeight.w500,
+                                    height: 1.2,
                                   ),
                                 ),
                               ),
@@ -588,6 +613,7 @@ class _PlayerNameFormState extends State<PlayerNameForm> {
                             borderRadius: BorderRadius.circular(10),
                           ),
                           margin: EdgeInsets.all(12),
+                          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                         ),
                       );
                       return;
@@ -595,8 +621,7 @@ class _PlayerNameFormState extends State<PlayerNameForm> {
                   }
 
                   if (mounted) {
-                    Navigator.push(
-                      context,
+                    navigator.push(
                       MaterialPageRoute(
                         builder: (context) => QuestionBoardPage(),
                       ),
@@ -604,14 +629,16 @@ class _PlayerNameFormState extends State<PlayerNameForm> {
                   }
                 } else {
                   AppLogger.w("Player names are not unique");
-                  ScaffoldMessenger.of(context).showSnackBar(
+                  scaffoldMessenger.showSnackBar(
                     SnackBar(
                       content: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
                           Icon(
                             Icons.warning_amber_rounded,
                             color: Colors.white,
+                            size: 20,
                           ),
                           SizedBox(width: 8),
                           Text(
@@ -619,6 +646,7 @@ class _PlayerNameFormState extends State<PlayerNameForm> {
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w500,
+                              height: 1.2,
                             ),
                           ),
                         ],
@@ -629,6 +657,7 @@ class _PlayerNameFormState extends State<PlayerNameForm> {
                         borderRadius: BorderRadius.circular(10),
                       ),
                       margin: EdgeInsets.all(12),
+                      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                     ),
                   );
                 }
