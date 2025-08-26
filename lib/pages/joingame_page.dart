@@ -53,6 +53,7 @@ class _JoinGamePageState extends State<JoinGamePage> {
     try {
       final roomProvider = Provider.of<RoomProvider>(context, listen: false);
       final playerProvider = Provider.of<PlayerProvider>(context, listen: false);
+      final navigator = Navigator.of(context);
       
       // Format room code (remove dashes and convert to uppercase)
       final roomCode = _roomCodeController.text.replaceAll('-', '').toUpperCase().trim();
@@ -81,15 +82,14 @@ class _JoinGamePageState extends State<JoinGamePage> {
       // Attempt to join the room with player name validation
       final success = await roomProvider.joinRoom(roomCode, playerName: playerName);
       
-      if (success && context.mounted) {
+      if (success && mounted) {
         // Add player to the local player list for joined players
         playerProvider.setPlayerList([Player(name: playerName)]);
         
         AppLogger.i("Successfully joined room: $roomCode");
         
         // Navigate to game room page
-        Navigator.pushReplacement(
-          context,
+        navigator.pushReplacement(
           MaterialPageRoute(
             builder: (context) => GameRoomPage(),
           ),
