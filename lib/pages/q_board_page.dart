@@ -896,6 +896,9 @@ class RoomCodeDisplay extends StatelessWidget {
         }
 
         final room = roomProvider.currentRoom!;
+        final connectedPlayers = roomProvider.roomPlayers
+            .where((player) => !player.isHost && player.isConnected)
+            .length;
 
         return Container(
           padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -945,7 +948,16 @@ class RoomCodeDisplay extends StatelessWidget {
               ),
               SizedBox(height: 4),
               Text(
-                'Join the room using the code above',
+                '$connectedPlayers players connected',
+                style: TextStyle(
+                  color: ColorConstants.secondaryContainerColor,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              SizedBox(height: 2),
+              Text(
+                'Join room using the code above',
                 style: TextStyle(
                   color: ColorConstants.lightTextColor,
                   fontSize: 11,

@@ -561,7 +561,23 @@ class _PlayerNameFormState extends State<PlayerNameForm> {
                     listen: false,
                   );
                   if (roomProvider.hostRoom) {
-                    final success = await roomProvider.createRoom();
+                    // Get the player names to store for validation
+                    final playerNames = [
+                      _player1Controller.text.trim(),
+                      _player2Controller.text.trim(),
+                      _player3Controller.text.trim(),
+                      _player4Controller.text.trim(),
+                      _player5Controller.text.trim(),
+                      _player6Controller.text.trim(),
+                      _player7Controller.text.trim(),
+                      _player8Controller.text.trim(),
+                      _player9Controller.text.trim(),
+                      _player10Controller.text.trim(),
+                    ].where((name) => name.isNotEmpty).toList();
+                    
+                    final success = await roomProvider.createRoom(
+                      hostPlayerNames: playerNames.isNotEmpty ? playerNames : null,
+                    );
                     if (!mounted) return;
                     if (!success && roomProvider.error != null) {
                       ScaffoldMessenger.of(context).showSnackBar(
