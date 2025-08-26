@@ -244,11 +244,14 @@ class RoomProvider with ChangeNotifier {
           presenceRef.set(true);
           lastSeenRef.set(DateTime.now().millisecondsSinceEpoch);
           
-          // Set up disconnect handler
+          // Set up disconnect handler - this will trigger when connection is lost
           presenceRef.onDisconnect().set(false);
           lastSeenRef.onDisconnect().set(DateTime.now().millisecondsSinceEpoch);
           
           AppLogger.i("Presence tracking set up for player $playerId in room $roomId");
+        } else {
+          // Connection lost - this will be handled by onDisconnect() automatically
+          AppLogger.i("Connection lost for player $playerId");
         }
       });
     } catch (e) {
@@ -340,7 +343,32 @@ class RoomProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  // Clear current room (for leaving)
+  // Leave current room (removes player from Firebase and clears local state)
+  Future<void> leaveRoom() async {
+    if (_currentRoom == null) return;
+    
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        // Remove player from the room in Firebase
+        await _database
+            .child('rooms')
+            .child(_currentRoom!.roomId)
+            .child('players')
+            .child(user.uid)
+            .remove();
+        
+        AppLogger.i("Removed player ${user.uid} from room ${_currentRoom!.roomId}");
+      }
+    } catch (e) {
+      AppLogger.e("Error removing player from room: $e");
+    }
+    
+    // Clear local state
+    clearRoom();
+  }
+
+  // Clear current room (for internal use)
   void clearRoom() {
     _stopListeningToPlayers();
     _currentRoom = null;
@@ -363,6 +391,14 @@ class RoomProvider with ChangeNotifier {
   void clearError() {
     _error = null;
     notifyListeners();
+  }
+
+  // Force refresh player list (useful for refresh button)
+  void refreshPlayerList() {
+    if (_currentRoom != null) {
+      AppLogger.i("Force refreshing player list for room: ${_currentRoom!.roomId}");
+      notifyListeners();
+    }
   }
   
   @override

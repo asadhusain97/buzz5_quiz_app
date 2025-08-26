@@ -8,6 +8,7 @@ import 'package:buzz5_quiz_app/widgets/base_page.dart';
 import 'package:flutter/material.dart';
 import 'package:buzz5_quiz_app/models/player_provider.dart';
 import 'package:buzz5_quiz_app/models/room_provider.dart';
+import 'package:buzz5_quiz_app/models/room.dart';
 import 'package:provider/provider.dart';
 import 'package:buzz5_quiz_app/config/logger.dart';
 import 'package:buzz5_quiz_app/models/qrow.dart';
@@ -384,8 +385,8 @@ class Leaderboard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<PlayerProvider>(
-      builder: (context, playerProvider, child) {
+    return Consumer2<PlayerProvider, RoomProvider>(
+      builder: (context, playerProvider, roomProvider, child) {
         AppLogger.i("Player list updated: ${playerProvider.playerList}");
         return SingleChildScrollView(
           child: SizedBox(
@@ -406,6 +407,18 @@ class Leaderboard extends StatelessWidget {
                       final player = playerProvider.playerList[index];
                       final isLastPositivePlayer =
                           playerProvider.lastPositivePlayer == player;
+                      
+                      // Check if this player is connected to the room
+                      RoomPlayer? roomPlayer;
+                      try {
+                        roomPlayer = roomProvider.roomPlayers.firstWhere(
+                          (rp) => rp.name.toLowerCase() == player.name.toLowerCase(),
+                        );
+                      } catch (e) {
+                        roomPlayer = null;
+                      }
+                      final isConnectedToRoom = roomPlayer != null && roomPlayer.isConnected;
+                      
                       return Container(
                         margin: const EdgeInsets.symmetric(vertical: 4.0),
                         padding: const EdgeInsets.all(8.0),
@@ -441,10 +454,30 @@ class Leaderboard extends StatelessWidget {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Expanded(
-                              child: Text(
-                                player.name,
-                                style: AppTextStyles.scoreCard,
-                                overflow: TextOverflow.ellipsis,
+                              child: Row(
+                                children: [
+                                  // Connection status indicator
+                                  if (roomProvider.hasActiveRoom) ...[
+                                    Container(
+                                      width: 8,
+                                      height: 8,
+                                      margin: EdgeInsets.only(right: 6),
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: isConnectedToRoom 
+                                            ? Colors.green 
+                                            : Colors.grey.withValues(alpha: 0.5),
+                                      ),
+                                    ),
+                                  ],
+                                  Expanded(
+                                    child: Text(
+                                      player.name,
+                                      style: AppTextStyles.scoreCard,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                             SizedBox(width: 8),
