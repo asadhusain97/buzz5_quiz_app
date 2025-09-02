@@ -2,6 +2,7 @@ import 'package:buzz5_quiz_app/config/logger.dart';
 
 class Player {
   String name;
+  String? accountId;
   int score;
   List<int> allPoints;
   int correctAnsCount;
@@ -11,6 +12,7 @@ class Player {
 
   Player({
     required this.name,
+    this.accountId,
     this.score = 0,
     List<int>? allPoints,
     this.correctAnsCount = 0,

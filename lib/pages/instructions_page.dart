@@ -549,21 +549,22 @@ class _PlayerNameFormState extends State<PlayerNameForm> {
               onPressed: () async {
                 final navigator = Navigator.of(context);
                 final scaffoldMessenger = ScaffoldMessenger.of(context);
+                final roomProvider = Provider.of<RoomProvider>(
+                  context,
+                  listen: false,
+                );
+                final playerProvider = Provider.of<PlayerProvider>(
+                  context,
+                  listen: false,
+                );
                 
                 if (_validateUniqueNames()) {
                   _resetGameState(context);
-                  _addPlayersToProvider(context);
-                  Provider.of<PlayerProvider>(
-                    context,
-                    listen: false,
-                  ).setGameStartTime(DateTime.now());
-
+                  
                   // Create room if hosting is enabled
-                  final roomProvider = Provider.of<RoomProvider>(
-                    context,
-                    listen: false,
-                  );
                   if (roomProvider.hostRoom) {
+                    // When hosting a room, don't add players to local list yet
+                    // They will be added when they join the room
                     // Get the player names to store for validation
                     final playerNames = [
                       _player1Controller.text.trim(),
@@ -618,7 +619,13 @@ class _PlayerNameFormState extends State<PlayerNameForm> {
                       );
                       return;
                     }
+                  } else {
+                    // Not hosting a room, add players to local list as before
+                    _addPlayersToProvider(context);
                   }
+
+                  // Set game start time for both hosting and non-hosting scenarios
+                  playerProvider.setGameStartTime(DateTime.now());
 
                   if (mounted) {
                     navigator.push(

@@ -32,8 +32,12 @@ class _GameRoomPageState extends State<GameRoomPage> {
   Widget build(BuildContext context) {
     return BasePage(
       appBar: CustomAppBar(title: "Game Room", showBackButton: false),
-      child: Consumer<RoomProvider>(
-        builder: (context, roomProvider, child) {
+      child: Consumer2<RoomProvider, PlayerProvider>(
+        builder: (context, roomProvider, playerProvider, child) {
+          // Set up playerProvider synchronization with roomProvider if not already set
+          if (roomProvider.hasActiveRoom) {
+            roomProvider.setPlayerProvider(playerProvider);
+          }
           final room = roomProvider.currentRoom;
           final roomPlayers = roomProvider.roomPlayers;
           final hostPlayer = roomPlayers.firstWhere(
@@ -114,10 +118,9 @@ class _GameRoomPageState extends State<GameRoomPage> {
           Padding(
             padding: EdgeInsets.fromLTRB(16, 0, 16, 16),
             child: Text(
-              "• The game host will select questions and start the game\n"
+              "• The Quiz MC will read and display the questions and answers\n"
               "• You'll be able to buzz in when questions are active\n"
-              "• Your score will be tracked throughout the game\n"
-              "• Stay connected to participate in the full experience!",
+              "• Buzz carefully as there are negative points",
               style: AppTextStyles.body.copyWith(
                 color: ColorConstants.lightTextColor,
                 fontSize: 14,
