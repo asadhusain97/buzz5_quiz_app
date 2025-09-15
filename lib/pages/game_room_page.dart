@@ -120,7 +120,9 @@ class _GameRoomPageState extends State<GameRoomPage> {
             child: Text(
               "• The Quiz MC will read and display the questions and answers\n"
               "• You'll be able to buzz in when questions are active\n"
-              "• Buzz carefully as there are negative points",
+              "• Buzz carefully as there are negative points\n"
+              "• Closing the tab/browser will not affect your connection or points\n"
+              "• Leaving the game will forfeit your points\n",
               style: AppTextStyles.body.copyWith(
                 color: ColorConstants.lightTextColor,
                 fontSize: 14,
