@@ -12,9 +12,9 @@ import 'package:provider/provider.dart';
 import 'package:buzz5_quiz_app/config/logger.dart';
 
 const String howToPlayMD = """
-  Who is a Reader? YOU. (The person who'll act as Quiz Emcee, and will conduct the quiz and 'read' the questions)
+  YOU are the reader/ Quiz Emcee. You will conduct the quiz and 'read' the questions.
   Once you are ready, click the button to start the game.
-  - When you reach the next page, select a question board to play from the dropdown.
+  - When you reach the next page, select a question board to play from the dropdown
   - Ask players to join the room using the game code from the 'Join Game' page
   - Each Board has 5 sets of 5 questions; each with increasing difficulty from 10 to 50 points
   - Click on the set name to learn about what the set means and see example question (if available)

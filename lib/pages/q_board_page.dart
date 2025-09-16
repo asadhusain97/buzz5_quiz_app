@@ -972,7 +972,7 @@ class RoomCodeDisplay extends StatelessWidget {
                   ),
                   SizedBox(width: 8),
                   Text(
-                    'Room Code',
+                    'Game Code',
                     style: TextStyle(
                       color: ColorConstants.surfaceColor,
                       fontSize: 14,
@@ -1002,7 +1002,7 @@ class RoomCodeDisplay extends StatelessWidget {
               ),
               SizedBox(height: 2),
               Text(
-                'Join room using the code above',
+                'Join game using the code above',
                 style: TextStyle(
                   color: ColorConstants.lightTextColor,
                   fontSize: 11,

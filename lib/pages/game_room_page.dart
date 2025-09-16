@@ -455,7 +455,8 @@ class _GameRoomPageState extends State<GameRoomPage> {
                   player.name,
                   style: AppTextStyles.body.copyWith(
                     color: ColorConstants.lightTextColor,
-                    fontWeight: isCurrentUser ? FontWeight.w600 : FontWeight.normal,
+                    fontWeight:
+                        isCurrentUser ? FontWeight.w600 : FontWeight.normal,
                   ),
                 ),
                 // You badge (immediate right of name)
@@ -464,7 +465,9 @@ class _GameRoomPageState extends State<GameRoomPage> {
                   Container(
                     padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
-                      color: ColorConstants.secondaryColor.withValues(alpha: 0.3),
+                      color: ColorConstants.secondaryColor.withValues(
+                        alpha: 0.3,
+                      ),
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
@@ -482,9 +485,9 @@ class _GameRoomPageState extends State<GameRoomPage> {
           ),
 
           // Buzzer timing (right side) - only show when question is active
-          if (_getBuzzerEntryForPlayer(player.playerId) != null && _isQuestionActive)
+          if (_getBuzzerEntryForPlayer(player.playerId) != null &&
+              _isQuestionActive)
             _buildBuzzerTiming(_getBuzzerEntryForPlayer(player.playerId)!),
-
         ],
       ),
     );
@@ -866,9 +869,9 @@ class _GameRoomPageState extends State<GameRoomPage> {
 
   String _getBuzzerText() {
     if (!_isQuestionActive) {
-      return "INACTIVE";
+      return "Wait...";
     } else if (_hasPlayerBuzzed) {
-      return "BUZZED!";
+      return "Buzzed";
     } else {
       return "BUZZER";
     }
