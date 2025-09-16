@@ -13,9 +13,9 @@ import 'package:buzz5_quiz_app/config/logger.dart';
 
 const String howToPlayMD = """
   Who is a Reader? YOU. (The person who'll act as Quiz Emcee, and will conduct the quiz and 'read' the questions)
-  - Enter unique player names
-  - Create a Game on a **[Buzzer app](https://buzzin.live/)** and get all the players to join 
-  - On the next page, 'Select a Board' and the questions will load accordingly
+  Once you are ready, click the button to start the game.
+  - When you reach the next page, select a question board to play from the dropdown.
+  - Ask players to join the room using the game code from the 'Join Game' page
   - Each Board has 5 sets of 5 questions; each with increasing difficulty from 10 to 50 points
   - Click on the set name to learn about what the set means and see example question (if available)
   - A random player starts the game (Green border indicates the player in control of the board)
@@ -226,9 +226,7 @@ class InstructionsPage extends StatelessWidget {
       flex: 1,
       child: Container(
         padding: EdgeInsets.all(24),
-        child: Center(
-          child: _buildLetsGoButton(context),
-        ),
+        child: Center(child: _buildLetsGoButton(context)),
       ),
     );
   }
@@ -270,7 +268,7 @@ class InstructionsPage extends StatelessWidget {
           ),
           SizedBox(height: 8),
           Text(
-            "Create a room for players to join",
+            "Set up the game and share the code with players",
             style: TextStyle(
               fontSize: 14,
               color: ColorConstants.lightTextColor,
@@ -296,7 +294,9 @@ class InstructionsPage extends StatelessWidget {
                 // Reset game state - start with empty player list
                 playerProvider.setPlayerList([]);
                 playerProvider.resetAnsweredQuestions();
-                AppLogger.i("Game state reset - starting with empty player list");
+                AppLogger.i(
+                  "Game state reset - starting with empty player list",
+                );
 
                 // Always create a room (hosting is mandatory)
                 final success = await roomProvider.createRoom();
@@ -332,7 +332,10 @@ class InstructionsPage extends StatelessWidget {
                         borderRadius: BorderRadius.circular(10),
                       ),
                       margin: EdgeInsets.all(12),
-                      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
                     ),
                   );
                   return;
@@ -342,9 +345,7 @@ class InstructionsPage extends StatelessWidget {
                 playerProvider.setGameStartTime(DateTime.now());
 
                 navigator.push(
-                  MaterialPageRoute(
-                    builder: (context) => QuestionBoardPage(),
-                  ),
+                  MaterialPageRoute(builder: (context) => QuestionBoardPage()),
                 );
               },
               style: ElevatedButton.styleFrom(
