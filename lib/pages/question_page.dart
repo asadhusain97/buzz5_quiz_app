@@ -10,6 +10,23 @@ import 'package:buzz5_quiz_app/models/room_provider.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'dart:async';
 
+// BuzzerEntry class to track player buzzer data
+class BuzzerEntry {
+  final String playerId;
+  final String playerName;
+  final int timestamp;
+  final int questionNumber;
+  final int position;
+
+  BuzzerEntry({
+    required this.playerId,
+    required this.playerName,
+    required this.timestamp,
+    required this.questionNumber,
+    required this.position,
+  });
+}
+
 class QuestionPage extends StatefulWidget {
   const QuestionPage({super.key});
 
@@ -38,6 +55,10 @@ class _QuestionPageState extends State<QuestionPage> {
   int _elapsedSeconds = 0;
   final DatabaseReference _database = FirebaseDatabase.instance.ref();
   String? _currentRoomId;
+
+  // Buzzer functionality
+  List<BuzzerEntry> _buzzerEntries = [];
+  StreamSubscription? _buzzerSubscription;
 
   // Timer management methods
   void _startTimer() {
@@ -82,6 +103,9 @@ class _QuestionPageState extends State<QuestionPage> {
           .child(_currentRoomId!)
           .child('currentQuestionBuzzes')
           .remove();
+
+      // Start listening to buzzer entries
+      _startListeningToBuzzers();
 
       AppLogger.i(
         "Question started in room $_currentRoomId at timestamp $timestamp",
@@ -271,6 +295,7 @@ class _QuestionPageState extends State<QuestionPage> {
   void dispose() {
     _stopTimer();
     _endQuestion();
+    _buzzerSubscription?.cancel();
     super.dispose();
   }
 
@@ -312,6 +337,111 @@ class _QuestionPageState extends State<QuestionPage> {
     }
     if (ansMedia.isNotEmpty) {
       AppLogger.i("Question loaded with media: ansMedia='$ansMedia'");
+    }
+  }
+
+  // Start listening to buzzer entries in Firebase
+  void _startListeningToBuzzers() {
+    if (_currentRoomId == null) return;
+
+    _buzzerSubscription?.cancel();
+
+    final buzzersRef = _database
+        .child('rooms')
+        .child(_currentRoomId!)
+        .child('currentQuestionBuzzes')
+        .orderByChild('timestamp');
+
+    AppLogger.i("Starting to listen for buzzer entries in room: $_currentRoomId");
+
+    _buzzerSubscription = buzzersRef.onValue.listen((event) {
+      if (!mounted) return;
+
+      final data = event.snapshot.value;
+      final newBuzzerEntries = <BuzzerEntry>[];
+
+      if (data != null && data is Map) {
+        final buzzersMap = Map<String, dynamic>.from(data);
+        for (final entry in buzzersMap.entries) {
+          final playerId = entry.key;
+          final buzzerData = Map<String, dynamic>.from(entry.value);
+          final buzzerEntry = BuzzerEntry(
+            playerId: buzzerData['playerId'] ?? playerId,
+            playerName: buzzerData['playerName'] ?? 'Unknown',
+            timestamp: buzzerData['timestamp'] ?? 0,
+            questionNumber: 1, // Default question number
+            position: buzzerData['position'] ?? 0,
+          );
+          newBuzzerEntries.add(buzzerEntry);
+        }
+      }
+
+      // Sort by timestamp (fastest first)
+      newBuzzerEntries.sort((a, b) => a.timestamp.compareTo(b.timestamp));
+
+      // Update positions based on sorted order
+      for (int i = 0; i < newBuzzerEntries.length; i++) {
+        newBuzzerEntries[i] = BuzzerEntry(
+          playerId: newBuzzerEntries[i].playerId,
+          playerName: newBuzzerEntries[i].playerName,
+          timestamp: newBuzzerEntries[i].timestamp,
+          questionNumber: newBuzzerEntries[i].questionNumber,
+          position: i + 1,
+        );
+      }
+
+      setState(() {
+        _buzzerEntries = newBuzzerEntries;
+      });
+
+      AppLogger.i("Buzzer entries updated: ${_buzzerEntries.length} entries");
+    });
+  }
+
+  // Get buzzer entry for a specific player
+  BuzzerEntry? _getBuzzerEntryForPlayer(String playerName) {
+    try {
+      return _buzzerEntries.firstWhere((entry) => entry.playerName == playerName);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // Get ranking color based on colors.dart temperature system
+  Color _getRankingColor(int position) {
+    switch (position) {
+      case 1:
+        return ColorConstants.rank1Color; // Hot red - 1st place
+      case 2:
+        return ColorConstants.rank2Color; // Orange - 2nd place
+      case 3:
+        return ColorConstants.rank3Color; // Yellow - 3rd place
+      case 4:
+      case 5:
+      case 6:
+      case 7:
+      case 8:
+      case 9:
+      case 10:
+        return ColorConstants.championTierColor; // Light green - ranks 4-10
+      case 11:
+      case 12:
+      case 13:
+      case 14:
+      case 15:
+      case 16:
+      case 17:
+      case 18:
+      case 19:
+      case 20:
+      case 21:
+      case 22:
+      case 23:
+      case 24:
+      case 25:
+        return ColorConstants.veteranTierColor; // Cyan - ranks 11-25
+      default:
+        return ColorConstants.challengerTierColor; // Cool blue - ranks 26+
     }
   }
 
@@ -382,126 +512,129 @@ class _QuestionPageState extends State<QuestionPage> {
             // Question section with intelligent layout based on content
             _buildQuestionSection(question, qstnMedia),
             SizedBox(height: 40),
-            Center(
-              child: Padding(
-                padding: EdgeInsets.all(20),
-                child: SizedBox(
-                  height: 200,
-                  width: _calculatePlayerBoardContainerWidth(
-                    playerProvider.playerList.length,
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      GridView.builder(
-                        gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                          maxCrossAxisExtent: 290,
-                          childAspectRatio: 4,
-                          crossAxisSpacing: 10,
-                          mainAxisSpacing: 10,
-                          mainAxisExtent:
-                              50, // Specify the minimum height for the child
-                        ),
-                        itemCount: playerProvider.playerList.length,
-                        shrinkWrap: true,
-                        physics: AlwaysScrollableScrollPhysics(),
-                        itemBuilder: (context, index) {
-                          final player = playerProvider.playerList[index];
-                          final buttonState = playerButtonStates[player.name]!;
-                          return Center(
-                            child: Container(
-                              decoration: BoxDecoration(
-                                border: Border.all(
-                                  color: ColorConstants.primaryContainerColor,
-                                ),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceEvenly,
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  ToggleButton(
-                                    key: ValueKey('correct_${player.name}'),
-                                    initialOn: buttonState.correctOn,
-                                    isDisabled: buttonState.correctDisabled,
-                                    iconData: Icons.check,
-                                    onColor: ColorConstants.correctAnsBtn,
-                                    offColor: ColorConstants.cardColor,
-                                    onToggle: (isOn) {
-                                      // force update the UI
-                                      setState(() {
-                                        buttonState.setCorrect(isOn);
-                                      });
-                                    },
-                                  ),
-                                  SizedBox(
-                                    width: 100,
-                                    child: Padding(
-                                      padding: EdgeInsets.only(
-                                        left: 2,
-                                        right: 2,
-                                      ),
-                                      child: _PlayerNameWithHover(
-                                        playerName: player.name,
-                                        onEditTap:
-                                            () => _showAwardPointDialog(
-                                              player.name,
-                                            ),
-                                      ),
-                                    ),
-                                  ),
-                                  ToggleButton(
-                                    key: ValueKey('wrong_${player.name}'),
-                                    initialOn: buttonState.wrongOn,
-                                    isDisabled: buttonState.wrongDisabled,
-                                    iconData: Icons.cancel_outlined,
-                                    onColor: ColorConstants.wrongAnsBtn,
-                                    offColor: ColorConstants.cardColor,
-                                    onToggle: (isOn) {
-                                      // force update the UI
-                                      setState(() {
-                                        buttonState.setWrong(isOn);
-                                      });
-                                    },
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
+            _playerGrid(playerProvider),
             SizedBox(height: 5),
-            Center(
-              child: ElevatedButton(
-                onPressed: () {
-                  // Show answer logic
-                  setState(() {
-                    _showAnswer = !_showAnswer;
-                  });
-                },
-                style: ElevatedButton.styleFrom(
-                  minimumSize: Size(180, 60),
-                  backgroundColor: ColorConstants.primaryContainerColor,
-                ),
-                child: Text(
-                  "Show Answer",
-                  style: AppTextStyles.titleSmall.copyWith(
-                    color: ColorConstants.surfaceColor,
-                  ),
-                ),
-              ),
-            ),
+            _showAnswerButton(),
             SizedBox(height: 30),
             if (_showAnswer) _buildAnswerSection(answer, ansMedia),
             SizedBox(height: 5),
           ],
+        ),
+      ),
+    );
+  }
+
+  Center _showAnswerButton() {
+    return Center(
+      child: ElevatedButton(
+        onPressed: () {
+          // Show answer logic
+          setState(() {
+            _showAnswer = !_showAnswer;
+          });
+        },
+        style: ElevatedButton.styleFrom(
+          minimumSize: Size(180, 60),
+          backgroundColor: ColorConstants.primaryContainerColor,
+        ),
+        child: Text(
+          "Show Answer",
+          style: AppTextStyles.titleSmall.copyWith(
+            color: ColorConstants.surfaceColor,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Center _playerGrid(PlayerProvider playerProvider) {
+    return Center(
+      child: Padding(
+        padding: EdgeInsets.all(20),
+        child: SizedBox(
+          height: 200,
+          width: _calculatePlayerBoardContainerWidth(
+            playerProvider.playerList.length,
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              GridView.builder(
+                gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                  maxCrossAxisExtent: 290,
+                  childAspectRatio: 4,
+                  crossAxisSpacing: 10,
+                  mainAxisSpacing: 10,
+                  mainAxisExtent:
+                      50, // Specify the minimum height for the child
+                ),
+                itemCount: playerProvider.playerList.length,
+                shrinkWrap: true,
+                physics: AlwaysScrollableScrollPhysics(),
+                itemBuilder: (context, index) {
+                  final player = playerProvider.playerList[index];
+                  final buttonState = playerButtonStates[player.name]!;
+                  return Center(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: ColorConstants.primaryContainerColor,
+                        ),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          ToggleButton(
+                            key: ValueKey('correct_${player.name}'),
+                            initialOn: buttonState.correctOn,
+                            isDisabled: buttonState.correctDisabled,
+                            iconData: Icons.check,
+                            onColor: ColorConstants.correctAnsBtn,
+                            offColor: ColorConstants.cardColor,
+                            onToggle: (isOn) {
+                              // force update the UI
+                              setState(() {
+                                buttonState.setCorrect(isOn);
+                              });
+                            },
+                          ),
+                          SizedBox(
+                            width: 100,
+                            child: Padding(
+                              padding: EdgeInsets.only(left: 2, right: 2),
+                              child: _PlayerNameWithRank(
+                                player: player,
+                                buzzerEntry: _getBuzzerEntryForPlayer(player.name),
+                                onEditTap:
+                                    () => _showAwardPointDialog(player.name),
+                              ),
+                            ),
+                          ),
+                          ToggleButton(
+                            key: ValueKey('wrong_${player.name}'),
+                            initialOn: buttonState.wrongOn,
+                            isDisabled: buttonState.wrongDisabled,
+                            iconData: Icons.cancel_outlined,
+                            onColor: ColorConstants.wrongAnsBtn,
+                            offColor: ColorConstants.cardColor,
+                            onToggle: (isOn) {
+                              // force update the UI
+                              setState(() {
+                                buttonState.setWrong(isOn);
+                              });
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -990,40 +1123,67 @@ class _ToggleButtonState extends State<ToggleButton> {
   }
 }
 
-class _PlayerNameWithHover extends StatefulWidget {
-  final String playerName;
+class _PlayerNameWithRank extends StatefulWidget {
+  final dynamic player; // Player object from PlayerProvider
+  final BuzzerEntry? buzzerEntry;
   final VoidCallback onEditTap;
 
-  const _PlayerNameWithHover({
-    required this.playerName,
+  const _PlayerNameWithRank({
+    required this.player,
+    required this.buzzerEntry,
     required this.onEditTap,
   });
 
   @override
-  State<_PlayerNameWithHover> createState() => _PlayerNameWithHoverState();
+  State<_PlayerNameWithRank> createState() => _PlayerNameWithRankState();
 }
 
-class _PlayerNameWithHoverState extends State<_PlayerNameWithHover> {
+class _PlayerNameWithRankState extends State<_PlayerNameWithRank> {
   bool _isHovered = false;
 
   @override
   Widget build(BuildContext context) {
+    final playerName = widget.player.name;
+    final buzzerEntry = widget.buzzerEntry;
+    final questionPageState = context.findAncestorStateOfType<_QuestionPageState>();
+
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
+          // Rank badge (if player has buzzed)
+          if (buzzerEntry != null) ...[
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+              decoration: BoxDecoration(
+                color: questionPageState?._getRankingColor(buzzerEntry.position) ?? Colors.grey,
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Text(
+                "#${buzzerEntry.position}",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 8,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            SizedBox(width: 4),
+          ],
+          // Player name
           Flexible(
             child: FittedBox(
               fit: BoxFit.scaleDown,
               child: Text(
-                widget.playerName,
+                playerName,
                 style: AppTextStyles.scoreCard,
                 overflow: TextOverflow.ellipsis,
               ),
             ),
           ),
+          // Edit icon on hover
           if (_isHovered)
             GestureDetector(
               onTap: widget.onEditTap,
