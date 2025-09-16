@@ -479,7 +479,8 @@ class _GameRoomPageState extends State<GameRoomPage> {
             ),
           ),
           content: Text(
-            'Are you sure you want to leave this game room?',
+            'Are you sure you want to leave this game room?\n'
+            'Your score will be lost forever.',
             style: AppTextStyles.body.copyWith(
               color: ColorConstants.lightTextColor,
             ),

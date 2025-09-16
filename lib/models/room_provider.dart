@@ -50,28 +50,31 @@ class RoomProvider with ChangeNotifier {
     final newPlayerList = <Player>[];
     
     for (final roomPlayer in nonHostPlayers) {
-      // Try to find existing player to preserve scoring data
+      // Try to find existing player to preserve scoring data by Firebase UID
       Player? existingPlayer;
       try {
         existingPlayer = currentPlayerList.firstWhere(
-          (p) => p.name.toLowerCase() == roomPlayer.name.toLowerCase(),
+          (p) => p.accountId == roomPlayer.playerId,
         );
       } catch (e) {
         existingPlayer = null;
       }
-      
+
       if (existingPlayer != null) {
-        // Keep existing player with their scores
+        // Keep existing player with their scores, but update the name if changed
+        existingPlayer.name = roomPlayer.name;
         newPlayerList.add(existingPlayer);
+        AppLogger.i("Preserved existing player data for ${roomPlayer.playerId} with new name: ${roomPlayer.name}");
       } else {
         // Create new player for scoring
         final user = FirebaseAuth.instance.currentUser;
-        final accountId = (roomPlayer.playerId == user?.uid) ? user?.uid : null;
-        
+        final accountId = (roomPlayer.playerId == user?.uid) ? user?.uid : roomPlayer.playerId;
+
         newPlayerList.add(Player(
           name: roomPlayer.name,
           accountId: accountId,
         ));
+        AppLogger.i("Created new player for ${roomPlayer.playerId} with name: ${roomPlayer.name}");
       }
     }
     
