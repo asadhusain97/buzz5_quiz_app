@@ -2,8 +2,8 @@
 
 Welcome to buzz5_quiz_app – a place to host quizzes among friends!
 
-Go to the [app](https://buzz5quiz.netlify.app/) or
-learn more about the project [here](https://asadhusain97.github.io/projects/flutterquizapp.html)
+Go to the [app](https://buzz5quiz.web.app/) or
+learn more about the project [in my portfolio](https://asadhusain97.github.io/projects/flutterquizapp.html)
 
 ## Overview
 
@@ -95,9 +95,16 @@ Follow these steps to get your app up and running:
 
    5.2 Production environment
 
-   For production deployments (Netlify, etc.):
+   For production deployments (Firebase, Netlify, etc.):
 
-   5.2.1. **Netlify Configuration:**
+   5.2.1. **Hosting site Configuration:**
+
+      (a) Firebase Hosting
+      - Use the Firebase CLI to create necessary files
+      - Save environment variables in the Github Secrets
+      - Set relevant permissions in firebase authentication adn google web client
+
+      (b) Netlify
       - Go to Site settings → Environment variables
       - Add all variables from your `dev.json` as key-value pairs
       - Create a `netlify-build.sh` with instructions on building the app with configurations

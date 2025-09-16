@@ -6,6 +6,26 @@ import 'package:flutter/services.dart';
 import 'package:buzz5_quiz_app/config/logger.dart';
 import 'package:provider/provider.dart';
 import 'package:buzz5_quiz_app/models/player_provider.dart';
+import 'package:buzz5_quiz_app/models/room_provider.dart';
+import 'package:firebase_database/firebase_database.dart';
+import 'dart:async';
+
+// BuzzerEntry class to track player buzzer data
+class BuzzerEntry {
+  final String playerId;
+  final String playerName;
+  final int timestamp;
+  final int questionNumber;
+  final int position;
+
+  BuzzerEntry({
+    required this.playerId,
+    required this.playerName,
+    required this.timestamp,
+    required this.questionNumber,
+    required this.position,
+  });
+}
 
 class QuestionPage extends StatefulWidget {
   const QuestionPage({super.key});
@@ -29,6 +49,95 @@ class _QuestionPageState extends State<QuestionPage> {
 
   // Track custom award points per player for this question
   Map<String, int> customAwardPoints = {};
+
+  // Timer and Firebase functionality
+  Timer? _questionTimer;
+  int _elapsedSeconds = 0;
+  final DatabaseReference _database = FirebaseDatabase.instance.ref();
+  String? _currentRoomId;
+
+  // Buzzer functionality
+  List<BuzzerEntry> _buzzerEntries = [];
+  StreamSubscription? _buzzerSubscription;
+
+  // Timer management methods
+  void _startTimer() {
+    _elapsedSeconds = 0;
+    _questionTimer = Timer.periodic(Duration(seconds: 1), (timer) {
+      if (mounted) {
+        setState(() {
+          _elapsedSeconds++;
+        });
+      }
+    });
+    AppLogger.i("Question timer started");
+  }
+
+  void _stopTimer() {
+    _questionTimer?.cancel();
+    _questionTimer = null;
+    AppLogger.i("Question timer stopped at $_elapsedSeconds seconds");
+  }
+
+  // Firebase question state management
+  Future<void> _startQuestion() async {
+    if (_currentRoomId == null) return;
+
+    try {
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final questionRef = _database
+          .child('rooms')
+          .child(_currentRoomId!)
+          .child('currentQuestion');
+
+      // Set question as active with start time
+      await questionRef.set({
+        'isActive': true,
+        'startTime': timestamp,
+        'questionId': 'q_$timestamp', // Simple question ID
+      });
+
+      // Clear current question buzzes
+      await _database
+          .child('rooms')
+          .child(_currentRoomId!)
+          .child('currentQuestionBuzzes')
+          .remove();
+
+      // Start listening to buzzer entries
+      _startListeningToBuzzers();
+
+      AppLogger.i(
+        "Question started in room $_currentRoomId at timestamp $timestamp",
+      );
+    } catch (e) {
+      AppLogger.e("Error starting question: $e");
+    }
+  }
+
+  Future<void> _endQuestion() async {
+    if (_currentRoomId == null) return;
+
+    try {
+      await _database
+          .child('rooms')
+          .child(_currentRoomId!)
+          .child('currentQuestion')
+          .child('isActive')
+          .set(false);
+
+      AppLogger.i("Question ended in room $_currentRoomId");
+    } catch (e) {
+      AppLogger.e("Error ending question: $e");
+    }
+  }
+
+  // Format timer display
+  String _formatTimer(int seconds) {
+    final minutes = seconds ~/ 60;
+    final remainingSeconds = seconds % 60;
+    return '${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
+  }
 
   // Method to show award point edit dialog
   void _showAwardPointDialog(String playerName) {
@@ -176,6 +285,21 @@ class _QuestionPageState extends State<QuestionPage> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    // Start the timer immediately
+    _startTimer();
+  }
+
+  @override
+  void dispose() {
+    _stopTimer();
+    _endQuestion();
+    _buzzerSubscription?.cancel();
+    super.dispose();
+  }
+
+  @override
   void didChangeDependencies() {
     super.didChangeDependencies();
 
@@ -198,12 +322,145 @@ class _QuestionPageState extends State<QuestionPage> {
       }
     }
 
+    // Get current room ID and start question
+    final roomProvider = Provider.of<RoomProvider>(context, listen: false);
+    if (roomProvider.hasActiveRoom && _currentRoomId == null) {
+      _currentRoomId = roomProvider.currentRoom?.roomId;
+      if (_currentRoomId != null) {
+        _startQuestion();
+      }
+    }
+
     // Log media URLs for debugging
     if (qstnMedia.isNotEmpty) {
       AppLogger.i("Question loaded with media: qstnMedia='$qstnMedia'");
     }
     if (ansMedia.isNotEmpty) {
       AppLogger.i("Question loaded with media: ansMedia='$ansMedia'");
+    }
+  }
+
+  // Start listening to buzzer entries in Firebase
+  void _startListeningToBuzzers() {
+    if (_currentRoomId == null) return;
+
+    _buzzerSubscription?.cancel();
+
+    final buzzersRef = _database
+        .child('rooms')
+        .child(_currentRoomId!)
+        .child('currentQuestionBuzzes')
+        .orderByChild('timestamp');
+
+    AppLogger.i("Starting to listen for buzzer entries in room: $_currentRoomId");
+
+    _buzzerSubscription = buzzersRef.onValue.listen((event) {
+      if (!mounted) return;
+
+      final data = event.snapshot.value;
+      final newBuzzerEntries = <BuzzerEntry>[];
+
+      if (data != null && data is Map) {
+        final buzzersMap = Map<String, dynamic>.from(data);
+        for (final entry in buzzersMap.entries) {
+          final playerId = entry.key;
+          final buzzerData = Map<String, dynamic>.from(entry.value);
+          final buzzerEntry = BuzzerEntry(
+            playerId: buzzerData['playerId'] ?? playerId,
+            playerName: buzzerData['playerName'] ?? 'Unknown',
+            timestamp: buzzerData['timestamp'] ?? 0,
+            questionNumber: 1, // Default question number
+            position: buzzerData['position'] ?? 0,
+          );
+          newBuzzerEntries.add(buzzerEntry);
+        }
+      }
+
+      // Sort by timestamp (fastest first)
+      newBuzzerEntries.sort((a, b) => a.timestamp.compareTo(b.timestamp));
+
+      // Update positions based on sorted order
+      for (int i = 0; i < newBuzzerEntries.length; i++) {
+        newBuzzerEntries[i] = BuzzerEntry(
+          playerId: newBuzzerEntries[i].playerId,
+          playerName: newBuzzerEntries[i].playerName,
+          timestamp: newBuzzerEntries[i].timestamp,
+          questionNumber: newBuzzerEntries[i].questionNumber,
+          position: i + 1,
+        );
+      }
+
+      // Track first hits: if we have new buzzer entries and the first one is new
+      if (newBuzzerEntries.isNotEmpty) {
+        final firstBuzzer = newBuzzerEntries.first;
+        final playerProvider = Provider.of<PlayerProvider>(context, listen: false);
+        final firstPlayer = playerProvider.getPlayerByName(firstBuzzer.playerName);
+
+        // Only increment if this is a new first buzzer (position 1)
+        if (firstPlayer != null && firstBuzzer.position == 1) {
+          // Check if this is a new first buzzer by comparing with previous state
+          final wasFirstBefore = _buzzerEntries.isNotEmpty &&
+                                _buzzerEntries.first.playerName == firstBuzzer.playerName;
+
+          if (!wasFirstBefore) {
+            playerProvider.incrementFirstHits(firstPlayer);
+            AppLogger.i("Incremented first hits for first buzzer: ${firstBuzzer.playerName}");
+          }
+        }
+      }
+
+      setState(() {
+        _buzzerEntries = newBuzzerEntries;
+      });
+
+      AppLogger.i("Buzzer entries updated: ${_buzzerEntries.length} entries");
+    });
+  }
+
+  // Get buzzer entry for a specific player
+  BuzzerEntry? _getBuzzerEntryForPlayer(String playerName) {
+    try {
+      return _buzzerEntries.firstWhere((entry) => entry.playerName == playerName);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // Get ranking color based on colors.dart temperature system
+  Color _getRankingColor(int position) {
+    switch (position) {
+      case 1:
+        return ColorConstants.rank1Color; // Hot red - 1st place
+      case 2:
+        return ColorConstants.rank2Color; // Orange - 2nd place
+      case 3:
+        return ColorConstants.rank3Color; // Yellow - 3rd place
+      case 4:
+      case 5:
+      case 6:
+      case 7:
+      case 8:
+      case 9:
+      case 10:
+        return ColorConstants.championTierColor; // Light green - ranks 4-10
+      case 11:
+      case 12:
+      case 13:
+      case 14:
+      case 15:
+      case 16:
+      case 17:
+      case 18:
+      case 19:
+      case 20:
+      case 21:
+      case 22:
+      case 23:
+      case 24:
+      case 25:
+        return ColorConstants.veteranTierColor; // Cyan - ranks 11-25
+      default:
+        return ColorConstants.challengerTierColor; // Cool blue - ranks 26+
     }
   }
 
@@ -230,9 +487,37 @@ class _QuestionPageState extends State<QuestionPage> {
         ],
         backgroundColor: Colors.transparent,
         title: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
+            // Set name (left)
             Text(setname, style: AppTextStyles.titleMedium),
+
+            // Timer (center)
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: ColorConstants.secondaryContainerColor.withValues(
+                  alpha: 0.3,
+                ),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: ColorConstants.secondaryContainerColor.withValues(
+                    alpha: 0.5,
+                  ),
+                  width: 1,
+                ),
+              ),
+              child: Text(
+                _formatTimer(_elapsedSeconds),
+                style: AppTextStyles.titleSmall.copyWith(
+                  color: ColorConstants.secondaryContainerColor,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 16,
+                ),
+              ),
+            ),
+
+            // Points (right)
             Text('Points: $score', style: AppTextStyles.titleMedium),
           ],
         ),
@@ -246,126 +531,129 @@ class _QuestionPageState extends State<QuestionPage> {
             // Question section with intelligent layout based on content
             _buildQuestionSection(question, qstnMedia),
             SizedBox(height: 40),
-            Center(
-              child: Padding(
-                padding: EdgeInsets.all(20),
-                child: SizedBox(
-                  height: 200,
-                  width: _calculatePlayerBoardContainerWidth(
-                    playerProvider.playerList.length,
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      GridView.builder(
-                        gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                          maxCrossAxisExtent: 290,
-                          childAspectRatio: 4,
-                          crossAxisSpacing: 10,
-                          mainAxisSpacing: 10,
-                          mainAxisExtent:
-                              50, // Specify the minimum height for the child
-                        ),
-                        itemCount: playerProvider.playerList.length,
-                        shrinkWrap: true,
-                        physics: AlwaysScrollableScrollPhysics(),
-                        itemBuilder: (context, index) {
-                          final player = playerProvider.playerList[index];
-                          final buttonState = playerButtonStates[player.name]!;
-                          return Center(
-                            child: Container(
-                              decoration: BoxDecoration(
-                                border: Border.all(
-                                  color: ColorConstants.primaryContainerColor,
-                                ),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceEvenly,
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  ToggleButton(
-                                    key: ValueKey('correct_${player.name}'),
-                                    initialOn: buttonState.correctOn,
-                                    isDisabled: buttonState.correctDisabled,
-                                    iconData: Icons.check,
-                                    onColor: ColorConstants.correctAnsBtn,
-                                    offColor: ColorConstants.cardColor,
-                                    onToggle: (isOn) {
-                                      // force update the UI
-                                      setState(() {
-                                        buttonState.setCorrect(isOn);
-                                      });
-                                    },
-                                  ),
-                                  SizedBox(
-                                    width: 100,
-                                    child: Padding(
-                                      padding: EdgeInsets.only(
-                                        left: 2,
-                                        right: 2,
-                                      ),
-                                      child: _PlayerNameWithHover(
-                                        playerName: player.name,
-                                        onEditTap:
-                                            () => _showAwardPointDialog(
-                                              player.name,
-                                            ),
-                                      ),
-                                    ),
-                                  ),
-                                  ToggleButton(
-                                    key: ValueKey('wrong_${player.name}'),
-                                    initialOn: buttonState.wrongOn,
-                                    isDisabled: buttonState.wrongDisabled,
-                                    iconData: Icons.cancel_outlined,
-                                    onColor: ColorConstants.wrongAnsBtn,
-                                    offColor: ColorConstants.cardColor,
-                                    onToggle: (isOn) {
-                                      // force update the UI
-                                      setState(() {
-                                        buttonState.setWrong(isOn);
-                                      });
-                                    },
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
+            _playerGrid(playerProvider),
             SizedBox(height: 5),
-            Center(
-              child: ElevatedButton(
-                onPressed: () {
-                  // Show answer logic
-                  setState(() {
-                    _showAnswer = !_showAnswer;
-                  });
-                },
-                style: ElevatedButton.styleFrom(
-                  minimumSize: Size(180, 60),
-                  backgroundColor: ColorConstants.primaryContainerColor,
-                ),
-                child: Text(
-                  "Show Answer",
-                  style: AppTextStyles.titleSmall.copyWith(
-                    color: ColorConstants.surfaceColor,
-                  ),
-                ),
-              ),
-            ),
+            _showAnswerButton(),
             SizedBox(height: 30),
             if (_showAnswer) _buildAnswerSection(answer, ansMedia),
             SizedBox(height: 5),
           ],
+        ),
+      ),
+    );
+  }
+
+  Center _showAnswerButton() {
+    return Center(
+      child: ElevatedButton(
+        onPressed: () {
+          // Show answer logic
+          setState(() {
+            _showAnswer = !_showAnswer;
+          });
+        },
+        style: ElevatedButton.styleFrom(
+          minimumSize: Size(180, 60),
+          backgroundColor: ColorConstants.primaryContainerColor,
+        ),
+        child: Text(
+          "Show Answer",
+          style: AppTextStyles.titleSmall.copyWith(
+            color: ColorConstants.surfaceColor,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Center _playerGrid(PlayerProvider playerProvider) {
+    return Center(
+      child: Padding(
+        padding: EdgeInsets.all(20),
+        child: SizedBox(
+          height: 200,
+          width: _calculatePlayerBoardContainerWidth(
+            playerProvider.playerList.length,
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              GridView.builder(
+                gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                  maxCrossAxisExtent: 290,
+                  childAspectRatio: 4,
+                  crossAxisSpacing: 10,
+                  mainAxisSpacing: 10,
+                  mainAxisExtent:
+                      50, // Specify the minimum height for the child
+                ),
+                itemCount: playerProvider.playerList.length,
+                shrinkWrap: true,
+                physics: AlwaysScrollableScrollPhysics(),
+                itemBuilder: (context, index) {
+                  final player = playerProvider.playerList[index];
+                  final buttonState = playerButtonStates[player.name]!;
+                  return Center(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: ColorConstants.primaryContainerColor,
+                        ),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          ToggleButton(
+                            key: ValueKey('correct_${player.name}'),
+                            initialOn: buttonState.correctOn,
+                            isDisabled: buttonState.correctDisabled,
+                            iconData: Icons.check,
+                            onColor: ColorConstants.correctAnsBtn,
+                            offColor: ColorConstants.cardColor,
+                            onToggle: (isOn) {
+                              // force update the UI
+                              setState(() {
+                                buttonState.setCorrect(isOn);
+                              });
+                            },
+                          ),
+                          SizedBox(
+                            width: 100,
+                            child: Padding(
+                              padding: EdgeInsets.only(left: 2, right: 2),
+                              child: _PlayerNameWithRank(
+                                player: player,
+                                buzzerEntry: _getBuzzerEntryForPlayer(player.name),
+                                onEditTap:
+                                    () => _showAwardPointDialog(player.name),
+                              ),
+                            ),
+                          ),
+                          ToggleButton(
+                            key: ValueKey('wrong_${player.name}'),
+                            initialOn: buttonState.wrongOn,
+                            isDisabled: buttonState.wrongDisabled,
+                            iconData: Icons.cancel_outlined,
+                            onColor: ColorConstants.wrongAnsBtn,
+                            offColor: ColorConstants.cardColor,
+                            onToggle: (isOn) {
+                              // force update the UI
+                              setState(() {
+                                buttonState.setWrong(isOn);
+                              });
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -395,9 +683,7 @@ class _QuestionPageState extends State<QuestionPage> {
       // Case 2: Only image - center the image in consistent container
       return Container(
         constraints: BoxConstraints(maxWidth: maxSectionWidth),
-        child: Center(
-          child: SimplerNetworkImage(imageUrl: mediaUrl),
-        ),
+        child: Center(child: SimplerNetworkImage(imageUrl: mediaUrl)),
       );
     } else if (displayText.isNotEmpty && mediaUrl.isEmpty) {
       // Case 3: Only text - text with proper wrapping in centered container
@@ -856,40 +1142,67 @@ class _ToggleButtonState extends State<ToggleButton> {
   }
 }
 
-class _PlayerNameWithHover extends StatefulWidget {
-  final String playerName;
+class _PlayerNameWithRank extends StatefulWidget {
+  final dynamic player; // Player object from PlayerProvider
+  final BuzzerEntry? buzzerEntry;
   final VoidCallback onEditTap;
 
-  const _PlayerNameWithHover({
-    required this.playerName,
+  const _PlayerNameWithRank({
+    required this.player,
+    required this.buzzerEntry,
     required this.onEditTap,
   });
 
   @override
-  State<_PlayerNameWithHover> createState() => _PlayerNameWithHoverState();
+  State<_PlayerNameWithRank> createState() => _PlayerNameWithRankState();
 }
 
-class _PlayerNameWithHoverState extends State<_PlayerNameWithHover> {
+class _PlayerNameWithRankState extends State<_PlayerNameWithRank> {
   bool _isHovered = false;
 
   @override
   Widget build(BuildContext context) {
+    final playerName = widget.player.name;
+    final buzzerEntry = widget.buzzerEntry;
+    final questionPageState = context.findAncestorStateOfType<_QuestionPageState>();
+
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
+          // Rank badge (if player has buzzed)
+          if (buzzerEntry != null) ...[
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+              decoration: BoxDecoration(
+                color: questionPageState?._getRankingColor(buzzerEntry.position) ?? Colors.grey,
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Text(
+                "#${buzzerEntry.position}",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 8,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            SizedBox(width: 4),
+          ],
+          // Player name
           Flexible(
             child: FittedBox(
               fit: BoxFit.scaleDown,
               child: Text(
-                widget.playerName,
+                playerName,
                 style: AppTextStyles.scoreCard,
                 overflow: TextOverflow.ellipsis,
               ),
             ),
           ),
+          // Edit icon on hover
           if (_isHovered)
             GestureDetector(
               onTap: widget.onEditTap,

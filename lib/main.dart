@@ -6,6 +6,7 @@ import 'package:buzz5_quiz_app/widgets/auth_gate.dart';
 import 'package:buzz5_quiz_app/pages/forgot_password_page.dart';
 import 'package:provider/provider.dart';
 import 'package:buzz5_quiz_app/models/player_provider.dart';
+import 'package:buzz5_quiz_app/models/room_provider.dart';
 import 'package:buzz5_quiz_app/models/auth_provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
@@ -79,6 +80,7 @@ class MyApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => PlayerProvider()),
+        ChangeNotifierProvider(create: (_) => RoomProvider()),
         ChangeNotifierProvider(create: (_) => AnsweredQuestionsProvider()),
         ChangeNotifierProvider(
           create: (_) {
