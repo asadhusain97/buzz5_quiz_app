@@ -5,6 +5,7 @@ import 'package:buzz5_quiz_app/widgets/base_page.dart';
 import 'package:buzz5_quiz_app/models/room_provider.dart';
 import 'package:buzz5_quiz_app/pages/game_room_page.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:buzz5_quiz_app/config/logger.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -172,6 +173,15 @@ class _JoinGamePageState extends State<JoinGamePage> {
                       ),
                       textAlign: TextAlign.center,
                       textCapitalization: TextCapitalization.characters,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z0-9-]')),
+                        TextInputFormatter.withFunction((oldValue, newValue) =>
+                          TextEditingValue(
+                            text: newValue.text.toUpperCase(),
+                            selection: newValue.selection,
+                          ),
+                        ),
+                      ],
                       validator: (value) {
                         if (value == null || value.isEmpty) {
                           return 'Please enter a room code';

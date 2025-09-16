@@ -6,6 +6,9 @@ import 'package:flutter/services.dart';
 import 'package:buzz5_quiz_app/config/logger.dart';
 import 'package:provider/provider.dart';
 import 'package:buzz5_quiz_app/models/player_provider.dart';
+import 'package:buzz5_quiz_app/models/room_provider.dart';
+import 'package:firebase_database/firebase_database.dart';
+import 'dart:async';
 
 class QuestionPage extends StatefulWidget {
   const QuestionPage({super.key});
@@ -29,6 +32,88 @@ class _QuestionPageState extends State<QuestionPage> {
 
   // Track custom award points per player for this question
   Map<String, int> customAwardPoints = {};
+
+  // Timer and Firebase functionality
+  Timer? _questionTimer;
+  int _elapsedSeconds = 0;
+  final DatabaseReference _database = FirebaseDatabase.instance.ref();
+  String? _currentRoomId;
+
+  // Timer management methods
+  void _startTimer() {
+    _elapsedSeconds = 0;
+    _questionTimer = Timer.periodic(Duration(seconds: 1), (timer) {
+      if (mounted) {
+        setState(() {
+          _elapsedSeconds++;
+        });
+      }
+    });
+    AppLogger.i("Question timer started");
+  }
+
+  void _stopTimer() {
+    _questionTimer?.cancel();
+    _questionTimer = null;
+    AppLogger.i("Question timer stopped at $_elapsedSeconds seconds");
+  }
+
+  // Firebase question state management
+  Future<void> _startQuestion() async {
+    if (_currentRoomId == null) return;
+
+    try {
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final questionRef = _database
+          .child('rooms')
+          .child(_currentRoomId!)
+          .child('currentQuestion');
+
+      // Set question as active with start time
+      await questionRef.set({
+        'isActive': true,
+        'startTime': timestamp,
+        'questionId': 'q_$timestamp', // Simple question ID
+      });
+
+      // Clear current question buzzes
+      await _database
+          .child('rooms')
+          .child(_currentRoomId!)
+          .child('currentQuestionBuzzes')
+          .remove();
+
+      AppLogger.i(
+        "Question started in room $_currentRoomId at timestamp $timestamp",
+      );
+    } catch (e) {
+      AppLogger.e("Error starting question: $e");
+    }
+  }
+
+  Future<void> _endQuestion() async {
+    if (_currentRoomId == null) return;
+
+    try {
+      await _database
+          .child('rooms')
+          .child(_currentRoomId!)
+          .child('currentQuestion')
+          .child('isActive')
+          .set(false);
+
+      AppLogger.i("Question ended in room $_currentRoomId");
+    } catch (e) {
+      AppLogger.e("Error ending question: $e");
+    }
+  }
+
+  // Format timer display
+  String _formatTimer(int seconds) {
+    final minutes = seconds ~/ 60;
+    final remainingSeconds = seconds % 60;
+    return '${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
+  }
 
   // Method to show award point edit dialog
   void _showAwardPointDialog(String playerName) {
@@ -176,6 +261,20 @@ class _QuestionPageState extends State<QuestionPage> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    // Start the timer immediately
+    _startTimer();
+  }
+
+  @override
+  void dispose() {
+    _stopTimer();
+    _endQuestion();
+    super.dispose();
+  }
+
+  @override
   void didChangeDependencies() {
     super.didChangeDependencies();
 
@@ -195,6 +294,15 @@ class _QuestionPageState extends State<QuestionPage> {
     for (var player in playerProvider.playerList) {
       if (!playerButtonStates.containsKey(player.name)) {
         playerButtonStates[player.name] = PlayerButtonState();
+      }
+    }
+
+    // Get current room ID and start question
+    final roomProvider = Provider.of<RoomProvider>(context, listen: false);
+    if (roomProvider.hasActiveRoom && _currentRoomId == null) {
+      _currentRoomId = roomProvider.currentRoom?.roomId;
+      if (_currentRoomId != null) {
+        _startQuestion();
       }
     }
 
@@ -230,9 +338,37 @@ class _QuestionPageState extends State<QuestionPage> {
         ],
         backgroundColor: Colors.transparent,
         title: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
+            // Set name (left)
             Text(setname, style: AppTextStyles.titleMedium),
+
+            // Timer (center)
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: ColorConstants.secondaryContainerColor.withValues(
+                  alpha: 0.3,
+                ),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: ColorConstants.secondaryContainerColor.withValues(
+                    alpha: 0.5,
+                  ),
+                  width: 1,
+                ),
+              ),
+              child: Text(
+                _formatTimer(_elapsedSeconds),
+                style: AppTextStyles.titleSmall.copyWith(
+                  color: ColorConstants.secondaryContainerColor,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 16,
+                ),
+              ),
+            ),
+
+            // Points (right)
             Text('Points: $score', style: AppTextStyles.titleMedium),
           ],
         ),
@@ -395,9 +531,7 @@ class _QuestionPageState extends State<QuestionPage> {
       // Case 2: Only image - center the image in consistent container
       return Container(
         constraints: BoxConstraints(maxWidth: maxSectionWidth),
-        child: Center(
-          child: SimplerNetworkImage(imageUrl: mediaUrl),
-        ),
+        child: Center(child: SimplerNetworkImage(imageUrl: mediaUrl)),
       );
     } else if (displayText.isNotEmpty && mediaUrl.isEmpty) {
       // Case 3: Only text - text with proper wrapping in centered container
