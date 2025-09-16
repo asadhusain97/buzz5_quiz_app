@@ -128,4 +128,23 @@ class PlayerProvider with ChangeNotifier {
     _gameEndTime = endTime;
     notifyListeners();
   }
+
+  // Increment first hits for a player when they buzz first
+  void incrementFirstHits(Player player) {
+    int playerIndex = _playerList.indexOf(player);
+    if (playerIndex != -1) {
+      _playerList[playerIndex].firstHits++;
+      AppLogger.i("Incremented first hits for ${player.name}: ${_playerList[playerIndex].firstHits}");
+      notifyListeners();
+    }
+  }
+
+  // Get player by name - helper method
+  Player? getPlayerByName(String name) {
+    try {
+      return _playerList.firstWhere((player) => player.name == name);
+    } catch (e) {
+      return null;
+    }
+  }
 }

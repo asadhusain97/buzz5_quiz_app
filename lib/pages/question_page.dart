@@ -390,6 +390,25 @@ class _QuestionPageState extends State<QuestionPage> {
         );
       }
 
+      // Track first hits: if we have new buzzer entries and the first one is new
+      if (newBuzzerEntries.isNotEmpty) {
+        final firstBuzzer = newBuzzerEntries.first;
+        final playerProvider = Provider.of<PlayerProvider>(context, listen: false);
+        final firstPlayer = playerProvider.getPlayerByName(firstBuzzer.playerName);
+
+        // Only increment if this is a new first buzzer (position 1)
+        if (firstPlayer != null && firstBuzzer.position == 1) {
+          // Check if this is a new first buzzer by comparing with previous state
+          final wasFirstBefore = _buzzerEntries.isNotEmpty &&
+                                _buzzerEntries.first.playerName == firstBuzzer.playerName;
+
+          if (!wasFirstBefore) {
+            playerProvider.incrementFirstHits(firstPlayer);
+            AppLogger.i("Incremented first hits for first buzzer: ${firstBuzzer.playerName}");
+          }
+        }
+      }
+
       setState(() {
         _buzzerEntries = newBuzzerEntries;
       });
