@@ -46,4 +46,16 @@ class ColorConstants {
   static Color surfaceColor = hexToColor('#FFFFFF'); // Pure white
   static Color cardColor = hexToColor('#F5F5FF'); // Very soft purple
   static Color darkCardColor = hexToColor('#240264'); // Persian Indigo
+
+  // Ranking colors - Temperature-based system (hot to cool)
+  static Color rank1Color = hexToColor('#DC2626'); // Hot red - 1st place
+  static Color rank2Color = hexToColor('#F59E0B'); // Orange - 2nd place
+  static Color rank3Color = hexToColor('#EAB308'); // Yellow - 3rd place
+  static Color championTierColor = hexToColor(
+    '#84CC16',
+  ); // Light green - ranks 4-10
+  static Color veteranTierColor = hexToColor('#06B6D4'); // Cyan - ranks 11-25
+  static Color challengerTierColor = hexToColor(
+    '#3B82F6',
+  ); // Cool blue - ranks 26-50
 }

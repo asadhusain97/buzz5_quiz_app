@@ -109,11 +109,7 @@ class ScoreBoard extends StatelessWidget {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      'Wrong ans:  ${player.wrongAnsCount} (${player.wrongAnsTotal})',
-                                      style: AppTextStyles.scoreSubtitle,
-                                    ),
-                                    Text(
-                                      'Correct ans:  ${player.correctAnsCount} (+${player.correctAnsTotal})',
+                                      'First hits:  ${player.firstHits}',
                                       style: AppTextStyles.scoreSubtitle,
                                     ),
                                   ],
@@ -123,11 +119,7 @@ class ScoreBoard extends StatelessWidget {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      'Accuracy:  ${player.allPoints.isNotEmpty ? '${(player.correctAnsCount / player.allPoints.length * 100).toStringAsFixed(1)}%' : '-'}',
-                                      style: AppTextStyles.scoreSubtitle,
-                                    ),
-                                    Text(
-                                      'Total attempts:  ${player.allPoints.length}',
+                                      'Accuracy:  ${player.allPoints.isNotEmpty ? '${(player.correctAnsCount / player.allPoints.length * 100).toStringAsFixed(1)}%' : '-'} (${player.allPoints.length} attempts)',
                                       style: AppTextStyles.scoreSubtitle,
                                     ),
                                   ],

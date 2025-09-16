@@ -2,21 +2,25 @@ import 'package:buzz5_quiz_app/config/logger.dart';
 
 class Player {
   String name;
+  String? accountId;
   int score;
   List<int> allPoints;
   int correctAnsCount;
   int correctAnsTotal;
   int wrongAnsCount;
   int wrongAnsTotal;
+  int firstHits;
 
   Player({
     required this.name,
+    this.accountId,
     this.score = 0,
     List<int>? allPoints,
     this.correctAnsCount = 0,
     this.correctAnsTotal = 0,
     this.wrongAnsCount = 0,
     this.wrongAnsTotal = 0,
+    this.firstHits = 0,
   }) : allPoints = allPoints ?? [];
 
   // Method to add points
@@ -57,6 +61,7 @@ class Player {
     correctAnsTotal = 0;
     wrongAnsCount = 0;
     wrongAnsTotal = 0;
+    firstHits = 0;
     AppLogger.i("Reset score for $name");
   }
 }

@@ -7,6 +7,8 @@ import 'package:buzz5_quiz_app/widgets/appbar.dart';
 import 'package:buzz5_quiz_app/widgets/base_page.dart';
 import 'package:flutter/material.dart';
 import 'package:buzz5_quiz_app/models/player_provider.dart';
+import 'package:buzz5_quiz_app/models/room_provider.dart';
+import 'package:buzz5_quiz_app/models/room.dart';
 import 'package:provider/provider.dart';
 import 'package:buzz5_quiz_app/config/logger.dart';
 import 'package:buzz5_quiz_app/models/qrow.dart';
@@ -224,13 +226,15 @@ class _QuestionBoardContentState extends State<QuestionBoardContent> {
                       rounds: uniqueRounds,
                     ),
                   ),
-                  SizedBox(height: 50),
+                  SizedBox(height: 30),
                   if (selectedRound != null) ...[
                     Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
+                        RoomCodeDisplay(),
+                        SizedBox(height: 30),
                         Leaderboard(),
-                        SizedBox(height: 60),
+                        SizedBox(height: 45),
                         EndGameButton(),
                       ],
                     ),
@@ -381,8 +385,13 @@ class Leaderboard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<PlayerProvider>(
-      builder: (context, playerProvider, child) {
+    return Consumer2<PlayerProvider, RoomProvider>(
+      builder: (context, playerProvider, roomProvider, child) {
+        // Set up playerProvider synchronization with roomProvider if not already set
+        if (roomProvider.hasActiveRoom) {
+          roomProvider.setPlayerProvider(playerProvider);
+        }
+
         AppLogger.i("Player list updated: ${playerProvider.playerList}");
         return SingleChildScrollView(
           child: SizedBox(
@@ -403,6 +412,21 @@ class Leaderboard extends StatelessWidget {
                       final player = playerProvider.playerList[index];
                       final isLastPositivePlayer =
                           playerProvider.lastPositivePlayer == player;
+
+                      // Check if this player is connected to the room
+                      RoomPlayer? roomPlayer;
+                      try {
+                        roomPlayer = roomProvider.roomPlayers.firstWhere(
+                          (rp) =>
+                              rp.name.toLowerCase() ==
+                              player.name.toLowerCase(),
+                        );
+                      } catch (e) {
+                        roomPlayer = null;
+                      }
+                      final isConnectedToRoom =
+                          roomPlayer != null && roomPlayer.isConnected;
+
                       return Container(
                         margin: const EdgeInsets.symmetric(vertical: 4.0),
                         padding: const EdgeInsets.all(8.0),
@@ -438,10 +462,33 @@ class Leaderboard extends StatelessWidget {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Expanded(
-                              child: Text(
-                                player.name,
-                                style: AppTextStyles.scoreCard,
-                                overflow: TextOverflow.ellipsis,
+                              child: Row(
+                                children: [
+                                  // Connection status indicator
+                                  if (roomProvider.hasActiveRoom) ...[
+                                    Container(
+                                      width: 8,
+                                      height: 8,
+                                      margin: EdgeInsets.only(right: 6),
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color:
+                                            isConnectedToRoom
+                                                ? Colors.green
+                                                : Colors.grey.withValues(
+                                                  alpha: 0.5,
+                                                ),
+                                      ),
+                                    ),
+                                  ],
+                                  Expanded(
+                                    child: Text(
+                                      player.name,
+                                      style: AppTextStyles.scoreCard,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                             SizedBox(width: 8),
@@ -873,6 +920,95 @@ class QSet extends StatelessWidget {
                 ),
               ],
             ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class RoomCodeDisplay extends StatelessWidget {
+  const RoomCodeDisplay({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<RoomProvider>(
+      builder: (context, roomProvider, child) {
+        // Only show room code if there's an active room
+        if (!roomProvider.hasActiveRoom || roomProvider.currentRoom == null) {
+          return SizedBox.shrink();
+        }
+
+        final room = roomProvider.currentRoom!;
+        final connectedPlayers =
+            roomProvider.roomPlayers
+                .where((player) => !player.isHost && player.isConnected)
+                .length;
+
+        return Container(
+          padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          decoration: BoxDecoration(
+            color: Colors.transparent,
+            borderRadius: BorderRadius.circular(25),
+            border: Border.all(color: ColorConstants.primaryColor, width: 2),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.3),
+                blurRadius: 12,
+                offset: Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.doorbell,
+                    color: ColorConstants.primaryContainerColor,
+                    size: 20,
+                  ),
+                  SizedBox(width: 8),
+                  Text(
+                    'Game Code',
+                    style: TextStyle(
+                      color: ColorConstants.surfaceColor,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 6),
+              SelectableText(
+                room.formattedRoomCode,
+                style: TextStyle(
+                  color: ColorConstants.primaryContainerColor,
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 2.0,
+                ),
+              ),
+              SizedBox(height: 4),
+              Text(
+                '$connectedPlayers players connected',
+                style: TextStyle(
+                  color: ColorConstants.secondaryContainerColor,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              SizedBox(height: 2),
+              Text(
+                'Join game using the code above',
+                style: TextStyle(
+                  color: ColorConstants.lightTextColor,
+                  fontSize: 11,
+                ),
+              ),
+            ],
           ),
         );
       },

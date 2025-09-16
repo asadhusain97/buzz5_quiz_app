@@ -6,16 +6,16 @@ import 'package:buzz5_quiz_app/widgets/base_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:buzz5_quiz_app/models/player.dart';
 import 'package:buzz5_quiz_app/models/player_provider.dart';
+import 'package:buzz5_quiz_app/models/room_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:buzz5_quiz_app/config/logger.dart';
 
 const String howToPlayMD = """
-  Who is a Reader? YOU. (The person who'll act as Quiz Emcee, and will conduct the quiz and 'read' the questions)
-  - Enter unique player names
-  - Create a Game on a **[Buzzer app](https://buzzin.live/)** and get all the players to join 
-  - On the next page, 'Select a Board' and the questions will load accordingly
+  YOU are the reader/ Quiz Emcee. You will conduct the quiz and 'read' the questions.
+  Once you are ready, click the button to start the game.
+  - When you reach the next page, select a question board to play from the dropdown
+  - Ask players to join the room using the game code from the 'Join Game' page
   - Each Board has 5 sets of 5 questions; each with increasing difficulty from 10 to 50 points
   - Click on the set name to learn about what the set means and see example question (if available)
   - A random player starts the game (Green border indicates the player in control of the board)
@@ -56,7 +56,7 @@ class InstructionsPage extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildInstructionsPanel(context),
-                _buildPlayerFormPanel(context),
+                _buildActionPanel(context),
               ],
             );
           } else {
@@ -65,7 +65,7 @@ class InstructionsPage extends StatelessWidget {
               child: Column(
                 children: [
                   _buildInstructionsPanel(context),
-                  _buildPlayerFormPanel(context),
+                  _buildActionPanel(context),
                 ],
               ),
             );
@@ -221,89 +221,19 @@ class InstructionsPage extends StatelessWidget {
     );
   }
 
-  Widget _buildPlayerFormPanel(BuildContext context) {
+  Widget _buildActionPanel(BuildContext context) {
     return Expanded(
       flex: 1,
-      child: Container(padding: EdgeInsets.all(24), child: PlayerNameForm()),
+      child: Container(
+        padding: EdgeInsets.all(24),
+        child: Center(child: _buildLetsGoButton(context)),
+      ),
     );
   }
-}
 
-class PlayerNameForm extends StatelessWidget {
-  PlayerNameForm({super.key});
-
-  final _player1Controller = TextEditingController();
-  final _player2Controller = TextEditingController();
-  final _player3Controller = TextEditingController();
-  final _player4Controller = TextEditingController();
-  final _player5Controller = TextEditingController();
-  final _player6Controller = TextEditingController();
-  final _player7Controller = TextEditingController();
-  final _player8Controller = TextEditingController();
-  final _player9Controller = TextEditingController();
-  final _player10Controller = TextEditingController();
-
-  bool _validateUniqueNames() {
-    final names =
-        [
-          _player1Controller.text.trim(),
-          _player2Controller.text.trim(),
-          _player3Controller.text.trim(),
-          _player4Controller.text.trim(),
-          _player5Controller.text.trim(),
-          _player6Controller.text.trim(),
-          _player7Controller.text.trim(),
-          _player8Controller.text.trim(),
-          _player9Controller.text.trim(),
-          _player10Controller.text.trim(),
-        ].where((name) => name.isNotEmpty).toList(); // Filter out empty names
-
-    final uniqueNames = names.toSet();
-    AppLogger.i("Validating unique names: $names");
-    return uniqueNames.length == names.length;
-  }
-
-  void _addPlayersToProvider(BuildContext context) {
-    final playerProvider = Provider.of<PlayerProvider>(context, listen: false);
-    final names = [
-      _player1Controller.text.trim(),
-      _player2Controller.text.trim(),
-      _player3Controller.text.trim(),
-      _player4Controller.text.trim(),
-      _player5Controller.text.trim(),
-      _player6Controller.text.trim(),
-      _player7Controller.text.trim(),
-      _player8Controller.text.trim(),
-      _player9Controller.text.trim(),
-      _player10Controller.text.trim(),
-    ];
-
-    final nonEmptyNames = names.where((name) => name.isNotEmpty).toList();
-
-    if (nonEmptyNames.isEmpty) {
-      playerProvider.addPlayer(Player(name: "Lone Ranger"));
-      AppLogger.i("Added default player: Lone Ranger");
-    } else {
-      for (var name in nonEmptyNames) {
-        playerProvider.addPlayer(Player(name: name));
-        AppLogger.i("Added player: $name");
-      }
-    }
-    playerProvider.setLastPositivePlayer();
-  }
-
-  void _resetGameState(BuildContext context) {
-    final playerProvider = Provider.of<PlayerProvider>(context, listen: false);
-    playerProvider.setPlayerList([]);
-    playerProvider.resetAnsweredQuestions();
-    AppLogger.i("Game state reset (players and answered questions)");
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    AppLogger.i("PlayerNameForm built");
+  Widget _buildLetsGoButton(BuildContext context) {
     return Container(
-      constraints: BoxConstraints(maxWidth: 600),
+      constraints: BoxConstraints(maxWidth: 300),
       decoration: BoxDecoration(
         color:
             Theme.of(context).brightness == Brightness.dark
@@ -318,198 +248,80 @@ class PlayerNameForm extends StatelessWidget {
           ),
         ],
       ),
-      padding: EdgeInsets.all(24),
+      padding: EdgeInsets.all(32),
       child: Column(
         mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          Container(
-            padding: EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.transparent,
-              borderRadius: BorderRadius.circular(12),
+        children: [
+          Icon(
+            Icons.rocket_launch,
+            color: ColorConstants.primaryColor,
+            size: 48,
+          ),
+          SizedBox(height: 16),
+          Text(
+            "Ready to Start?",
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: ColorConstants.surfaceColor,
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.people_alt_rounded,
-                  color: ColorConstants.surfaceColor,
-                  size: 28,
-                ),
-                SizedBox(width: 12),
-                Text(
-                  "Enter player names",
-                  style: AppTextStyles.titleMedium.copyWith(
-                    color: ColorConstants.surfaceColor,
-                  ),
-                ),
-              ],
+          ),
+          SizedBox(height: 8),
+          Text(
+            "Set up the game and share the code with players",
+            style: TextStyle(
+              fontSize: 14,
+              color: ColorConstants.lightTextColor,
             ),
+            textAlign: TextAlign.center,
           ),
           SizedBox(height: 24),
-          LayoutBuilder(
-            builder: (context, constraints) {
-              if (constraints.maxWidth > 500) {
-                // Two-column layout for wider screens
-                return Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        children: [
-                          PlayerTextField(
-                            controller: _player1Controller,
-                            playerNumber: 1,
-                          ),
-                          SizedBox(height: 16),
-                          PlayerTextField(
-                            controller: _player2Controller,
-                            playerNumber: 2,
-                          ),
-                          SizedBox(height: 16),
-                          PlayerTextField(
-                            controller: _player3Controller,
-                            playerNumber: 3,
-                          ),
-                          SizedBox(height: 16),
-                          PlayerTextField(
-                            controller: _player4Controller,
-                            playerNumber: 4,
-                          ),
-                          SizedBox(height: 16),
-                          PlayerTextField(
-                            controller: _player5Controller,
-                            playerNumber: 5,
-                          ),
-                        ],
-                      ),
-                    ),
-                    SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        children: [
-                          PlayerTextField(
-                            controller: _player6Controller,
-                            playerNumber: 6,
-                          ),
-                          SizedBox(height: 16),
-                          PlayerTextField(
-                            controller: _player7Controller,
-                            playerNumber: 7,
-                          ),
-                          SizedBox(height: 16),
-                          PlayerTextField(
-                            controller: _player8Controller,
-                            playerNumber: 8,
-                          ),
-                          SizedBox(height: 16),
-                          PlayerTextField(
-                            controller: _player9Controller,
-                            playerNumber: 9,
-                          ),
-                          SizedBox(height: 16),
-                          PlayerTextField(
-                            controller: _player10Controller,
-                            playerNumber: 10,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                );
-              } else {
-                // Single-column layout for narrower screens
-                return Column(
-                  children: [
-                    PlayerTextField(
-                      controller: _player1Controller,
-                      playerNumber: 1,
-                    ),
-                    SizedBox(height: 16),
-                    PlayerTextField(
-                      controller: _player2Controller,
-                      playerNumber: 2,
-                    ),
-                    SizedBox(height: 16),
-                    PlayerTextField(
-                      controller: _player3Controller,
-                      playerNumber: 3,
-                    ),
-                    SizedBox(height: 16),
-                    PlayerTextField(
-                      controller: _player4Controller,
-                      playerNumber: 4,
-                    ),
-                    SizedBox(height: 16),
-                    PlayerTextField(
-                      controller: _player5Controller,
-                      playerNumber: 5,
-                    ),
-                    SizedBox(height: 16),
-                    PlayerTextField(
-                      controller: _player6Controller,
-                      playerNumber: 6,
-                    ),
-                    SizedBox(height: 16),
-                    PlayerTextField(
-                      controller: _player7Controller,
-                      playerNumber: 7,
-                    ),
-                    SizedBox(height: 16),
-                    PlayerTextField(
-                      controller: _player8Controller,
-                      playerNumber: 8,
-                    ),
-                    SizedBox(height: 16),
-                    PlayerTextField(
-                      controller: _player9Controller,
-                      playerNumber: 9,
-                    ),
-                    SizedBox(height: 16),
-                    PlayerTextField(
-                      controller: _player10Controller,
-                      playerNumber: 10,
-                    ),
-                  ],
-                );
-              }
-            },
-          ),
-          SizedBox(height: 32),
           SizedBox(
             width: 200,
             child: ElevatedButton(
-              onPressed: () {
-                if (_validateUniqueNames()) {
-                  _resetGameState(context);
-                  _addPlayersToProvider(context);
-                  Provider.of<PlayerProvider>(
-                    context,
-                    listen: false,
-                  ).setGameStartTime(DateTime.now());
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => QuestionBoardPage(),
-                    ),
-                  );
-                } else {
-                  AppLogger.w("Player names are not unique");
-                  ScaffoldMessenger.of(context).showSnackBar(
+              onPressed: () async {
+                final navigator = Navigator.of(context);
+                final scaffoldMessenger = ScaffoldMessenger.of(context);
+                final roomProvider = Provider.of<RoomProvider>(
+                  context,
+                  listen: false,
+                );
+                final playerProvider = Provider.of<PlayerProvider>(
+                  context,
+                  listen: false,
+                );
+
+                // Reset game state - start with empty player list
+                playerProvider.setPlayerList([]);
+                playerProvider.resetAnsweredQuestions();
+                AppLogger.i(
+                  "Game state reset - starting with empty player list",
+                );
+
+                // Always create a room (hosting is mandatory)
+                final success = await roomProvider.createRoom();
+
+                if (!success && roomProvider.error != null) {
+                  scaffoldMessenger.showSnackBar(
                     SnackBar(
                       content: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
                           Icon(
-                            Icons.warning_amber_rounded,
+                            Icons.error_outline,
                             color: Colors.white,
+                            size: 20,
                           ),
                           SizedBox(width: 8),
-                          Text(
-                            'Player names must be unique',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
+                          Flexible(
+                            child: Text(
+                              roomProvider.error!,
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                                height: 1.2,
+                              ),
                             ),
                           ),
                         ],
@@ -520,9 +332,21 @@ class PlayerNameForm extends StatelessWidget {
                         borderRadius: BorderRadius.circular(10),
                       ),
                       margin: EdgeInsets.all(12),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
                     ),
                   );
+                  return;
                 }
+
+                // Set game start time
+                playerProvider.setGameStartTime(DateTime.now());
+
+                navigator.push(
+                  MaterialPageRoute(builder: (context) => QuestionBoardPage()),
+                );
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: ColorConstants.primaryColor,
@@ -544,56 +368,6 @@ class PlayerNameForm extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class PlayerTextField extends StatelessWidget {
-  final TextEditingController controller;
-  final int playerNumber;
-
-  const PlayerTextField({
-    super.key,
-    required this.controller,
-    required this.playerNumber,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return TextFormField(
-      controller: controller,
-      maxLength: 15,
-      style: TextStyle(
-        color: ColorConstants.darkTextColor,
-        fontWeight: FontWeight.w500,
-      ),
-      decoration: InputDecoration(
-        hintText: 'Player $playerNumber',
-        hintStyle: TextStyle(
-          color: ColorConstants.hintGrey,
-          fontWeight: FontWeight.w500,
-        ),
-        prefixIcon: Icon(
-          Icons.person_rounded,
-          color: ColorConstants.primaryColor,
-          size: 20,
-        ),
-        filled: true,
-        fillColor: ColorConstants.backgroundColor,
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(
-            color: ColorConstants.tertiaryColor,
-            width: 1.5,
-          ),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: ColorConstants.primaryColor, width: 2),
-        ),
-        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-        counterText: '',
       ),
     );
   }
