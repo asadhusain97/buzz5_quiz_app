@@ -6,7 +6,6 @@ import 'package:buzz5_quiz_app/widgets/base_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:buzz5_quiz_app/models/player.dart';
 import 'package:buzz5_quiz_app/models/player_provider.dart';
 import 'package:buzz5_quiz_app/models/room_provider.dart';
 import 'package:provider/provider.dart';
@@ -57,7 +56,7 @@ class InstructionsPage extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildInstructionsPanel(context),
-                _buildPlayerFormPanel(context),
+                _buildActionPanel(context),
               ],
             );
           } else {
@@ -66,7 +65,7 @@ class InstructionsPage extends StatelessWidget {
               child: Column(
                 children: [
                   _buildInstructionsPanel(context),
-                  _buildPlayerFormPanel(context),
+                  _buildActionPanel(context),
                 ],
               ),
             );
@@ -222,96 +221,21 @@ class InstructionsPage extends StatelessWidget {
     );
   }
 
-  Widget _buildPlayerFormPanel(BuildContext context) {
+  Widget _buildActionPanel(BuildContext context) {
     return Expanded(
       flex: 1,
-      child: SingleChildScrollView(
-        child: Container(padding: EdgeInsets.all(24), child: PlayerNameForm()),
+      child: Container(
+        padding: EdgeInsets.all(24),
+        child: Center(
+          child: _buildLetsGoButton(context),
+        ),
       ),
     );
   }
-}
 
-class PlayerNameForm extends StatefulWidget {
-  const PlayerNameForm({super.key});
-
-  @override
-  State<PlayerNameForm> createState() => _PlayerNameFormState();
-}
-
-class _PlayerNameFormState extends State<PlayerNameForm> {
-  final _player1Controller = TextEditingController();
-  final _player2Controller = TextEditingController();
-  final _player3Controller = TextEditingController();
-  final _player4Controller = TextEditingController();
-  final _player5Controller = TextEditingController();
-  final _player6Controller = TextEditingController();
-  final _player7Controller = TextEditingController();
-  final _player8Controller = TextEditingController();
-  final _player9Controller = TextEditingController();
-  final _player10Controller = TextEditingController();
-
-  bool _validateUniqueNames() {
-    final names =
-        [
-          _player1Controller.text.trim(),
-          _player2Controller.text.trim(),
-          _player3Controller.text.trim(),
-          _player4Controller.text.trim(),
-          _player5Controller.text.trim(),
-          _player6Controller.text.trim(),
-          _player7Controller.text.trim(),
-          _player8Controller.text.trim(),
-          _player9Controller.text.trim(),
-          _player10Controller.text.trim(),
-        ].where((name) => name.isNotEmpty).toList(); // Filter out empty names
-
-    final uniqueNames = names.toSet();
-    AppLogger.i("Validating unique names: $names");
-    return uniqueNames.length == names.length;
-  }
-
-  void _addPlayersToProvider(BuildContext context) {
-    final playerProvider = Provider.of<PlayerProvider>(context, listen: false);
-    final names = [
-      _player1Controller.text.trim(),
-      _player2Controller.text.trim(),
-      _player3Controller.text.trim(),
-      _player4Controller.text.trim(),
-      _player5Controller.text.trim(),
-      _player6Controller.text.trim(),
-      _player7Controller.text.trim(),
-      _player8Controller.text.trim(),
-      _player9Controller.text.trim(),
-      _player10Controller.text.trim(),
-    ];
-
-    final nonEmptyNames = names.where((name) => name.isNotEmpty).toList();
-
-    if (nonEmptyNames.isEmpty) {
-      playerProvider.addPlayer(Player(name: "Lone Ranger"));
-      AppLogger.i("Added default player: Lone Ranger");
-    } else {
-      for (var name in nonEmptyNames) {
-        playerProvider.addPlayer(Player(name: name));
-        AppLogger.i("Added player: $name");
-      }
-    }
-    playerProvider.setLastPositivePlayer();
-  }
-
-  void _resetGameState(BuildContext context) {
-    final playerProvider = Provider.of<PlayerProvider>(context, listen: false);
-    playerProvider.setPlayerList([]);
-    playerProvider.resetAnsweredQuestions();
-    AppLogger.i("Game state reset (players and answered questions)");
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    AppLogger.i("PlayerNameForm built");
+  Widget _buildLetsGoButton(BuildContext context) {
     return Container(
-      constraints: BoxConstraints(maxWidth: 600),
+      constraints: BoxConstraints(maxWidth: 300),
       decoration: BoxDecoration(
         color:
             Theme.of(context).brightness == Brightness.dark
@@ -326,309 +250,58 @@ class _PlayerNameFormState extends State<PlayerNameForm> {
           ),
         ],
       ),
-      padding: EdgeInsets.all(24),
+      padding: EdgeInsets.all(32),
       child: Column(
         mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          // Room Configuration Section
-          Consumer<RoomProvider>(
-            builder: (context, roomProvider, child) {
-              return Container(
-                padding: EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: ColorConstants.primaryColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: ColorConstants.primaryColor.withValues(alpha: 0.3),
-                    width: 1,
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.doorbell,
-                      color: ColorConstants.primaryColor,
-                      size: 36,
-                    ),
-                    SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            "Host a Room",
-                            style: AppTextStyles.titleSmall.copyWith(
-                              color: ColorConstants.surfaceColor,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          SizedBox(height: 4),
-                          Text(
-                            "Create a room for others to join with a buzzer",
-                            style: TextStyle(
-                              color: ColorConstants.lightTextColor,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Switch(
-                      value: roomProvider.hostRoom,
-                      onChanged: (value) {
-                        roomProvider.setHostRoom(value);
-                      },
-                      activeColor: ColorConstants.primaryColor,
-                      activeTrackColor: ColorConstants.primaryColor.withValues(
-                        alpha: 0.3,
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            },
+        children: [
+          Icon(
+            Icons.rocket_launch,
+            color: ColorConstants.primaryColor,
+            size: 48,
           ),
-          SizedBox(height: 24),
-          Container(
-            padding: EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.transparent,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.people_alt_rounded,
-                  color: ColorConstants.surfaceColor,
-                  size: 28,
-                ),
-                SizedBox(width: 12),
-                Text(
-                  "Enter player names",
-                  style: AppTextStyles.titleMedium.copyWith(
-                    color: ColorConstants.surfaceColor,
-                  ),
-                ),
-              ],
+          SizedBox(height: 16),
+          Text(
+            "Ready to Start?",
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: ColorConstants.surfaceColor,
             ),
           ),
-          SizedBox(height: 24),
-          LayoutBuilder(
-            builder: (context, constraints) {
-              if (constraints.maxWidth > 500) {
-                // Two-column layout for wider screens
-                return Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        children: [
-                          PlayerTextField(
-                            controller: _player1Controller,
-                            playerNumber: 1,
-                          ),
-                          SizedBox(height: 16),
-                          PlayerTextField(
-                            controller: _player2Controller,
-                            playerNumber: 2,
-                          ),
-                          SizedBox(height: 16),
-                          PlayerTextField(
-                            controller: _player3Controller,
-                            playerNumber: 3,
-                          ),
-                          SizedBox(height: 16),
-                          PlayerTextField(
-                            controller: _player4Controller,
-                            playerNumber: 4,
-                          ),
-                          SizedBox(height: 16),
-                          PlayerTextField(
-                            controller: _player5Controller,
-                            playerNumber: 5,
-                          ),
-                        ],
-                      ),
-                    ),
-                    SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        children: [
-                          PlayerTextField(
-                            controller: _player6Controller,
-                            playerNumber: 6,
-                          ),
-                          SizedBox(height: 16),
-                          PlayerTextField(
-                            controller: _player7Controller,
-                            playerNumber: 7,
-                          ),
-                          SizedBox(height: 16),
-                          PlayerTextField(
-                            controller: _player8Controller,
-                            playerNumber: 8,
-                          ),
-                          SizedBox(height: 16),
-                          PlayerTextField(
-                            controller: _player9Controller,
-                            playerNumber: 9,
-                          ),
-                          SizedBox(height: 16),
-                          PlayerTextField(
-                            controller: _player10Controller,
-                            playerNumber: 10,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                );
-              } else {
-                // Single-column layout for narrower screens
-                return Column(
-                  children: [
-                    PlayerTextField(
-                      controller: _player1Controller,
-                      playerNumber: 1,
-                    ),
-                    SizedBox(height: 16),
-                    PlayerTextField(
-                      controller: _player2Controller,
-                      playerNumber: 2,
-                    ),
-                    SizedBox(height: 16),
-                    PlayerTextField(
-                      controller: _player3Controller,
-                      playerNumber: 3,
-                    ),
-                    SizedBox(height: 16),
-                    PlayerTextField(
-                      controller: _player4Controller,
-                      playerNumber: 4,
-                    ),
-                    SizedBox(height: 16),
-                    PlayerTextField(
-                      controller: _player5Controller,
-                      playerNumber: 5,
-                    ),
-                    SizedBox(height: 16),
-                    PlayerTextField(
-                      controller: _player6Controller,
-                      playerNumber: 6,
-                    ),
-                    SizedBox(height: 16),
-                    PlayerTextField(
-                      controller: _player7Controller,
-                      playerNumber: 7,
-                    ),
-                    SizedBox(height: 16),
-                    PlayerTextField(
-                      controller: _player8Controller,
-                      playerNumber: 8,
-                    ),
-                    SizedBox(height: 16),
-                    PlayerTextField(
-                      controller: _player9Controller,
-                      playerNumber: 9,
-                    ),
-                    SizedBox(height: 16),
-                    PlayerTextField(
-                      controller: _player10Controller,
-                      playerNumber: 10,
-                    ),
-                  ],
-                );
-              }
-            },
+          SizedBox(height: 8),
+          Text(
+            "Create a room for players to join",
+            style: TextStyle(
+              fontSize: 14,
+              color: ColorConstants.lightTextColor,
+            ),
+            textAlign: TextAlign.center,
           ),
-          SizedBox(height: 32),
+          SizedBox(height: 24),
           SizedBox(
             width: 200,
             child: ElevatedButton(
               onPressed: () async {
                 final navigator = Navigator.of(context);
                 final scaffoldMessenger = ScaffoldMessenger.of(context);
-                
-                if (_validateUniqueNames()) {
-                  _resetGameState(context);
-                  _addPlayersToProvider(context);
-                  Provider.of<PlayerProvider>(
-                    context,
-                    listen: false,
-                  ).setGameStartTime(DateTime.now());
+                final roomProvider = Provider.of<RoomProvider>(
+                  context,
+                  listen: false,
+                );
+                final playerProvider = Provider.of<PlayerProvider>(
+                  context,
+                  listen: false,
+                );
 
-                  // Create room if hosting is enabled
-                  final roomProvider = Provider.of<RoomProvider>(
-                    context,
-                    listen: false,
-                  );
-                  if (roomProvider.hostRoom) {
-                    // Get the player names to store for validation
-                    final playerNames = [
-                      _player1Controller.text.trim(),
-                      _player2Controller.text.trim(),
-                      _player3Controller.text.trim(),
-                      _player4Controller.text.trim(),
-                      _player5Controller.text.trim(),
-                      _player6Controller.text.trim(),
-                      _player7Controller.text.trim(),
-                      _player8Controller.text.trim(),
-                      _player9Controller.text.trim(),
-                      _player10Controller.text.trim(),
-                    ].where((name) => name.isNotEmpty).toList();
-                    
-                    final success = await roomProvider.createRoom(
-                      hostPlayerNames: playerNames.isNotEmpty ? playerNames : null,
-                    );
-                    if (!mounted) return;
-                    if (!success && roomProvider.error != null) {
-                      scaffoldMessenger.showSnackBar(
-                        SnackBar(
-                          content: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.error_outline, 
-                                color: Colors.white,
-                                size: 20,
-                              ),
-                              SizedBox(width: 8),
-                              Flexible(
-                                child: Text(
-                                  roomProvider.error!,
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w500,
-                                    height: 1.2,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          backgroundColor: ColorConstants.errorContainerColor,
-                          behavior: SnackBarBehavior.floating,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          margin: EdgeInsets.all(12),
-                          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                        ),
-                      );
-                      return;
-                    }
-                  }
+                // Reset game state - start with empty player list
+                playerProvider.setPlayerList([]);
+                playerProvider.resetAnsweredQuestions();
+                AppLogger.i("Game state reset - starting with empty player list");
 
-                  if (mounted) {
-                    navigator.push(
-                      MaterialPageRoute(
-                        builder: (context) => QuestionBoardPage(),
-                      ),
-                    );
-                  }
-                } else {
-                  AppLogger.w("Player names are not unique");
+                // Always create a room (hosting is mandatory)
+                final success = await roomProvider.createRoom();
+
+                if (!success && roomProvider.error != null) {
                   scaffoldMessenger.showSnackBar(
                     SnackBar(
                       content: Row(
@@ -636,17 +309,19 @@ class _PlayerNameFormState extends State<PlayerNameForm> {
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
                           Icon(
-                            Icons.warning_amber_rounded,
+                            Icons.error_outline,
                             color: Colors.white,
                             size: 20,
                           ),
                           SizedBox(width: 8),
-                          Text(
-                            'Player names must be unique',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                              height: 1.2,
+                          Flexible(
+                            child: Text(
+                              roomProvider.error!,
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                                height: 1.2,
+                              ),
                             ),
                           ),
                         ],
@@ -660,7 +335,17 @@ class _PlayerNameFormState extends State<PlayerNameForm> {
                       padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                     ),
                   );
+                  return;
                 }
+
+                // Set game start time
+                playerProvider.setGameStartTime(DateTime.now());
+
+                navigator.push(
+                  MaterialPageRoute(
+                    builder: (context) => QuestionBoardPage(),
+                  ),
+                );
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: ColorConstants.primaryColor,
@@ -681,60 +366,7 @@ class _PlayerNameFormState extends State<PlayerNameForm> {
               ),
             ),
           ),
-          SizedBox(
-            height: 24,
-          ), // Extra bottom padding to ensure button is always accessible
         ],
-      ),
-    );
-  }
-}
-
-class PlayerTextField extends StatelessWidget {
-  final TextEditingController controller;
-  final int playerNumber;
-
-  const PlayerTextField({
-    super.key,
-    required this.controller,
-    required this.playerNumber,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return TextFormField(
-      controller: controller,
-      maxLength: 15,
-      style: TextStyle(
-        color: ColorConstants.darkTextColor,
-        fontWeight: FontWeight.w500,
-      ),
-      decoration: InputDecoration(
-        hintText: 'Player $playerNumber',
-        hintStyle: TextStyle(
-          color: ColorConstants.hintGrey,
-          fontWeight: FontWeight.w500,
-        ),
-        prefixIcon: Icon(
-          Icons.person_rounded,
-          color: ColorConstants.primaryColor,
-          size: 20,
-        ),
-        filled: true,
-        fillColor: ColorConstants.backgroundColor,
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(
-            color: ColorConstants.tertiaryColor,
-            width: 1.5,
-          ),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: ColorConstants.primaryColor, width: 2),
-        ),
-        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-        counterText: '',
       ),
     );
   }

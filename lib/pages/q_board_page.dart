@@ -387,6 +387,11 @@ class Leaderboard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer2<PlayerProvider, RoomProvider>(
       builder: (context, playerProvider, roomProvider, child) {
+        // Set up playerProvider synchronization with roomProvider if not already set
+        if (roomProvider.hasActiveRoom) {
+          roomProvider.setPlayerProvider(playerProvider);
+        }
+
         AppLogger.i("Player list updated: ${playerProvider.playerList}");
         return SingleChildScrollView(
           child: SizedBox(
@@ -407,18 +412,21 @@ class Leaderboard extends StatelessWidget {
                       final player = playerProvider.playerList[index];
                       final isLastPositivePlayer =
                           playerProvider.lastPositivePlayer == player;
-                      
+
                       // Check if this player is connected to the room
                       RoomPlayer? roomPlayer;
                       try {
                         roomPlayer = roomProvider.roomPlayers.firstWhere(
-                          (rp) => rp.name.toLowerCase() == player.name.toLowerCase(),
+                          (rp) =>
+                              rp.name.toLowerCase() ==
+                              player.name.toLowerCase(),
                         );
                       } catch (e) {
                         roomPlayer = null;
                       }
-                      final isConnectedToRoom = roomPlayer != null && roomPlayer.isConnected;
-                      
+                      final isConnectedToRoom =
+                          roomPlayer != null && roomPlayer.isConnected;
+
                       return Container(
                         margin: const EdgeInsets.symmetric(vertical: 4.0),
                         padding: const EdgeInsets.all(8.0),
@@ -464,9 +472,12 @@ class Leaderboard extends StatelessWidget {
                                       margin: EdgeInsets.only(right: 6),
                                       decoration: BoxDecoration(
                                         shape: BoxShape.circle,
-                                        color: isConnectedToRoom 
-                                            ? Colors.green 
-                                            : Colors.grey.withValues(alpha: 0.5),
+                                        color:
+                                            isConnectedToRoom
+                                                ? Colors.green
+                                                : Colors.grey.withValues(
+                                                  alpha: 0.5,
+                                                ),
                                       ),
                                     ),
                                   ],
@@ -929,9 +940,10 @@ class RoomCodeDisplay extends StatelessWidget {
         }
 
         final room = roomProvider.currentRoom!;
-        final connectedPlayers = roomProvider.roomPlayers
-            .where((player) => !player.isHost && player.isConnected)
-            .length;
+        final connectedPlayers =
+            roomProvider.roomPlayers
+                .where((player) => !player.isHost && player.isConnected)
+                .length;
 
         return Container(
           padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),

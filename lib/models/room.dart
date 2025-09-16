@@ -21,7 +21,7 @@ class Room {
     required this.hostId,
     this.status = RoomStatus.waiting,
     required this.createdAt,
-    this.maxPlayers = 10,
+    this.maxPlayers = 50,
     this.currentQuestion = 0,
     this.totalQuestions = 0,
     this.questionStartTime,
@@ -29,25 +29,26 @@ class Room {
 
   // Generate a unique 6-character room code
   static Future<String> generateRoomCode() async {
-    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Excluding confusing chars like 0, O, I, 1
+    const chars =
+        'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Excluding confusing chars like 0, O, I, 1
     final random = Random();
     final database = FirebaseDatabase.instance.ref();
-    
+
     String code;
     bool exists;
-    
+
     do {
       code = '';
       for (int i = 0; i < 6; i++) {
         code += chars[random.nextInt(chars.length)];
       }
-      
+
       // Check if room already exists
-      final snapshot = await database.child('rooms').child(code.toLowerCase()).get();
+      final snapshot =
+          await database.child('rooms').child(code.toLowerCase()).get();
       exists = snapshot.exists;
-      
     } while (exists);
-    
+
     AppLogger.i("Generated unique room code: $code");
     return code;
   }
@@ -60,7 +61,7 @@ class Room {
       hostId: data['hostId'] ?? '',
       status: _parseRoomStatus(data['status']),
       createdAt: data['createdAt'] ?? DateTime.now().millisecondsSinceEpoch,
-      maxPlayers: data['maxPlayers'] ?? 10,
+      maxPlayers: data['maxPlayers'] ?? 50,
       currentQuestion: data['currentQuestion'] ?? 0,
       totalQuestions: data['totalQuestions'] ?? 0,
       questionStartTime: data['questionStartTime'],

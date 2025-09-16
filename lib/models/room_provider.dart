@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:buzz5_quiz_app/models/room.dart';
+import 'package:buzz5_quiz_app/models/player.dart';
+import 'package:buzz5_quiz_app/models/player_provider.dart';
 import 'package:buzz5_quiz_app/config/logger.dart';
 import 'dart:async';
 
@@ -12,6 +14,7 @@ class RoomProvider with ChangeNotifier {
   String? _error;
   List<RoomPlayer> _roomPlayers = [];
   StreamSubscription? _playersSubscription;
+  PlayerProvider? _playerProvider;
   
   // Database reference
   final DatabaseReference _database = FirebaseDatabase.instance.ref();
@@ -29,6 +32,55 @@ class RoomProvider with ChangeNotifier {
     _hostRoom = value;
     AppLogger.i("Host room setting changed to: $value");
     notifyListeners();
+  }
+
+  // Set PlayerProvider for synchronization
+  void setPlayerProvider(PlayerProvider playerProvider) {
+    _playerProvider = playerProvider;
+    AppLogger.i("PlayerProvider set for synchronization");
+  }
+
+  // Sync roomPlayers to local playerList (excluding host)
+  void _syncPlayersToProvider() {
+    if (_playerProvider == null) return;
+    
+    // Convert roomPlayers to Player objects (excluding host for game scoring)
+    final nonHostPlayers = _roomPlayers.where((rp) => !rp.isHost).toList();
+    final currentPlayerList = _playerProvider!.playerList;
+    final newPlayerList = <Player>[];
+    
+    for (final roomPlayer in nonHostPlayers) {
+      // Try to find existing player to preserve scoring data by Firebase UID
+      Player? existingPlayer;
+      try {
+        existingPlayer = currentPlayerList.firstWhere(
+          (p) => p.accountId == roomPlayer.playerId,
+        );
+      } catch (e) {
+        existingPlayer = null;
+      }
+
+      if (existingPlayer != null) {
+        // Keep existing player with their scores, but update the name if changed
+        existingPlayer.name = roomPlayer.name;
+        newPlayerList.add(existingPlayer);
+        AppLogger.i("Preserved existing player data for ${roomPlayer.playerId} with new name: ${roomPlayer.name}");
+      } else {
+        // Create new player for scoring
+        final user = FirebaseAuth.instance.currentUser;
+        final accountId = (roomPlayer.playerId == user?.uid) ? user?.uid : roomPlayer.playerId;
+
+        newPlayerList.add(Player(
+          name: roomPlayer.name,
+          accountId: accountId,
+        ));
+        AppLogger.i("Created new player for ${roomPlayer.playerId} with name: ${roomPlayer.name}");
+      }
+    }
+    
+    // Update playerList with synchronized players
+    _playerProvider!.setPlayerList(newPlayerList);
+    AppLogger.i("Synchronized ${newPlayerList.length} players to playerList");
   }
 
   // Create a new room
@@ -320,6 +372,10 @@ class RoomProvider with ChangeNotifier {
       
       _roomPlayers = newPlayers;
       AppLogger.i("Player count updated: ${_roomPlayers.length} players in room");
+      
+      // Sync roomPlayers to local playerList for game scoring
+      _syncPlayersToProvider();
+      
       notifyListeners();
     });
   }
