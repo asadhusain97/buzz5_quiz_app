@@ -1,5 +1,4 @@
 import 'package:buzz5_quiz_app/config/colors.dart';
-import 'package:buzz5_quiz_app/config/text_styles.dart';
 import 'package:buzz5_quiz_app/pages/q_board_page.dart';
 import 'package:buzz5_quiz_app/widgets/appbar.dart';
 import 'package:buzz5_quiz_app/widgets/base_page.dart';
@@ -8,6 +7,7 @@ import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:buzz5_quiz_app/models/player_provider.dart';
 import 'package:buzz5_quiz_app/models/room_provider.dart';
+import 'package:buzz5_quiz_app/models/qrow.dart';
 import 'package:provider/provider.dart';
 import 'package:buzz5_quiz_app/config/logger.dart';
 
@@ -24,15 +24,26 @@ const String howToPlayMD = """
   - Wrong answers get negative points
   - The reader/Quiz Emcee can grant part points to players by clicking on their name during a specific question
   """;
-const String aboutThisGameMD = """
-  This game is inspired by the **[Buzzing with Kvizzing](https://youtu.be/Tku6Mk5zMjE?si=_zex3Ixa9kQFhGNO)** video series by *Kumar Varun*.
 
-  All **questions and answers** are stored and updated from [**this sheet**](https://docs.google.com/spreadsheets/d/149cG62dE_5H9JYmNYoJ_h0w5exYSFNY-HvX8Yq-HZrI/edit?usp=sharing).
-  Another option to submit your sets is to fill this [google form](https://docs.google.com/forms/d/e/1FAIpQLSfG_o2qm05MU1upotKMPmZIeILzn8RnaWdST0f56JaQ_NLueA/viewform). 
-  """;
-
-class InstructionsPage extends StatelessWidget {
+class InstructionsPage extends StatefulWidget {
   const InstructionsPage({super.key});
+
+  @override
+  State<InstructionsPage> createState() => _InstructionsPageState();
+}
+
+class _InstructionsPageState extends State<InstructionsPage> {
+  bool _showBuzzerSection = false;
+  bool _showInstructionsSection = false;
+
+  // API loading state
+  List<QRow> _allQRows = [];
+  List<String> _uniqueRounds = [];
+  String? _selectedRound;
+  bool _isLoading = false;
+  bool _hasError = false;
+  String _errorMessage = '';
+  late Future<List<QRow>> _qrowsFuture;
 
   Future<void> _launchURL(String url) async {
     final Uri uri = Uri.parse(url);
@@ -43,243 +54,507 @@ class InstructionsPage extends StatelessWidget {
     AppLogger.i('Launched URL: $url');
   }
 
+  Future<void> _fetchQRows() async {
+    setState(() {
+      _isLoading = true;
+      _hasError = false;
+    });
+
+    try {
+      AppLogger.i("Starting to fetch QRows from API");
+      _qrowsFuture = QRow.fetchAll();
+      await _loadData();
+    } catch (e) {
+      AppLogger.e("Error in _fetchQRows: $e");
+      setState(() {
+        _isLoading = false;
+        _hasError = true;
+        _errorMessage = "Failed to load question data: ${e.toString()}";
+      });
+    }
+  }
+
+  Future<void> _loadData() async {
+    try {
+      _allQRows = await _qrowsFuture;
+
+      AppLogger.i("Loaded ${_allQRows.length} QRows from API");
+
+      final uniqueRoundsResult = QRow.getUniqueRounds(_allQRows);
+
+      AppLogger.i(
+        "Found ${uniqueRoundsResult.length} unique rounds: $uniqueRoundsResult",
+      );
+
+      setState(() {
+        _uniqueRounds = uniqueRoundsResult;
+        _isLoading = false;
+        _hasError = false;
+      });
+    } catch (e) {
+      AppLogger.e("Error in _loadData: $e");
+      setState(() {
+        _isLoading = false;
+        _hasError = true;
+        _errorMessage = "Failed to process question data: ${e.toString()}";
+      });
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    // Start loading boards immediately when page loads
+    _fetchQRows();
+  }
+
   @override
   Widget build(BuildContext context) {
     AppLogger.i("InstructionsPage built");
     return BasePage(
       appBar: CustomAppBar(title: "Set up", showBackButton: true),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          if (constraints.maxWidth > 900) {
-            // Desktop layout
-            return Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildInstructionsPanel(context),
-                _buildActionPanel(context),
-              ],
-            );
-          } else {
-            // Mobile/tablet layout
-            return SingleChildScrollView(
-              child: Column(
-                children: [
-                  _buildInstructionsPanel(context),
-                  _buildActionPanel(context),
-                ],
-              ),
-            );
-          }
-        },
-      ),
-    );
-  }
-
-  Widget _buildInstructionsPanel(BuildContext context) {
-    return Expanded(
-      flex: 1,
       child: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                padding: EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color:
-                      Theme.of(context).brightness == Brightness.dark
-                          ? ColorConstants.darkCardColor
-                          : ColorConstants.cardColor,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: ColorConstants.primaryContainerColor,
-                      blurRadius: 20,
-                      offset: Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.lightbulb_outline,
-                          color: ColorConstants.surfaceColor,
-                          size: 24,
-                        ),
-                        SizedBox(width: 10),
-                        Text(
-                          "Instructions for the Reader",
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: ColorConstants.surfaceColor,
-                          ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 16),
-                    MarkdownBody(
-                      data: howToPlayMD,
-                      onTapLink: (text, href, title) {
-                        if (href != null) {
-                          _launchURL(href);
-                        }
-                      },
-                      styleSheet: MarkdownStyleSheet(
-                        p: TextStyle(
-                          fontSize: 16,
-                          height: 1.6,
-                          color:
-                              Theme.of(context).brightness == Brightness.dark
-                                  ? ColorConstants.lightTextColor
-                                  : ColorConstants.darkTextColor,
-                        ),
-                        a: TextStyle(
-                          color: ColorConstants.secondaryContainerColor,
-                          decoration: TextDecoration.underline,
-                        ),
-                        strong: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              SizedBox(height: 24),
-              Container(
-                padding: EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color:
-                      Theme.of(context).brightness == Brightness.dark
-                          ? ColorConstants.darkCardColor
-                          : ColorConstants.cardColor,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: ColorConstants.primaryContainerColor,
-                      blurRadius: 20,
-                      offset: Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.info_outline,
-                          color: ColorConstants.surfaceColor,
-                          size: 24,
-                        ),
-                        SizedBox(width: 10),
-                        Text(
-                          "About This Game",
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: ColorConstants.surfaceColor,
-                          ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 16),
-                    MarkdownBody(
-                      data: aboutThisGameMD,
-                      onTapLink: (text, href, title) {
-                        if (href != null) {
-                          _launchURL(href);
-                        }
-                      },
-                      styleSheet: MarkdownStyleSheet(
-                        p: TextStyle(
-                          fontSize: 16,
-                          height: 1.6,
-                          color:
-                              Theme.of(context).brightness == Brightness.dark
-                                  ? ColorConstants.lightTextColor
-                                  : ColorConstants.darkTextColor,
-                        ),
-                        a: TextStyle(
-                          color: ColorConstants.secondaryContainerColor,
-                          decoration: TextDecoration.underline,
-                        ),
-                        strong: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              SizedBox(height: 24),
-            ],
-          ),
+        padding: EdgeInsets.all(24.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _buildTopSection(context),
+            SizedBox(height: 24),
+            _buildCollapsibleBuzzerSection(context),
+            SizedBox(height: 16),
+            _buildCollapsibleInstructionsSection(context),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildActionPanel(BuildContext context) {
-    return Expanded(
-      flex: 1,
-      child: Container(
-        padding: EdgeInsets.all(24),
-        child: Center(child: _buildLetsGoButton(context)),
-      ),
-    );
-  }
-
-  Widget _buildLetsGoButton(BuildContext context) {
+  Widget _buildTopSection(BuildContext context) {
     return Container(
-      constraints: BoxConstraints(maxWidth: 300),
+      padding: EdgeInsets.all(24),
       decoration: BoxDecoration(
         color:
             Theme.of(context).brightness == Brightness.dark
                 ? ColorConstants.darkCardColor
                 : ColorConstants.cardColor,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: ColorConstants.primaryColor,
-            blurRadius: 25,
-            offset: Offset(0, 8),
+            color: ColorConstants.primaryContainerColor,
+            blurRadius: 20,
+            offset: Offset(0, 4),
           ),
         ],
       ),
-      padding: EdgeInsets.all(32),
       child: Column(
-        mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            Icons.rocket_launch,
-            color: ColorConstants.primaryColor,
-            size: 48,
-          ),
-          SizedBox(height: 16),
-          Text(
-            "Ready to Start?",
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: ColorConstants.surfaceColor,
-            ),
-          ),
-          SizedBox(height: 8),
-          Text(
-            "Set up the game and share the code with players",
-            style: TextStyle(
-              fontSize: 14,
-              color: ColorConstants.lightTextColor,
-            ),
-            textAlign: TextAlign.center,
+          // Title Section
+          Row(
+            children: [
+              Icon(
+                Icons.dashboard,
+                color: ColorConstants.surfaceColor,
+                size: 24,
+              ),
+              SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  "Select a Board",
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: ColorConstants.surfaceColor,
+                  ),
+                ),
+              ),
+            ],
           ),
           SizedBox(height: 24),
-          SizedBox(
-            width: 200,
-            child: ElevatedButton(
-              onPressed: () async {
+
+          // Dropdown and Button Section
+          LayoutBuilder(
+            builder: (context, constraints) {
+              bool isWideScreen = constraints.maxWidth > 600;
+
+              if (isWideScreen) {
+                return Row(
+                  children: [
+                    SizedBox(
+                      width: 300,
+                      child: _buildDropdownContainer(context),
+                    ),
+                    SizedBox(width: 20),
+                    SizedBox(
+                      width: 150,
+                      child: _buildCompactLetsGoButton(context),
+                    ),
+                  ],
+                );
+              } else {
+                return Column(
+                  children: [
+                    _buildDropdownContainer(context),
+                    SizedBox(height: 16),
+                    _buildCompactLetsGoButton(context),
+                  ],
+                );
+              }
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDropdownContainer(BuildContext context) {
+    if (_isLoading) {
+      return Container(
+        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color:
+              Theme.of(context).brightness == Brightness.dark
+                  ? Colors.grey[800]
+                  : Colors.grey[100],
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: ColorConstants.primaryContainerColor.withValues(alpha: 0.3),
+          ),
+        ),
+        child: Row(
+          children: [
+            SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: ColorConstants.primaryColor,
+              ),
+            ),
+            SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                "Loading boards...",
+                style: TextStyle(
+                  fontSize: 16,
+                  color: ColorConstants.surfaceColor.withValues(alpha: 0.7),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (_hasError) {
+      return Container(
+        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color:
+              Theme.of(context).brightness == Brightness.dark
+                  ? Colors.red[900]?.withValues(alpha: 0.3)
+                  : Colors.red[100],
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.red.withValues(alpha: 0.5)),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.error_outline, color: Colors.red, size: 20),
+            SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                "Error loading boards",
+                style: TextStyle(fontSize: 16, color: Colors.red),
+              ),
+            ),
+            InkWell(
+              onTap: _fetchQRows,
+              child: Icon(Icons.refresh, color: Colors.red, size: 20),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.1),
+            blurRadius: 4,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: DropdownButtonFormField<String>(
+        value: _selectedRound,
+        decoration: InputDecoration(
+          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(
+              color: ColorConstants.primaryContainerColor.withValues(
+                alpha: 0.3,
+              ),
+            ),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(
+              color: ColorConstants.primaryContainerColor.withValues(
+                alpha: 0.3,
+              ),
+            ),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(
+              color: ColorConstants.primaryColor,
+              width: 2,
+            ),
+          ),
+          filled: true,
+          fillColor:
+              Theme.of(context).brightness == Brightness.dark
+                  ? Colors.grey[800]
+                  : Colors.grey[100],
+          prefixIcon: Icon(
+            Icons.dashboard,
+            color: ColorConstants.surfaceColor.withValues(alpha: 0.7),
+            size: 20,
+          ),
+        ),
+        hint: Text(
+          "Choose a board",
+          style: TextStyle(
+            fontSize: 16,
+            color: ColorConstants.surfaceColor.withValues(alpha: 0.7),
+          ),
+        ),
+        items:
+            _uniqueRounds.map((String round) {
+              return DropdownMenuItem<String>(
+                value: round,
+                child: Container(
+                  padding: EdgeInsets.symmetric(vertical: 8),
+                  child: Text(
+                    round,
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: ColorConstants.surfaceColor,
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+        onChanged: (String? newValue) {
+          setState(() {
+            _selectedRound = newValue;
+          });
+        },
+        dropdownColor:
+            Theme.of(context).brightness == Brightness.dark
+                ? ColorConstants.darkCardColor
+                : ColorConstants.cardColor,
+        menuMaxHeight: 300,
+        isDense: false,
+        isExpanded: true,
+        borderRadius: BorderRadius.circular(12),
+        elevation: 8,
+      ),
+    );
+  }
+
+  Widget _buildCollapsibleBuzzerSection(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color:
+            Theme.of(context).brightness == Brightness.dark
+                ? ColorConstants.darkCardColor
+                : ColorConstants.cardColor,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: ColorConstants.primaryContainerColor.withValues(alpha: 0.3),
+            blurRadius: 10,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          InkWell(
+            onTap: () {
+              setState(() {
+                _showBuzzerSection = !_showBuzzerSection;
+              });
+            },
+            borderRadius: BorderRadius.circular(16),
+            child: Padding(
+              padding: EdgeInsets.all(20),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.smart_button,
+                    color: ColorConstants.surfaceColor,
+                    size: 24,
+                  ),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      "I have my own buzzer",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: ColorConstants.surfaceColor,
+                      ),
+                    ),
+                  ),
+                  Icon(
+                    _showBuzzerSection ? Icons.expand_less : Icons.expand_more,
+                    color: ColorConstants.surfaceColor,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          AnimatedContainer(
+            duration: Duration(milliseconds: 300),
+            height: _showBuzzerSection ? null : 0,
+            child:
+                _showBuzzerSection
+                    ? Padding(
+                      padding: EdgeInsets.fromLTRB(20, 0, 20, 20),
+                      child: Text(
+                        "Great! You can use your physical buzzer system. This app will handle scoring and question management.",
+                        style: TextStyle(
+                          fontSize: 16,
+                          height: 1.5,
+                          color:
+                              Theme.of(context).brightness == Brightness.dark
+                                  ? ColorConstants.lightTextColor
+                                  : ColorConstants.darkTextColor,
+                        ),
+                      ),
+                    )
+                    : SizedBox.shrink(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCollapsibleInstructionsSection(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color:
+            Theme.of(context).brightness == Brightness.dark
+                ? ColorConstants.darkCardColor
+                : ColorConstants.cardColor,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: ColorConstants.primaryContainerColor.withValues(alpha: 0.3),
+            blurRadius: 10,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          InkWell(
+            onTap: () {
+              setState(() {
+                _showInstructionsSection = !_showInstructionsSection;
+              });
+            },
+            borderRadius: BorderRadius.circular(16),
+            child: Padding(
+              padding: EdgeInsets.all(20),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.lightbulb_outline,
+                    color: ColorConstants.surfaceColor,
+                    size: 24,
+                  ),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      "Instructions for the Reader",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: ColorConstants.surfaceColor,
+                      ),
+                    ),
+                  ),
+                  Icon(
+                    _showInstructionsSection
+                        ? Icons.expand_less
+                        : Icons.expand_more,
+                    color: ColorConstants.surfaceColor,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          AnimatedContainer(
+            duration: Duration(milliseconds: 300),
+            height: _showInstructionsSection ? null : 0,
+            child:
+                _showInstructionsSection
+                    ? Padding(
+                      padding: EdgeInsets.fromLTRB(20, 0, 20, 20),
+                      child: MarkdownBody(
+                        data: howToPlayMD,
+                        onTapLink: (text, href, title) {
+                          if (href != null) {
+                            _launchURL(href);
+                          }
+                        },
+                        styleSheet: MarkdownStyleSheet(
+                          p: TextStyle(
+                            fontSize: 16,
+                            height: 1.6,
+                            color:
+                                Theme.of(context).brightness == Brightness.dark
+                                    ? ColorConstants.lightTextColor
+                                    : ColorConstants.darkTextColor,
+                          ),
+                          a: TextStyle(
+                            color: ColorConstants.secondaryContainerColor,
+                            decoration: TextDecoration.underline,
+                          ),
+                          strong: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    )
+                    : SizedBox.shrink(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCompactLetsGoButton(BuildContext context) {
+    // Button is enabled only when a round is selected and there's no error
+    bool canProceed = _selectedRound != null && !_hasError;
+
+    // Determine background color based on state
+    Color backgroundColor;
+    if (_hasError) {
+      backgroundColor = Colors.red;
+    } else if (canProceed) {
+      backgroundColor = ColorConstants.primaryColor;
+    } else {
+      backgroundColor = Colors.grey;
+    }
+
+    return ElevatedButton(
+      onPressed:
+          canProceed
+              ? () async {
                 final navigator = Navigator.of(context);
                 final scaffoldMessenger = ScaffoldMessenger.of(context);
                 final roomProvider = Provider.of<RoomProvider>(
@@ -344,28 +619,40 @@ class InstructionsPage extends StatelessWidget {
                 // Set game start time
                 playerProvider.setGameStartTime(DateTime.now());
 
+                // Navigate to question board with preloaded data
                 navigator.push(
-                  MaterialPageRoute(builder: (context) => QuestionBoardPage()),
+                  MaterialPageRoute(
+                    builder:
+                        (context) => QuestionBoardPage(
+                          selectedRound: _selectedRound!,
+                          allQRows: _allQRows,
+                        ),
+                  ),
                 );
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: ColorConstants.primaryColor,
-                foregroundColor: ColorConstants.lightTextColor,
-                padding: EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                elevation: 3,
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.play_circle_filled, size: 28),
-                  SizedBox(width: 8),
-                  Text("Let's Go!", style: AppTextStyles.titleMedium),
-                ],
-              ),
-            ),
+              }
+              : (_hasError ? _fetchQRows : null),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: backgroundColor,
+        foregroundColor: ColorConstants.lightTextColor,
+        padding: EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        elevation: canProceed ? 3 : 1,
+        disabledBackgroundColor: Colors.grey,
+        disabledForegroundColor: ColorConstants.lightTextColor.withValues(
+          alpha: 0.6,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            _hasError ? Icons.refresh : Icons.play_circle_filled,
+            size: 24,
+          ),
+          SizedBox(width: 8),
+          Text(
+            "Let's Go!",
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
           ),
         ],
       ),
