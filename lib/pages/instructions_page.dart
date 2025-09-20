@@ -1,4 +1,5 @@
 import 'package:buzz5_quiz_app/config/colors.dart';
+import 'package:buzz5_quiz_app/config/text_styles.dart';
 import 'package:buzz5_quiz_app/pages/q_board_page.dart';
 import 'package:buzz5_quiz_app/widgets/appbar.dart';
 import 'package:buzz5_quiz_app/widgets/base_page.dart';
@@ -133,10 +134,8 @@ class _InstructionsPageState extends State<InstructionsPage> {
     return Container(
       padding: EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color:
-            Theme.of(context).brightness == Brightness.dark
-                ? ColorConstants.darkCardColor
-                : ColorConstants.cardColor,
+        color: ColorConstants.darkCardColor,
+
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -211,10 +210,7 @@ class _InstructionsPageState extends State<InstructionsPage> {
       return Container(
         padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
-          color:
-              Theme.of(context).brightness == Brightness.dark
-                  ? Colors.grey[800]
-                  : Colors.grey[100],
+          color: Colors.grey[800],
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: ColorConstants.primaryContainerColor.withValues(alpha: 0.3),
@@ -249,10 +245,7 @@ class _InstructionsPageState extends State<InstructionsPage> {
       return Container(
         padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
-          color:
-              Theme.of(context).brightness == Brightness.dark
-                  ? Colors.red[900]?.withValues(alpha: 0.3)
-                  : Colors.red[100],
+          color: Colors.red[900]?.withValues(alpha: 0.3),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: Colors.red.withValues(alpha: 0.5)),
         ),
@@ -314,10 +307,7 @@ class _InstructionsPageState extends State<InstructionsPage> {
             ),
           ),
           filled: true,
-          fillColor:
-              Theme.of(context).brightness == Brightness.dark
-                  ? Colors.grey[800]
-                  : Colors.grey[100],
+          fillColor: Colors.grey[800],
           prefixIcon: Icon(
             Icons.dashboard,
             color: ColorConstants.surfaceColor.withValues(alpha: 0.7),
@@ -352,10 +342,7 @@ class _InstructionsPageState extends State<InstructionsPage> {
             _selectedRound = newValue;
           });
         },
-        dropdownColor:
-            Theme.of(context).brightness == Brightness.dark
-                ? ColorConstants.darkCardColor
-                : ColorConstants.cardColor,
+        dropdownColor: ColorConstants.darkCardColor,
         menuMaxHeight: 300,
         isDense: false,
         isExpanded: true,
@@ -368,10 +355,7 @@ class _InstructionsPageState extends State<InstructionsPage> {
   Widget _buildCollapsibleBuzzerSection(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color:
-            Theme.of(context).brightness == Brightness.dark
-                ? ColorConstants.darkCardColor
-                : ColorConstants.cardColor,
+        color: ColorConstants.darkCardColor,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -402,7 +386,7 @@ class _InstructionsPageState extends State<InstructionsPage> {
                   SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      "I have my own buzzer",
+                      "Using an external buzzer setup",
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w600,
@@ -425,16 +409,19 @@ class _InstructionsPageState extends State<InstructionsPage> {
                 _showBuzzerSection
                     ? Padding(
                       padding: EdgeInsets.fromLTRB(20, 0, 20, 20),
-                      child: Text(
-                        "Great! You can use your physical buzzer system. This app will handle scoring and question management.",
-                        style: TextStyle(
-                          fontSize: 16,
-                          height: 1.5,
-                          color:
-                              Theme.of(context).brightness == Brightness.dark
-                                  ? ColorConstants.lightTextColor
-                                  : ColorConstants.darkTextColor,
-                        ),
+                      child: Column(
+                        children: [
+                          Text(
+                            "Great! You can use your own buzzer system and we will handle scoring and question management.",
+                            style: AppTextStyles.body,
+                            textAlign: TextAlign.justify,
+                          ),
+                          Text(
+                            "Add the player names below.",
+                            style: AppTextStyles.body,
+                            textAlign: TextAlign.justify,
+                          ),
+                        ],
                       ),
                     )
                     : SizedBox.shrink(),
@@ -447,10 +434,7 @@ class _InstructionsPageState extends State<InstructionsPage> {
   Widget _buildCollapsibleInstructionsSection(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color:
-            Theme.of(context).brightness == Brightness.dark
-                ? ColorConstants.darkCardColor
-                : ColorConstants.cardColor,
+        color: ColorConstants.darkCardColor,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -517,10 +501,7 @@ class _InstructionsPageState extends State<InstructionsPage> {
                           p: TextStyle(
                             fontSize: 16,
                             height: 1.6,
-                            color:
-                                Theme.of(context).brightness == Brightness.dark
-                                    ? ColorConstants.lightTextColor
-                                    : ColorConstants.darkTextColor,
+                            color: ColorConstants.lightTextColor,
                           ),
                           a: TextStyle(
                             color: ColorConstants.secondaryContainerColor,
@@ -645,10 +626,7 @@ class _InstructionsPageState extends State<InstructionsPage> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            _hasError ? Icons.refresh : Icons.play_circle_filled,
-            size: 24,
-          ),
+          Icon(_hasError ? Icons.refresh : Icons.play_circle_filled, size: 24),
           SizedBox(width: 8),
           Text(
             "Let's Go!",
