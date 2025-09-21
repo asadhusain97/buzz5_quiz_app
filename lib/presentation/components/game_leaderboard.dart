@@ -1,5 +1,5 @@
 import 'package:buzz5_quiz_app/config/app_dimensions.dart';
-import 'package:buzz5_quiz_app/config/app_theme_extensions.dart';
+import 'package:buzz5_quiz_app/config/text_styles.dart';
 import 'package:buzz5_quiz_app/providers/player_provider.dart';
 import 'package:buzz5_quiz_app/providers/room_provider.dart';
 import 'package:buzz5_quiz_app/models/room.dart';
@@ -113,7 +113,7 @@ class GameLeaderboard extends StatelessWidget {
                 Expanded(
                   child: Text(
                     player.name,
-                    style: context.gameTheme.scoreCardStyle,
+                    style: AppTextStyles.scoreCard,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
@@ -123,7 +123,7 @@ class GameLeaderboard extends StatelessWidget {
           SizedBox(width: AppDimensions.extraSmallSpacing),
           Text(
             '${player.score}',
-            style: context.gameTheme.scoreCardStyle,
+            style: AppTextStyles.scoreCard,
           ),
         ],
       ),

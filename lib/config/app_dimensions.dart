@@ -159,4 +159,14 @@ class AppDimensions {
 
   /// Text constraints for truncation
   static const BoxConstraints textConstraints = BoxConstraints(maxWidth: 130.0);
+
+  // Migrated from UIConstants
+  /// Animation durations
+  static const Duration animationFast = Duration(milliseconds: 200);
+  static const Duration animationMedium = Duration(milliseconds: 300);
+  static const Duration animationSlow = Duration(milliseconds: 500);
+
+  /// Text truncation
+  static const int maxTextLength = 500;
+  static const int maxTitleLines = 3;
 }

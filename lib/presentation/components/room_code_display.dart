@@ -54,12 +54,12 @@ class RoomCodeDisplay extends StatelessWidget {
   /// Creates the card decoration with border and shadow
   BoxDecoration _getCardDecoration() {
     return BoxDecoration(
-      color: Colors.transparent,
+      color: ColorConstants.transparent,
       borderRadius: AppDimensions.modalBorderRadius,
       border: Border.all(color: ColorConstants.primaryColor, width: 2),
       boxShadow: [
         BoxShadow(
-          color: Colors.black.withValues(alpha: AppDimensions.backdropOpacity),
+          color: ColorConstants.overlayMedium,
           blurRadius: 12,
           offset: const Offset(0, 4),
         ),

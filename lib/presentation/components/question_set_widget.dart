@@ -1,5 +1,5 @@
 import 'package:buzz5_quiz_app/config/app_dimensions.dart';
-import 'package:buzz5_quiz_app/config/app_theme_extensions.dart';
+import 'package:buzz5_quiz_app/config/colors.dart';
 import 'package:buzz5_quiz_app/providers/question_done.dart';
 import 'package:buzz5_quiz_app/providers/player_provider.dart';
 import 'package:buzz5_quiz_app/pages/question_page.dart';
@@ -126,8 +126,8 @@ class QuestionSetWidget extends StatelessWidget {
       style: ElevatedButton.styleFrom(
         shape: const CircleBorder(),
         padding: EdgeInsets.zero,
-        backgroundColor: Colors.transparent,
-        shadowColor: Colors.transparent,
+        backgroundColor: ColorConstants.transparent,
+        shadowColor: ColorConstants.transparent,
       ),
       child: Container(
         width: 90,
@@ -139,13 +139,13 @@ class QuestionSetWidget extends StatelessWidget {
             children: [
               Icon(
                 Icons.check,
-                color: context.gameTheme.answeredQuestionColor,
+                color: ColorConstants.answeredQuestion,
                 size: 30,
               ),
               Text(
                 item['points'].toString(),
                 style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  color: context.gameTheme.answeredQuestionColor,
+                  color: ColorConstants.answeredQuestion,
                 ),
               ),
             ],

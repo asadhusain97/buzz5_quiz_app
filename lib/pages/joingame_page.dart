@@ -241,15 +241,15 @@ class _JoinGamePageState extends State<JoinGamePage> {
                         padding: EdgeInsets.all(12),
                         margin: EdgeInsets.only(bottom: 20),
                         decoration: BoxDecoration(
-                          color: Colors.red.withValues(alpha: 0.1),
+                          color: ColorConstants.danger.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.red, width: 1),
+                          border: Border.all(color: ColorConstants.danger, width: 1),
                         ),
                         child: Row(
                           children: [
                             Icon(
                               Icons.error_outline,
-                              color: Colors.red,
+                              color: ColorConstants.danger,
                               size: 20,
                             ),
                             SizedBox(width: 8),
@@ -257,7 +257,7 @@ class _JoinGamePageState extends State<JoinGamePage> {
                               child: Text(
                                 _errorMessage!,
                                 style: TextStyle(
-                                  color: Colors.red,
+                                  color: ColorConstants.danger,
                                   fontSize: 14,
                                 ),
                               ),

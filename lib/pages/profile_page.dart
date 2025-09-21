@@ -5,6 +5,7 @@ import 'package:buzz5_quiz_app/providers/auth_provider.dart';
 import 'package:buzz5_quiz_app/widgets/custom_app_bar.dart';
 import 'package:buzz5_quiz_app/widgets/app_background.dart';
 import 'package:buzz5_quiz_app/config/colors.dart';
+import 'package:buzz5_quiz_app/config/text_styles.dart';
 import 'package:buzz5_quiz_app/config/logger.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -57,7 +58,7 @@ class _ProfilePageState extends State<ProfilePage> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Failed to pick image'),
-            backgroundColor: Colors.red,
+            backgroundColor: ColorConstants.danger,
           ),
         );
       }
@@ -81,7 +82,7 @@ class _ProfilePageState extends State<ProfilePage> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Profile updated successfully!'),
-            backgroundColor: Colors.green,
+            backgroundColor: ColorConstants.success,
           ),
         );
       }
@@ -92,7 +93,7 @@ class _ProfilePageState extends State<ProfilePage> {
             content: Text(
               authProvider.errorMessage ?? 'Failed to update profile',
             ),
-            backgroundColor: Colors.red,
+            backgroundColor: ColorConstants.danger,
           ),
         );
       }
@@ -188,14 +189,14 @@ class _ProfilePageState extends State<ProfilePage> {
                                     );
                                   }
                                 },
-                        icon: const Icon(Icons.logout, color: Colors.red),
+                        icon: const Icon(Icons.logout, color: ColorConstants.danger),
                         label: const Text(
                           'Sign Out',
-                          style: TextStyle(color: Colors.red),
+                          style: AppTextStyles.dangerText,
                         ),
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 16),
-                          side: const BorderSide(color: Colors.red),
+                          side: const BorderSide(color: ColorConstants.danger),
                         ),
                       ),
                     ),
@@ -441,9 +442,7 @@ class _ProfilePageState extends State<ProfilePage> {
       child: Center(
         child: Text(
           initials,
-          style: TextStyle(
-            fontSize: 32,
-            fontWeight: FontWeight.bold,
+          style: AppTextStyles.profileHeading.copyWith(
             color: ColorConstants.lightTextColor,
           ),
         ),

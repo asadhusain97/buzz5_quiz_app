@@ -332,21 +332,21 @@ class _GameRoomPageState extends State<GameRoomPage> {
           boxShadow: [
             // Outer shadow for depth
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.3),
+              color: ColorConstants.overlayMedium,
               offset: Offset(0, 8),
               blurRadius: 20,
               spreadRadius: 2,
             ),
             // Inner shadow for 3D effect
             BoxShadow(
-              color: Colors.red.shade900.withValues(alpha: 0.6),
+              color: ColorConstants.danger.withValues(alpha: 0.6),
               offset: Offset(0, 4),
               blurRadius: 12,
               spreadRadius: -2,
             ),
             // Top highlight
             BoxShadow(
-              color: Colors.red.shade200.withValues(alpha: 0.4),
+              color: ColorConstants.danger.withValues(alpha: 0.4),
               offset: Offset(0, -2),
               blurRadius: 8,
               spreadRadius: -4,
@@ -368,7 +368,7 @@ class _GameRoomPageState extends State<GameRoomPage> {
                 letterSpacing: 2.0,
                 shadows: [
                   Shadow(
-                    color: Colors.black.withValues(alpha: 0.5),
+                    color: ColorConstants.overlayDark,
                     offset: Offset(0, 2),
                     blurRadius: 4,
                   ),
@@ -441,7 +441,7 @@ class _GameRoomPageState extends State<GameRoomPage> {
             height: 8,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: player.isConnected ? Colors.green : Colors.red,
+              color: player.isConnected ? ColorConstants.connected : ColorConstants.disconnected,
             ),
           ),
           SizedBox(width: 12),
@@ -528,8 +528,8 @@ class _GameRoomPageState extends State<GameRoomPage> {
                 _leaveRoom();
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
-                foregroundColor: Colors.white,
+                backgroundColor: ColorConstants.danger,
+                foregroundColor: ColorConstants.lightTextColor,
               ),
               child: Text('Leave Room'),
             ),
