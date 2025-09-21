@@ -1,8 +1,8 @@
 import 'package:buzz5_quiz_app/config/text_styles.dart';
 import 'package:buzz5_quiz_app/config/colors.dart';
-import 'package:buzz5_quiz_app/widgets/appbar.dart';
+import 'package:buzz5_quiz_app/widgets/custom_app_bar.dart';
 import 'package:buzz5_quiz_app/widgets/base_page.dart';
-import 'package:buzz5_quiz_app/models/room_provider.dart';
+import 'package:buzz5_quiz_app/providers/room_provider.dart';
 import 'package:buzz5_quiz_app/pages/game_room_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -54,20 +54,20 @@ class _JoinGamePageState extends State<JoinGamePage> {
       final roomProvider = Provider.of<RoomProvider>(context, listen: false);
       final navigator = Navigator.of(context);
 
-      // Format room code (remove dashes and convert to uppercase)
-      final roomCode =
+      // Format game code (remove dashes and convert to uppercase)
+      final gameCode =
           _roomCodeController.text.replaceAll('-', '').toUpperCase().trim();
       final playerName = _playerNameController.text.trim();
 
       AppLogger.i(
-        "Attempting to join room: $roomCode with player name: $playerName",
+        "Attempting to join room: $gameCode with player name: $playerName",
       );
 
       // Get room details first to validate
-      final room = await roomProvider.getRoomByCode(roomCode);
+      final room = await roomProvider.getRoomByCode(gameCode);
       if (room == null) {
         setState(() {
-          _errorMessage = "Room not found. Please check the room code.";
+          _errorMessage = "Game not found. Please check the game code.";
           _isJoining = false;
         });
         return;
@@ -83,7 +83,7 @@ class _JoinGamePageState extends State<JoinGamePage> {
 
       // Attempt to join the room with player name validation
       final success = await roomProvider.joinRoom(
-        roomCode,
+        gameCode,
         playerName: playerName,
       );
 
@@ -91,11 +91,13 @@ class _JoinGamePageState extends State<JoinGamePage> {
         // Player has been added to Firebase roomPlayers via joinRoom()
         // The playerList will be automatically synchronized via RoomProvider listener
         final user = FirebaseAuth.instance.currentUser;
-        
+
         if (user != null) {
-          AppLogger.i("Successfully joined room: $roomCode as logged-in user: ${user.uid}");
+          AppLogger.i(
+            "Successfully joined game: $gameCode as logged-in user: ${user.uid}",
+          );
         } else {
-          AppLogger.i("Successfully joined room: $roomCode as guest player");
+          AppLogger.i("Successfully joined game: $gameCode as guest player");
         }
 
         // Navigate to game room page
@@ -144,7 +146,7 @@ class _JoinGamePageState extends State<JoinGamePage> {
                     ),
                     SizedBox(height: 16),
                     Text(
-                      "Enter the room code and your display name for the quiz to join the game.",
+                      "Enter the game code and your display name for the quiz to join the game.",
                       style: AppTextStyles.body.copyWith(
                         color: ColorConstants.hintGrey,
                       ),
@@ -152,11 +154,11 @@ class _JoinGamePageState extends State<JoinGamePage> {
                     ),
                     SizedBox(height: 40),
 
-                    // Room Code Input
+                    // Game Code Input
                     TextFormField(
                       controller: _roomCodeController,
                       decoration: InputDecoration(
-                        labelText: "Room Code",
+                        labelText: "Game Code",
                         counterText: "",
                         prefixIcon: Icon(Icons.meeting_room),
                         border: OutlineInputBorder(
@@ -174,9 +176,11 @@ class _JoinGamePageState extends State<JoinGamePage> {
                       textAlign: TextAlign.center,
                       textCapitalization: TextCapitalization.characters,
                       inputFormatters: [
-                        FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z0-9-]')),
-                        TextInputFormatter.withFunction((oldValue, newValue) =>
-                          TextEditingValue(
+                        FilteringTextInputFormatter.allow(
+                          RegExp(r'[A-Za-z0-9-]'),
+                        ),
+                        TextInputFormatter.withFunction(
+                          (oldValue, newValue) => TextEditingValue(
                             text: newValue.text.toUpperCase(),
                             selection: newValue.selection,
                           ),
@@ -184,11 +188,11 @@ class _JoinGamePageState extends State<JoinGamePage> {
                       ],
                       validator: (value) {
                         if (value == null || value.isEmpty) {
-                          return 'Please enter a room code';
+                          return 'Please enter a game code';
                         }
                         final cleanCode = value.replaceAll('-', '');
                         if (cleanCode.length != 6) {
-                          return 'Room code must be 6 characters';
+                          return 'Game code must be 6 characters';
                         }
                         return null;
                       },
@@ -241,15 +245,18 @@ class _JoinGamePageState extends State<JoinGamePage> {
                         padding: EdgeInsets.all(12),
                         margin: EdgeInsets.only(bottom: 20),
                         decoration: BoxDecoration(
-                          color: Colors.red.withValues(alpha: 0.1),
+                          color: ColorConstants.danger.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.red, width: 1),
+                          border: Border.all(
+                            color: ColorConstants.danger,
+                            width: 1,
+                          ),
                         ),
                         child: Row(
                           children: [
                             Icon(
                               Icons.error_outline,
-                              color: Colors.red,
+                              color: ColorConstants.danger,
                               size: 20,
                             ),
                             SizedBox(width: 8),
@@ -257,7 +264,7 @@ class _JoinGamePageState extends State<JoinGamePage> {
                               child: Text(
                                 _errorMessage!,
                                 style: TextStyle(
-                                  color: Colors.red,
+                                  color: ColorConstants.danger,
                                   fontSize: 14,
                                 ),
                               ),
@@ -324,47 +331,6 @@ class _JoinGamePageState extends State<JoinGamePage> {
                       ),
                     ),
                     SizedBox(height: 24),
-
-                    // Help Text
-                    Container(
-                      padding: EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: ColorConstants.darkCardColor.withValues(
-                          alpha: 0.5,
-                        ),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Column(
-                        children: [
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.info_outline,
-                                color: ColorConstants.primaryContainerColor,
-                                size: 20,
-                              ),
-                              SizedBox(width: 8),
-                              Text(
-                                "How to join:",
-                                style: AppTextStyles.titleSmall.copyWith(
-                                  color: ColorConstants.primaryContainerColor,
-                                ),
-                              ),
-                            ],
-                          ),
-                          SizedBox(height: 8),
-                          Text(
-                            "• Get the room code from the game host\n"
-                            "• Enter your name (must match the name in the game)\n"
-                            "• Join and wait for the game to start!",
-                            style: AppTextStyles.body.copyWith(
-                              color: ColorConstants.lightTextColor,
-                              fontSize: 14,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
                   ],
                 ),
               ),

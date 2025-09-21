@@ -27,7 +27,7 @@ class Room {
     this.questionStartTime,
   });
 
-  // Generate a unique 6-character room code
+  // Generate a unique 6-character game code
   static Future<String> generateRoomCode() async {
     const chars =
         'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Excluding confusing chars like 0, O, I, 1
@@ -49,7 +49,7 @@ class Room {
       exists = snapshot.exists;
     } while (exists);
 
-    AppLogger.i("Generated unique room code: $code");
+    AppLogger.i("Generated unique game code: $code");
     return code;
   }
 
@@ -124,7 +124,7 @@ class Room {
     );
   }
 
-  // Get formatted room code (with dash in middle for readability)
+  // Get formatted game code (with dash in middle for readability)
   String get formattedRoomCode {
     if (roomCode.length == 6) {
       return '${roomCode.substring(0, 3)}-${roomCode.substring(3)}';

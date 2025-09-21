@@ -1,13 +1,14 @@
 import 'package:buzz5_quiz_app/config/logger.dart';
 import 'package:buzz5_quiz_app/config/app_config.dart';
-import 'package:buzz5_quiz_app/models/question_done.dart';
+import 'package:buzz5_quiz_app/config/theme.dart';
+import 'package:buzz5_quiz_app/providers/question_done.dart';
 import 'package:flutter/material.dart';
 import 'package:buzz5_quiz_app/widgets/auth_gate.dart';
 import 'package:buzz5_quiz_app/pages/forgot_password_page.dart';
 import 'package:provider/provider.dart';
-import 'package:buzz5_quiz_app/models/player_provider.dart';
-import 'package:buzz5_quiz_app/models/room_provider.dart';
-import 'package:buzz5_quiz_app/models/auth_provider.dart';
+import 'package:buzz5_quiz_app/providers/player_provider.dart';
+import 'package:buzz5_quiz_app/providers/room_provider.dart';
+import 'package:buzz5_quiz_app/providers/auth_provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
 import 'firebase_options.dart';
@@ -95,7 +96,8 @@ class MyApp extends StatelessWidget {
       child: MaterialApp(
         title: 'Buzz5 Quiz App',
         debugShowCheckedModeBanner: false,
-        theme: ThemeData.dark(),
+        theme: AppTheme.buildDarkTheme(), // App uses only dark theme
+        themeMode: ThemeMode.dark, // Force dark theme always
         home: const AuthGate(),
         routes: {'/forgot-password': (context) => const ForgotPasswordPage()},
       ),

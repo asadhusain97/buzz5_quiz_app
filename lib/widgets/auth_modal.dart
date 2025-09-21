@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:buzz5_quiz_app/models/auth_provider.dart';
+import 'package:buzz5_quiz_app/providers/auth_provider.dart';
 
 class AuthModal extends StatefulWidget {
   const AuthModal({super.key});
@@ -128,7 +128,7 @@ class _AuthModalState extends State<AuthModal>
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'Please login or Sign Up',
+                      'Who this?',
                       style: Theme.of(context).textTheme.headlineSmall
                           ?.copyWith(fontWeight: FontWeight.bold),
                     ),
@@ -143,13 +143,20 @@ class _AuthModalState extends State<AuthModal>
 
               // Tab bar - Modern Toggle Style
               Container(
-                margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                margin: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 16,
+                ),
                 padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.1),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.outline.withValues(alpha: 0.1),
                     width: 1,
                   ),
                 ),
@@ -159,7 +166,9 @@ class _AuthModalState extends State<AuthModal>
                     gradient: LinearGradient(
                       colors: [
                         Theme.of(context).colorScheme.primary,
-                        Theme.of(context).colorScheme.primary.withValues(alpha: 0.9),
+                        Theme.of(
+                          context,
+                        ).colorScheme.primary.withValues(alpha: 0.9),
                       ],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
@@ -167,7 +176,9 @@ class _AuthModalState extends State<AuthModal>
                     borderRadius: BorderRadius.circular(12),
                     boxShadow: [
                       BoxShadow(
-                        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.primary.withValues(alpha: 0.2),
                         blurRadius: 4,
                         offset: const Offset(0, 2),
                       ),
@@ -176,7 +187,9 @@ class _AuthModalState extends State<AuthModal>
                   indicatorSize: TabBarIndicatorSize.tab,
                   dividerColor: Colors.transparent,
                   labelColor: Theme.of(context).colorScheme.onPrimary,
-                  unselectedLabelColor: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+                  unselectedLabelColor: Theme.of(
+                    context,
+                  ).colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
                   labelStyle: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
@@ -188,14 +201,8 @@ class _AuthModalState extends State<AuthModal>
                     letterSpacing: 0.3,
                   ),
                   tabs: const [
-                    Tab(
-                      height: 44,
-                      child: Text('Login'),
-                    ),
-                    Tab(
-                      height: 44,
-                      child: Text('Sign Up'),
-                    ),
+                    Tab(height: 44, child: Text('Login')),
+                    Tab(height: 44, child: Text('Sign Up')),
                   ],
                 ),
               ),

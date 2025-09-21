@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 
 Color hexToColor(String hex) {
@@ -58,4 +57,38 @@ class ColorConstants {
   static Color challengerTierColor = hexToColor(
     '#3B82F6',
   ); // Cool blue - ranks 26-50
+
+  // Game-specific colors (migrated from GameThemeExtension)
+  static const Color connectionIndicator = Colors.green;
+  static const Color answeredQuestion = Colors.green;
+  static const Color unansweredQuestion = Colors.transparent;
+
+  // Dark theme specific colors (migrated from app_theme.dart)
+  static Color darkSurface = hexToColor('#1E1E1E');
+  static Color darkScaffoldBackground = hexToColor('#121212');
+  static Color darkCard = hexToColor('#252525');
+
+  // Semantic colors for common usage patterns
+  static const Color transparent = Colors.transparent;
+  static const Color warning = Colors.amber;
+  static const Color danger = Colors.red;
+  static const Color success = Colors.green;
+  static const Color info = Colors.blue;
+
+  // Status indicator colors
+  static const Color connected = Colors.green;
+  static const Color disconnected = Colors.red;
+
+  // Overlay colors
+  static Color overlayLight = Colors.black.withValues(alpha: 0.1);
+  static Color overlayMedium = Colors.black.withValues(alpha: 0.3);
+  static Color overlayDark = Colors.black.withValues(alpha: 0.5);
+
+  // Shadow colors
+  static const Color shadow = Colors.black26;
+
+  // Generic neutral colors
+  static final Color greyLight = Colors.grey.shade300;
+  static final Color greyMedium = Colors.grey.shade500;
+  static final Color greyDark = Colors.grey.shade800;
 }

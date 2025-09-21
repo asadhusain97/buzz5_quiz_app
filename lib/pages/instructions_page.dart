@@ -1,13 +1,13 @@
 import 'package:buzz5_quiz_app/config/colors.dart';
-import 'package:buzz5_quiz_app/pages/q_board_page.dart';
-import 'package:buzz5_quiz_app/widgets/appbar.dart';
+import 'package:buzz5_quiz_app/pages/question_board_page.dart';
+import 'package:buzz5_quiz_app/widgets/custom_app_bar.dart';
 import 'package:buzz5_quiz_app/widgets/base_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:buzz5_quiz_app/models/player_provider.dart';
+import 'package:buzz5_quiz_app/providers/player_provider.dart';
 import 'package:buzz5_quiz_app/models/player.dart';
-import 'package:buzz5_quiz_app/models/room_provider.dart';
+import 'package:buzz5_quiz_app/providers/room_provider.dart';
 import 'package:buzz5_quiz_app/models/qrow.dart';
 import 'package:provider/provider.dart';
 import 'package:buzz5_quiz_app/config/logger.dart';
@@ -641,8 +641,10 @@ class _InstructionsPageState extends State<InstructionsPage> {
                                                       ColorConstants
                                                           .lightTextColor,
                                                   padding: EdgeInsets.symmetric(
-                                                    horizontal: 16,
+                                                    horizontal: 12,
+                                                    vertical: 8,
                                                   ),
+                                                  minimumSize: Size(80, 32),
                                                   shape: RoundedRectangleBorder(
                                                     borderRadius:
                                                         BorderRadius.circular(
@@ -652,7 +654,10 @@ class _InstructionsPageState extends State<InstructionsPage> {
                                                   disabledBackgroundColor:
                                                       Colors.grey,
                                                 ),
-                                                child: Text("Add Player"),
+                                                child: Text(
+                                                  "Add Player",
+                                                  style: TextStyle(fontSize: 13),
+                                                ),
                                               ),
                                             ),
                                           ],

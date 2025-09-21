@@ -1,11 +1,11 @@
 import 'package:buzz5_quiz_app/config/colors.dart';
 import 'package:buzz5_quiz_app/config/text_styles.dart';
 import 'package:buzz5_quiz_app/main.dart';
-import 'package:buzz5_quiz_app/widgets/appbar.dart';
+import 'package:buzz5_quiz_app/widgets/custom_app_bar.dart';
 import 'package:buzz5_quiz_app/widgets/base_page.dart';
 import 'package:flutter/material.dart';
 import 'package:buzz5_quiz_app/config/logger.dart';
-import 'package:buzz5_quiz_app/models/player_provider.dart';
+import 'package:buzz5_quiz_app/providers/player_provider.dart';
 import 'package:provider/provider.dart';
 
 class FinalPage extends StatelessWidget {

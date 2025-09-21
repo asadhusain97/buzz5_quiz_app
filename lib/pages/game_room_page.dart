@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:buzz5_quiz_app/config/text_styles.dart';
 import 'package:buzz5_quiz_app/config/colors.dart';
-import 'package:buzz5_quiz_app/widgets/appbar.dart';
+import 'package:buzz5_quiz_app/widgets/custom_app_bar.dart';
 import 'package:buzz5_quiz_app/widgets/base_page.dart';
-import 'package:buzz5_quiz_app/models/room_provider.dart';
-import 'package:buzz5_quiz_app/models/player_provider.dart';
-import 'package:buzz5_quiz_app/models/auth_provider.dart';
+import 'package:buzz5_quiz_app/providers/room_provider.dart';
+import 'package:buzz5_quiz_app/providers/player_provider.dart';
+import 'package:buzz5_quiz_app/providers/auth_provider.dart';
 import 'package:buzz5_quiz_app/models/room.dart';
 import 'package:buzz5_quiz_app/config/logger.dart';
 import 'package:firebase_database/firebase_database.dart';
@@ -141,9 +141,8 @@ class _GameRoomPageState extends State<GameRoomPage> {
           Padding(
             padding: EdgeInsets.fromLTRB(16, 0, 16, 16),
             child: Text(
-              "• The Quiz MC will read and display the questions and answers\n"
+              "• The Quiz Emcee will read and display the questions and answers\n"
               "• You'll be able to buzz in when questions are active\n"
-              "• Buzz carefully as there are negative points\n"
               "• Closing the tab/browser will not affect your connection or points\n"
               "• Leaving the game will forfeit your points\n",
               style: AppTextStyles.body.copyWith(
@@ -170,9 +169,9 @@ class _GameRoomPageState extends State<GameRoomPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Room Code
+        // Game Code
         Text(
-          "Room Code",
+          "Game Code",
           style: AppTextStyles.body.copyWith(
             color: ColorConstants.hintGrey,
             fontSize: 12,
@@ -292,9 +291,9 @@ class _GameRoomPageState extends State<GameRoomPage> {
             ElevatedButton(
               onPressed: () => _showLeaveRoomDialog(context),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red.withValues(alpha: 0.8),
-                foregroundColor: Colors.white,
-                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                minimumSize: Size(150, 50),
+                backgroundColor: ColorConstants.wrongAnsBtn,
+                foregroundColor: ColorConstants.lightTextColor,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
@@ -302,9 +301,9 @@ class _GameRoomPageState extends State<GameRoomPage> {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.exit_to_app, size: 16),
+                  Icon(Icons.exit_to_app, size: 14),
                   SizedBox(width: 4),
-                  Text("Leave", style: TextStyle(fontSize: 12)),
+                  Text("Leave", style: AppTextStyles.buttonTextSmall),
                 ],
               ),
             ),
@@ -333,21 +332,21 @@ class _GameRoomPageState extends State<GameRoomPage> {
           boxShadow: [
             // Outer shadow for depth
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.3),
+              color: ColorConstants.overlayMedium,
               offset: Offset(0, 8),
               blurRadius: 20,
               spreadRadius: 2,
             ),
             // Inner shadow for 3D effect
             BoxShadow(
-              color: Colors.red.shade900.withValues(alpha: 0.6),
+              color: ColorConstants.danger.withValues(alpha: 0.6),
               offset: Offset(0, 4),
               blurRadius: 12,
               spreadRadius: -2,
             ),
             // Top highlight
             BoxShadow(
-              color: Colors.red.shade200.withValues(alpha: 0.4),
+              color: ColorConstants.danger.withValues(alpha: 0.4),
               offset: Offset(0, -2),
               blurRadius: 8,
               spreadRadius: -4,
@@ -369,7 +368,7 @@ class _GameRoomPageState extends State<GameRoomPage> {
                 letterSpacing: 2.0,
                 shadows: [
                   Shadow(
-                    color: Colors.black.withValues(alpha: 0.5),
+                    color: ColorConstants.overlayDark,
                     offset: Offset(0, 2),
                     blurRadius: 4,
                   ),
@@ -442,7 +441,10 @@ class _GameRoomPageState extends State<GameRoomPage> {
             height: 8,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: player.isConnected ? Colors.green : Colors.red,
+              color:
+                  player.isConnected
+                      ? ColorConstants.connected
+                      : ColorConstants.disconnected,
             ),
           ),
           SizedBox(width: 12),
@@ -529,8 +531,8 @@ class _GameRoomPageState extends State<GameRoomPage> {
                 _leaveRoom();
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
-                foregroundColor: Colors.white,
+                backgroundColor: ColorConstants.danger,
+                foregroundColor: ColorConstants.lightTextColor,
               ),
               child: Text('Leave Room'),
             ),
