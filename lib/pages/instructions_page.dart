@@ -1,3 +1,4 @@
+import 'package:buzz5_quiz_app/config/app_constants.dart';
 import 'package:buzz5_quiz_app/config/colors.dart';
 import 'package:buzz5_quiz_app/pages/question_board_page.dart';
 import 'package:buzz5_quiz_app/widgets/custom_app_bar.dart';
@@ -49,7 +50,7 @@ class _InstructionsPageState extends State<InstructionsPage> {
   final TextEditingController _playerNameController = TextEditingController();
   final FocusNode _playerNameFocusNode = FocusNode();
   final List<String> _manualPlayers = [];
-  static const int maxPlayerLimit = 50;
+  static const int maxPlayerLimit = AppConstants.maxPlayersPerRoom;
 
   Future<void> _launchURL(String url) async {
     final Uri uri = Uri.parse(url);
@@ -656,7 +657,9 @@ class _InstructionsPageState extends State<InstructionsPage> {
                                                 ),
                                                 child: Text(
                                                   "Add Player",
-                                                  style: TextStyle(fontSize: 13),
+                                                  style: TextStyle(
+                                                    fontSize: 13,
+                                                  ),
                                                 ),
                                               ),
                                             ),

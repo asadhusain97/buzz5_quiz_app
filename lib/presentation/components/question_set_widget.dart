@@ -1,4 +1,4 @@
-import 'package:buzz5_quiz_app/config/app_dimensions.dart';
+import 'package:buzz5_quiz_app/config/app_constants.dart';
 import 'package:buzz5_quiz_app/config/colors.dart';
 import 'package:buzz5_quiz_app/providers/question_done.dart';
 import 'package:buzz5_quiz_app/providers/player_provider.dart';
@@ -18,10 +18,7 @@ class QuestionSetWidget extends StatelessWidget {
   /// The question data for this set
   final List<Map<String, dynamic>> data;
 
-  const QuestionSetWidget({
-    super.key,
-    required this.data,
-  });
+  const QuestionSetWidget({super.key, required this.data});
 
   @override
   Widget build(BuildContext context) {
@@ -61,7 +58,7 @@ class QuestionSetWidget extends StatelessWidget {
             color: Theme.of(context).colorScheme.outline,
             width: 1.0,
           ),
-          borderRadius: AppDimensions.smallBorderRadius,
+          borderRadius: AppConstants.smallBorderRadius,
         ),
         child: Center(
           child: FittedBox(
@@ -90,7 +87,10 @@ class QuestionSetWidget extends StatelessWidget {
   ) {
     return Column(
       mainAxisSize: MainAxisSize.min,
-      children: sortedData.map((item) => _buildQuestionButton(context, item)).toList(),
+      children:
+          sortedData
+              .map((item) => _buildQuestionButton(context, item))
+              .toList(),
     );
   }
 
@@ -102,13 +102,16 @@ class QuestionSetWidget extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 2.0),
       child: Consumer<AnsweredQuestionsProvider>(
         builder: (context, answeredProvider, child) {
-          final bool isAnswered = answeredProvider.isQuestionAnswered(questionId);
+          final bool isAnswered = answeredProvider.isQuestionAnswered(
+            questionId,
+          );
 
           // Use RepaintBoundary to optimize repaints of individual buttons
           return RepaintBoundary(
-            child: isAnswered
-                ? _buildAnsweredButton(context, item, questionId)
-                : _buildUnansweredButton(context, item, questionId),
+            child:
+                isAnswered
+                    ? _buildAnsweredButton(context, item, questionId)
+                    : _buildUnansweredButton(context, item, questionId),
           );
         },
       ),
@@ -193,7 +196,8 @@ class QuestionSetWidget extends StatelessWidget {
     Navigator.push(
       context,
       PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) => const QuestionPage(),
+        pageBuilder:
+            (context, animation, secondaryAnimation) => const QuestionPage(),
         settings: RouteSettings(
           arguments: {
             'qid': questionId,
@@ -203,10 +207,11 @@ class QuestionSetWidget extends StatelessWidget {
             'score': item['points'],
             'qstn_media': item['qstn_media'] ?? "",
             'ans_media': item['ans_media'] ?? "",
-            'playerList': Provider.of<PlayerProvider>(context, listen: false)
-                .playerList
-                .map((player) => player.name)
-                .toList(),
+            'playerList':
+                Provider.of<PlayerProvider>(
+                  context,
+                  listen: false,
+                ).playerList.map((player) => player.name).toList(),
           },
         ),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
@@ -237,7 +242,9 @@ class QuestionSetWidget extends StatelessWidget {
       builder: (BuildContext context) {
         return Dialog(
           backgroundColor: Theme.of(context).cardColor,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.0)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16.0),
+          ),
           child: Container(
             width: 400,
             padding: const EdgeInsets.all(24.0),
@@ -279,7 +286,10 @@ class QuestionSetWidget extends StatelessWidget {
   }
 
   /// Builds popup explanation section
-  Widget _buildPopupExplanation(BuildContext context, Map<String, dynamic> setData) {
+  Widget _buildPopupExplanation(
+    BuildContext context,
+    Map<String, dynamic> setData,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -304,7 +314,10 @@ class QuestionSetWidget extends StatelessWidget {
   }
 
   /// Builds popup example question section
-  Widget _buildPopupExampleQuestion(BuildContext context, Map<String, dynamic> setData) {
+  Widget _buildPopupExampleQuestion(
+    BuildContext context,
+    Map<String, dynamic> setData,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -326,7 +339,10 @@ class QuestionSetWidget extends StatelessWidget {
   }
 
   /// Builds popup example answer section
-  Widget _buildPopupExampleAnswer(BuildContext context, Map<String, dynamic> setData) {
+  Widget _buildPopupExampleAnswer(
+    BuildContext context,
+    Map<String, dynamic> setData,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -355,7 +371,9 @@ class QuestionSetWidget extends StatelessWidget {
         style: ElevatedButton.styleFrom(
           backgroundColor: Theme.of(context).colorScheme.primaryContainer,
           padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8.0),
+          ),
         ),
         child: Text(
           'Close',

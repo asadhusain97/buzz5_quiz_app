@@ -1,5 +1,5 @@
 import 'package:buzz5_quiz_app/config/colors.dart';
-import 'package:buzz5_quiz_app/config/app_dimensions.dart';
+import 'package:buzz5_quiz_app/config/app_constants.dart';
 import 'package:buzz5_quiz_app/providers/room_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -34,17 +34,17 @@ class RoomCodeDisplay extends StatelessWidget {
   /// Builds the game code display card
   Widget _buildRoomCodeCard(BuildContext context, room, int connectedPlayers) {
     return Container(
-      padding: AppDimensions.modalPadding,
+      padding: AppConstants.modalPadding,
       decoration: _getCardDecoration(),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           _buildHeader(context),
-          SizedBox(height: AppDimensions.extraSmallSpacing + 2),
+          SizedBox(height: AppConstants.extraSmallSpacing + 2),
           _buildRoomCode(context, room.formattedRoomCode),
-          SizedBox(height: AppDimensions.extraSmallSpacing),
+          SizedBox(height: AppConstants.extraSmallSpacing),
           _buildPlayerCount(context, connectedPlayers),
-          SizedBox(height: AppDimensions.extraSmallSpacing / 2),
+          SizedBox(height: AppConstants.extraSmallSpacing / 2),
           _buildInstructions(context),
         ],
       ),
@@ -55,7 +55,7 @@ class RoomCodeDisplay extends StatelessWidget {
   BoxDecoration _getCardDecoration() {
     return BoxDecoration(
       color: ColorConstants.transparent,
-      borderRadius: AppDimensions.modalBorderRadius,
+      borderRadius: AppConstants.modalBorderRadius,
       border: Border.all(color: ColorConstants.primaryColor, width: 2),
       boxShadow: [
         BoxShadow(
@@ -75,9 +75,9 @@ class RoomCodeDisplay extends StatelessWidget {
         Icon(
           Icons.doorbell,
           color: ColorConstants.primaryContainerColor,
-          size: AppDimensions.smallIconSize + 4,
+          size: AppConstants.smallIconSize + 4,
         ),
-        SizedBox(width: AppDimensions.smallSpacing),
+        SizedBox(width: AppConstants.smallSpacing),
         Text(
           'Game Code',
           style: Theme.of(context).textTheme.labelMedium?.copyWith(

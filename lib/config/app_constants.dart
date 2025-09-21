@@ -4,9 +4,9 @@ import 'package:flutter/material.dart';
 ///
 /// All spacing follows the 8dp grid system for consistency and visual rhythm.
 /// These dimensions ensure consistent spacing across all screens and components.
-class AppDimensions {
+class AppConstants {
   // Prevent instantiation
-  AppDimensions._();
+  AppConstants._();
 
   /// Base unit for spacing calculations (8dp grid system)
   static const double baseUnit = 8.0;
@@ -21,35 +21,62 @@ class AppDimensions {
   static const EdgeInsets extraLargePadding = EdgeInsets.all(48.0);
 
   /// Horizontal padding variants
-  static const EdgeInsets smallHorizontalPadding = EdgeInsets.symmetric(horizontal: 8.0);
-  static const EdgeInsets defaultHorizontalPadding = EdgeInsets.symmetric(horizontal: 16.0);
-  static const EdgeInsets mediumHorizontalPadding = EdgeInsets.symmetric(horizontal: 24.0);
-  static const EdgeInsets largeHorizontalPadding = EdgeInsets.symmetric(horizontal: 32.0);
+  static const EdgeInsets smallHorizontalPadding = EdgeInsets.symmetric(
+    horizontal: 8.0,
+  );
+  static const EdgeInsets defaultHorizontalPadding = EdgeInsets.symmetric(
+    horizontal: 16.0,
+  );
+  static const EdgeInsets mediumHorizontalPadding = EdgeInsets.symmetric(
+    horizontal: 24.0,
+  );
+  static const EdgeInsets largeHorizontalPadding = EdgeInsets.symmetric(
+    horizontal: 32.0,
+  );
 
   /// Vertical padding variants
-  static const EdgeInsets smallVerticalPadding = EdgeInsets.symmetric(vertical: 8.0);
-  static const EdgeInsets defaultVerticalPadding = EdgeInsets.symmetric(vertical: 16.0);
-  static const EdgeInsets mediumVerticalPadding = EdgeInsets.symmetric(vertical: 24.0);
-  static const EdgeInsets largeVerticalPadding = EdgeInsets.symmetric(vertical: 32.0);
+  static const EdgeInsets smallVerticalPadding = EdgeInsets.symmetric(
+    vertical: 8.0,
+  );
+  static const EdgeInsets defaultVerticalPadding = EdgeInsets.symmetric(
+    vertical: 16.0,
+  );
+  static const EdgeInsets mediumVerticalPadding = EdgeInsets.symmetric(
+    vertical: 24.0,
+  );
+  static const EdgeInsets largeVerticalPadding = EdgeInsets.symmetric(
+    vertical: 32.0,
+  );
 
   /// Page-level padding
   static const EdgeInsets pagePadding = EdgeInsets.all(16.0);
-  static const EdgeInsets pageHorizontalPadding = EdgeInsets.symmetric(horizontal: 16.0);
+  static const EdgeInsets pageHorizontalPadding = EdgeInsets.symmetric(
+    horizontal: 16.0,
+  );
 
   /// Card and container padding
   static const EdgeInsets cardPadding = EdgeInsets.all(16.0);
   static const EdgeInsets containerPadding = EdgeInsets.all(12.0);
 
   /// Button padding
-  static const EdgeInsets buttonPadding = EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0);
-  static const EdgeInsets smallButtonPadding = EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0);
+  static const EdgeInsets buttonPadding = EdgeInsets.symmetric(
+    horizontal: 24.0,
+    vertical: 12.0,
+  );
+  static const EdgeInsets smallButtonPadding = EdgeInsets.symmetric(
+    horizontal: 16.0,
+    vertical: 8.0,
+  );
 
   /// App bar padding
   static const EdgeInsets appBarPadding = EdgeInsets.only(right: 8.0);
 
   /// Dialog and modal padding
   static const EdgeInsets dialogPadding = EdgeInsets.all(24.0);
-  static const EdgeInsets modalPadding = EdgeInsets.symmetric(horizontal: 20.0, vertical: 12.0);
+  static const EdgeInsets modalPadding = EdgeInsets.symmetric(
+    horizontal: 20.0,
+    vertical: 12.0,
+  );
 
   /// Icon and image padding
   static const EdgeInsets iconPadding = EdgeInsets.all(8.0);
@@ -82,13 +109,27 @@ class AppDimensions {
   static const double circularRadius = 90.0;
 
   /// Border radius for specific components
-  static const BorderRadius smallBorderRadius = BorderRadius.all(Radius.circular(4.0));
-  static const BorderRadius defaultBorderRadius = BorderRadius.all(Radius.circular(8.0));
-  static const BorderRadius mediumBorderRadius = BorderRadius.all(Radius.circular(12.0));
-  static const BorderRadius largeBorderRadius = BorderRadius.all(Radius.circular(16.0));
-  static const BorderRadius cardBorderRadius = BorderRadius.all(Radius.circular(12.0));
-  static const BorderRadius buttonBorderRadius = BorderRadius.all(Radius.circular(12.0));
-  static const BorderRadius modalBorderRadius = BorderRadius.all(Radius.circular(25.0));
+  static const BorderRadius smallBorderRadius = BorderRadius.all(
+    Radius.circular(4.0),
+  );
+  static const BorderRadius defaultBorderRadius = BorderRadius.all(
+    Radius.circular(8.0),
+  );
+  static const BorderRadius mediumBorderRadius = BorderRadius.all(
+    Radius.circular(12.0),
+  );
+  static const BorderRadius largeBorderRadius = BorderRadius.all(
+    Radius.circular(16.0),
+  );
+  static const BorderRadius cardBorderRadius = BorderRadius.all(
+    Radius.circular(12.0),
+  );
+  static const BorderRadius buttonBorderRadius = BorderRadius.all(
+    Radius.circular(12.0),
+  );
+  static const BorderRadius modalBorderRadius = BorderRadius.all(
+    Radius.circular(25.0),
+  );
 
   /// Icon sizes
   static const double smallIconSize = 16.0;
@@ -169,4 +210,16 @@ class AppDimensions {
   /// Text truncation
   static const int maxTextLength = 500;
   static const int maxTitleLines = 3;
+
+  /// Limits
+  /// Maximum number of players allowed in a room
+  static const int maxPlayersPerRoom = 50;
+
+  /// Number of questions allowed in a set
+  static const int minQuestionsPerQuiz = 3;
+  static const int maxQuestionsPerQuiz = 5;
+
+  /// Buzzer table expiration in hours
+  /// Set to 24 hours to align with DatabaseCleanupService
+  static const int roomExpirationHours = 24;
 }

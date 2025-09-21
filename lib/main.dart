@@ -2,6 +2,7 @@ import 'package:buzz5_quiz_app/config/logger.dart';
 import 'package:buzz5_quiz_app/config/app_config.dart';
 import 'package:buzz5_quiz_app/config/theme.dart';
 import 'package:buzz5_quiz_app/providers/question_done.dart';
+import 'package:buzz5_quiz_app/services/database_cleanup_service.dart';
 import 'package:flutter/material.dart';
 import 'package:buzz5_quiz_app/widgets/auth_gate.dart';
 import 'package:buzz5_quiz_app/pages/forgot_password_page.dart';
@@ -60,6 +61,22 @@ void main() async {
       AppLogger.w(
         'ReCAPTCHA site key not provided, skipping App Check initialization',
       );
+    }
+
+    // Perform database cleanup for expired game rooms after Firebase initialization
+    if (DatabaseCleanupService.shouldRunCleanup()) {
+      AppLogger.i('Performing startup database cleanup...');
+      try {
+        final cleanedRooms = await DatabaseCleanupService.performStartupCleanup();
+        if (cleanedRooms > 0) {
+          AppLogger.i('Startup cleanup completed: $cleanedRooms expired rooms removed');
+        } else {
+          AppLogger.i('Startup cleanup completed: no expired rooms found');
+        }
+      } catch (e) {
+        AppLogger.e('Error during startup cleanup: $e');
+        // Continue app startup even if cleanup fails
+      }
     }
   } catch (e) {
     AppLogger.e('CRITICAL ERROR initializing Firebase/App Check: $e');

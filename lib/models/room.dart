@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'package:buzz5_quiz_app/config/app_constants.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:buzz5_quiz_app/config/logger.dart';
 
@@ -21,7 +22,7 @@ class Room {
     required this.hostId,
     this.status = RoomStatus.waiting,
     required this.createdAt,
-    this.maxPlayers = 50,
+    this.maxPlayers = AppConstants.maxPlayersPerRoom,
     this.currentQuestion = 0,
     this.totalQuestions = 0,
     this.questionStartTime,
@@ -61,7 +62,7 @@ class Room {
       hostId: data['hostId'] ?? '',
       status: _parseRoomStatus(data['status']),
       createdAt: data['createdAt'] ?? DateTime.now().millisecondsSinceEpoch,
-      maxPlayers: data['maxPlayers'] ?? 50,
+      maxPlayers: data['maxPlayers'] ?? AppConstants.maxPlayersPerRoom,
       currentQuestion: data['currentQuestion'] ?? 0,
       totalQuestions: data['totalQuestions'] ?? 0,
       questionStartTime: data['questionStartTime'],
@@ -132,11 +133,15 @@ class Room {
     return roomCode;
   }
 
-  // Check if room is expired (older than 24 hours)
+  // Check if room is expired (older than 48 hours)
   bool get isExpired {
     final now = DateTime.now().millisecondsSinceEpoch;
     final difference = now - createdAt;
-    return difference > (24 * 60 * 60 * 1000); // 24 hours in milliseconds
+    return difference >
+        (AppConstants.roomExpirationHours *
+            60 *
+            60 *
+            1000); // hours in milliseconds
   }
 
   // Check if room is active (not ended and not expired)

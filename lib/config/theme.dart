@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:buzz5_quiz_app/config/colors.dart';
 import 'package:buzz5_quiz_app/config/text_styles.dart';
-import 'package:buzz5_quiz_app/config/app_dimensions.dart';
+import 'package:buzz5_quiz_app/config/app_constants.dart';
 
 /// Centralized theme configuration for the application.
 ///
@@ -49,26 +49,26 @@ class AppTheme {
       cardColor: ColorConstants.darkCard,
       appBarTheme: AppBarTheme(
         backgroundColor: ColorConstants.primaryContainerColor,
-        elevation: AppDimensions.appBarElevation,
+        elevation: AppConstants.appBarElevation,
         centerTitle: true,
         titleTextStyle: AppTextStyles.titleLarge.copyWith(
           color: ColorConstants.lightTextColor,
         ),
         iconTheme: IconThemeData(
           color: ColorConstants.lightTextColor,
-          size: AppDimensions.mediumIconSize,
+          size: AppConstants.mediumIconSize,
         ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: ColorConstants.primaryColor,
           foregroundColor: ColorConstants.lightTextColor,
-          elevation: AppDimensions.buttonElevation,
-          minimumSize: AppDimensions.defaultButtonSize,
+          elevation: AppConstants.buttonElevation,
+          minimumSize: AppConstants.defaultButtonSize,
           shape: RoundedRectangleBorder(
-            borderRadius: AppDimensions.buttonBorderRadius,
+            borderRadius: AppConstants.buttonBorderRadius,
           ),
-          padding: AppDimensions.buttonPadding,
+          padding: AppConstants.buttonPadding,
         ),
       ),
       textButtonTheme: TextButtonThemeData(

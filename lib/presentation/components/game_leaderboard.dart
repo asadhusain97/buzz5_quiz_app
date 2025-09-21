@@ -1,4 +1,4 @@
-import 'package:buzz5_quiz_app/config/app_dimensions.dart';
+import 'package:buzz5_quiz_app/config/app_constants.dart';
 import 'package:buzz5_quiz_app/config/text_styles.dart';
 import 'package:buzz5_quiz_app/providers/player_provider.dart';
 import 'package:buzz5_quiz_app/providers/room_provider.dart';
@@ -41,7 +41,7 @@ class GameLeaderboard extends StatelessWidget {
   ) {
     return SingleChildScrollView(
       child: SizedBox(
-        width: AppDimensions.leaderboardWidth,
+        width: AppConstants.leaderboardWidth,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           mainAxisAlignment: MainAxisAlignment.center,
@@ -50,7 +50,7 @@ class GameLeaderboard extends StatelessWidget {
               'Leaderboard',
               style: Theme.of(context).textTheme.headlineSmall,
             ),
-            SizedBox(height: AppDimensions.defaultSpacing),
+            SizedBox(height: AppConstants.defaultSpacing),
             _buildPlayersList(playerProvider, roomProvider),
           ],
         ),
@@ -64,7 +64,7 @@ class GameLeaderboard extends StatelessWidget {
     RoomProvider roomProvider,
   ) {
     return SizedBox(
-      width: AppDimensions.leaderboardItemWidth,
+      width: AppConstants.leaderboardItemWidth,
       child: ListView.builder(
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
@@ -99,8 +99,8 @@ class GameLeaderboard extends StatelessWidget {
     bool hasActiveRoom,
   ) {
     return Container(
-      margin: EdgeInsets.symmetric(vertical: AppDimensions.extraSmallSpacing),
-      padding: AppDimensions.smallPadding,
+      margin: EdgeInsets.symmetric(vertical: AppConstants.extraSmallSpacing),
+      padding: AppConstants.smallPadding,
       decoration: _getCardDecoration(isLastPositivePlayer, context),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -121,7 +121,7 @@ class GameLeaderboard extends StatelessWidget {
               ],
             ),
           ),
-          SizedBox(width: AppDimensions.extraSmallSpacing),
+          SizedBox(width: AppConstants.extraSmallSpacing),
           Text('${player.score}', style: AppTextStyles.scoreCard),
         ],
       ),
@@ -142,12 +142,12 @@ class GameLeaderboard extends StatelessWidget {
                 : Theme.of(context).colorScheme.outline,
         width: 2,
       ),
-      borderRadius: AppDimensions.defaultBorderRadius,
+      borderRadius: AppConstants.defaultBorderRadius,
       boxShadow: [
         BoxShadow(
           color: Theme.of(context).shadowColor.withValues(alpha: 0.1),
-          blurRadius: AppDimensions.shadowBlur,
-          spreadRadius: AppDimensions.shadowSpread,
+          blurRadius: AppConstants.shadowBlur,
+          spreadRadius: AppConstants.shadowSpread,
         ),
       ],
     );
@@ -158,7 +158,7 @@ class GameLeaderboard extends StatelessWidget {
     return Container(
       width: 8,
       height: 8,
-      margin: EdgeInsets.only(right: AppDimensions.smallSpacing),
+      margin: EdgeInsets.only(right: AppConstants.smallSpacing),
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         color:
