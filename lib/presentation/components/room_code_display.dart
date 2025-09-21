@@ -4,10 +4,10 @@ import 'package:buzz5_quiz_app/providers/room_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-/// A widget that displays the current room code for multiplayer games.
+/// A widget that displays the current game code for multiplayer games.
 ///
 /// Features:
-/// - Displays formatted room code
+/// - Displays formatted game code
 /// - Shows connected player count
 /// - Responsive design with visual styling
 /// - Automatically hides when no active room
@@ -31,7 +31,7 @@ class RoomCodeDisplay extends StatelessWidget {
     );
   }
 
-  /// Builds the room code display card
+  /// Builds the game code display card
   Widget _buildRoomCodeCard(BuildContext context, room, int connectedPlayers) {
     return Container(
       padding: AppDimensions.modalPadding,
@@ -89,7 +89,7 @@ class RoomCodeDisplay extends StatelessWidget {
     );
   }
 
-  /// Builds the formatted room code display
+  /// Builds the formatted game code display
   Widget _buildRoomCode(BuildContext context, String formattedRoomCode) {
     return SelectableText(
       formattedRoomCode,

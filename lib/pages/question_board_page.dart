@@ -13,7 +13,7 @@ import 'package:buzz5_quiz_app/models/qrow.dart';
 ///
 /// This page displays a Jeopardy-style game board with:
 /// - Question sets organized by categories
-/// - Player leaderboard and room code (for multiplayer)
+/// - Player leaderboard and game code (for multiplayer)
 /// - Game controls and navigation
 ///
 /// Features:
@@ -28,7 +28,7 @@ class QuestionBoardPage extends StatelessWidget {
   /// All available questions fetched from the data source
   final List<QRow>? allQRows;
 
-  /// Whether the game is using manual players (no room code needed)
+  /// Whether the game is using manual players (no game code needed)
   final bool hasManualPlayers;
 
   const QuestionBoardPage({
@@ -43,10 +43,7 @@ class QuestionBoardPage extends StatelessWidget {
     AppLogger.i("QuestionBoardPage built for round: $selectedRound");
 
     return BasePage(
-      appBar: const CustomAppBar(
-        title: "Question Board",
-        showBackButton: true,
-      ),
+      appBar: const CustomAppBar(title: "Question Board", showBackButton: true),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Row(
@@ -57,7 +54,7 @@ class QuestionBoardPage extends StatelessWidget {
               selectedRound: selectedRound,
               allQRows: allQRows,
               hasManualPlayers: hasManualPlayers,
-            )
+            ),
           ],
         ),
       ),
@@ -70,7 +67,7 @@ class QuestionBoardPage extends StatelessWidget {
 /// This widget manages:
 /// - Question filtering by selected round
 /// - Question set organization and display
-/// - Game controls layout (leaderboard, room code, end game button)
+/// - Game controls layout (leaderboard, game code, end game button)
 class QuestionBoardContent extends StatefulWidget {
   final String? selectedRound;
   final List<QRow>? allQRows;
@@ -158,7 +155,7 @@ class _QuestionBoardContentState extends State<QuestionBoardContent> {
           Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Show room code only for multiplayer mode
+              // Show game code only for multiplayer mode
               if (!widget.hasManualPlayers) ...[
                 const RoomCodeDisplay(),
                 const SizedBox(height: 30),
@@ -228,16 +225,16 @@ class _QuestionBoardContentState extends State<QuestionBoardContent> {
       spacing: 24.0,
       runSpacing: 24.0,
       alignment: WrapAlignment.center,
-      children: uniqueSetNames.map((setName) {
-        final List<QRow> setData = _getQRowsForSetName(setName);
+      children:
+          uniqueSetNames.map((setName) {
+            final List<QRow> setData = _getQRowsForSetName(setName);
 
-        // Convert QRow objects to Map format for QuestionSetWidget
-        final List<Map<String, dynamic>> setDataMaps = setData
-            .map((qrow) => _convertQRowToMap(qrow))
-            .toList();
+            // Convert QRow objects to Map format for QuestionSetWidget
+            final List<Map<String, dynamic>> setDataMaps =
+                setData.map((qrow) => _convertQRowToMap(qrow)).toList();
 
-        return QuestionSetWidget(data: setDataMaps);
-      }).toList(),
+            return QuestionSetWidget(data: setDataMaps);
+          }).toList(),
     );
   }
 
@@ -306,14 +303,13 @@ class RoundDropDown extends StatelessWidget {
           hint: const Center(child: Text('Select a round')),
           value: selectedRound,
           dropdownColor: Theme.of(context).scaffoldBackgroundColor,
-          items: rounds.map((String value) {
-            return DropdownMenuItem<String>(
-              value: value,
-              child: Center(
-                child: Text(value, style: AppTextStyles.body),
-              ),
-            );
-          }).toList(),
+          items:
+              rounds.map((String value) {
+                return DropdownMenuItem<String>(
+                  value: value,
+                  child: Center(child: Text(value, style: AppTextStyles.body)),
+                );
+              }).toList(),
           onChanged: (String? newValue) {
             AppLogger.i("Round selected: $newValue");
             onRoundSelected(newValue);

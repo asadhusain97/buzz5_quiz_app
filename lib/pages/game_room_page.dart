@@ -169,9 +169,9 @@ class _GameRoomPageState extends State<GameRoomPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Room Code
+        // Game Code
         Text(
-          "Room Code",
+          "Game Code",
           style: AppTextStyles.body.copyWith(
             color: ColorConstants.hintGrey,
             fontSize: 12,
@@ -292,7 +292,7 @@ class _GameRoomPageState extends State<GameRoomPage> {
               onPressed: () => _showLeaveRoomDialog(context),
               style: ElevatedButton.styleFrom(
                 minimumSize: Size(150, 50),
-                backgroundColor: ColorConstants.errorContainerColor,
+                backgroundColor: ColorConstants.wrongAnsBtn,
                 foregroundColor: ColorConstants.lightTextColor,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
@@ -441,7 +441,10 @@ class _GameRoomPageState extends State<GameRoomPage> {
             height: 8,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: player.isConnected ? ColorConstants.connected : ColorConstants.disconnected,
+              color:
+                  player.isConnected
+                      ? ColorConstants.connected
+                      : ColorConstants.disconnected,
             ),
           ),
           SizedBox(width: 12),
