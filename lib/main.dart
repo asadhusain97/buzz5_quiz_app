@@ -97,9 +97,7 @@ class MyApp extends StatelessWidget {
         debugShowCheckedModeBanner: false,
         theme: ThemeData.dark(),
         home: const AuthGate(),
-        routes: {
-          '/forgot-password': (context) => const ForgotPasswordPage(),
-        },
+        routes: {'/forgot-password': (context) => const ForgotPasswordPage()},
       ),
     );
   }

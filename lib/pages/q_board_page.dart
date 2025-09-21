@@ -16,11 +16,13 @@ import 'package:buzz5_quiz_app/models/qrow.dart';
 class QuestionBoardPage extends StatelessWidget {
   final String? selectedRound;
   final List<QRow>? allQRows;
+  final bool hasManualPlayers;
 
   const QuestionBoardPage({
     super.key,
     this.selectedRound,
     this.allQRows,
+    this.hasManualPlayers = false,
   });
 
   @override
@@ -37,6 +39,7 @@ class QuestionBoardPage extends StatelessWidget {
             QuestionBoardContent(
               selectedRound: selectedRound,
               allQRows: allQRows,
+              hasManualPlayers: hasManualPlayers,
             )
           ],
         ),
@@ -48,11 +51,13 @@ class QuestionBoardPage extends StatelessWidget {
 class QuestionBoardContent extends StatefulWidget {
   final String? selectedRound;
   final List<QRow>? allQRows;
+  final bool hasManualPlayers;
 
   const QuestionBoardContent({
     super.key,
     this.selectedRound,
     this.allQRows,
+    this.hasManualPlayers = false,
   });
 
   @override
@@ -116,8 +121,11 @@ class _QuestionBoardContentState extends State<QuestionBoardContent> {
               Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  RoomCodeDisplay(),
-                  SizedBox(height: 30),
+                  // Only show room code if NOT in manual players mode
+                  if (!widget.hasManualPlayers) ...[
+                    RoomCodeDisplay(),
+                    SizedBox(height: 30),
+                  ],
                   Leaderboard(),
                   SizedBox(height: 45),
                   EndGameButton(),

@@ -1,5 +1,4 @@
 import 'package:buzz5_quiz_app/config/colors.dart';
-import 'package:buzz5_quiz_app/config/text_styles.dart';
 import 'package:buzz5_quiz_app/pages/q_board_page.dart';
 import 'package:buzz5_quiz_app/widgets/appbar.dart';
 import 'package:buzz5_quiz_app/widgets/base_page.dart';
@@ -44,13 +43,12 @@ class _InstructionsPageState extends State<InstructionsPage> {
   String? _selectedRound;
   bool _isLoading = false;
   bool _hasError = false;
-  String _errorMessage = '';
   late Future<List<QRow>> _qrowsFuture;
 
   // Player management state
   final TextEditingController _playerNameController = TextEditingController();
   final FocusNode _playerNameFocusNode = FocusNode();
-  List<String> _manualPlayers = [];
+  final List<String> _manualPlayers = [];
   static const int maxPlayerLimit = 50;
 
   Future<void> _launchURL(String url) async {
@@ -77,7 +75,6 @@ class _InstructionsPageState extends State<InstructionsPage> {
       setState(() {
         _isLoading = false;
         _hasError = true;
-        _errorMessage = "Failed to load question data: ${e.toString()}";
       });
     }
   }
@@ -104,7 +101,6 @@ class _InstructionsPageState extends State<InstructionsPage> {
       setState(() {
         _isLoading = false;
         _hasError = true;
-        _errorMessage = "Failed to process question data: ${e.toString()}";
       });
     }
   }
@@ -929,54 +925,66 @@ class _InstructionsPageState extends State<InstructionsPage> {
                   listen: false,
                 );
 
-                // Reset game state - start with empty player list
-                playerProvider.setPlayerList([]);
-                playerProvider.resetAnsweredQuestions();
-                AppLogger.i(
-                  "Game state reset - starting with empty player list",
-                );
+                // Check if manual players were added
+                final hasManualPlayers = _manualPlayers.isNotEmpty;
 
-                // Always create a room (hosting is mandatory)
-                final success = await roomProvider.createRoom();
+                if (hasManualPlayers) {
+                  // Manual player mode - don't create room, don't reset player list
+                  AppLogger.i(
+                    "Manual player mode: ${_manualPlayers.length} players added manually",
+                  );
+                  // Only reset answered questions, keep the player list
+                  playerProvider.resetAnsweredQuestions();
+                } else {
+                  // Room mode - reset player list and create room
+                  AppLogger.i("Room mode: No manual players, creating room");
 
-                if (!success && roomProvider.error != null) {
-                  scaffoldMessenger.showSnackBar(
-                    SnackBar(
-                      content: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.error_outline,
-                            color: Colors.white,
-                            size: 20,
-                          ),
-                          SizedBox(width: 8),
-                          Flexible(
-                            child: Text(
-                              roomProvider.error!,
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
-                                height: 1.2,
+                  // Reset game state - start with empty player list
+                  playerProvider.setPlayerList([]);
+                  playerProvider.resetAnsweredQuestions();
+
+                  // Create a room for players to join
+                  final success = await roomProvider.createRoom();
+
+                  if (!success && roomProvider.error != null) {
+                    scaffoldMessenger.showSnackBar(
+                      SnackBar(
+                        content: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.error_outline,
+                              color: Colors.white,
+                              size: 20,
+                            ),
+                            SizedBox(width: 8),
+                            Flexible(
+                              child: Text(
+                                roomProvider.error!,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                  height: 1.2,
+                                ),
                               ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
+                        backgroundColor: ColorConstants.errorContainerColor,
+                        behavior: SnackBarBehavior.floating,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        margin: EdgeInsets.all(12),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
                       ),
-                      backgroundColor: ColorConstants.errorContainerColor,
-                      behavior: SnackBarBehavior.floating,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      margin: EdgeInsets.all(12),
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
-                      ),
-                    ),
-                  );
-                  return;
+                    );
+                    return;
+                  }
                 }
 
                 // Set game start time
@@ -989,6 +997,7 @@ class _InstructionsPageState extends State<InstructionsPage> {
                         (context) => QuestionBoardPage(
                           selectedRound: _selectedRound!,
                           allQRows: _allQRows,
+                          hasManualPlayers: hasManualPlayers,
                         ),
                   ),
                 );
