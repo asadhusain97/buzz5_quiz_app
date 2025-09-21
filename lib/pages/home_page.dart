@@ -2,6 +2,8 @@ import 'package:buzz5_quiz_app/config/colors.dart';
 import 'package:buzz5_quiz_app/config/text_styles.dart';
 import 'package:buzz5_quiz_app/pages/instructions_page.dart';
 import 'package:buzz5_quiz_app/pages/joingame_page.dart';
+import 'package:buzz5_quiz_app/pages/create_questions_page.dart';
+import 'package:buzz5_quiz_app/pages/marketplace_page.dart';
 import 'package:buzz5_quiz_app/widgets/custom_app_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:buzz5_quiz_app/config/logger.dart';
@@ -92,67 +94,155 @@ class HomePage extends StatelessWidget {
 
                           // Show different buttons based on authentication status
                           if (authProvider.isAuthenticated) ...[
-                            // Authenticated user - show game buttons
-                            ElevatedButton(
-                              onPressed: () {
-                                AppLogger.i("Navigating to InstructionsPage");
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => InstructionsPage(),
-                                  ),
-                                );
-                              },
-                              style: ElevatedButton.styleFrom(
-                                minimumSize: Size(280, 56),
-                                backgroundColor: ColorConstants.primaryColor,
-                                foregroundColor: ColorConstants.lightTextColor,
-                                elevation: 2,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
+                            // Authenticated user - show 4 buttons in a 2x2 grid
+                            Container(
+                              constraints: const BoxConstraints(maxWidth: 600),
+                              child: Column(
                                 children: [
-                                  Icon(Icons.play_arrow_rounded, size: 24),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    'Start Game',
-                                    style: AppTextStyles.homeButton,
+                                  // First row of buttons
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: ElevatedButton(
+                                          onPressed: () {
+                                            AppLogger.i("Navigating to InstructionsPage");
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (context) => InstructionsPage(),
+                                              ),
+                                            );
+                                          },
+                                          style: ElevatedButton.styleFrom(
+                                            minimumSize: Size(0, 56),
+                                            backgroundColor: ColorConstants.primaryColor,
+                                            foregroundColor: ColorConstants.lightTextColor,
+                                            elevation: 2,
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius: BorderRadius.circular(12),
+                                            ),
+                                          ),
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Icon(Icons.play_arrow_rounded, size: 24),
+                                              const SizedBox(width: 8),
+                                              Text(
+                                                'Start Game',
+                                                style: AppTextStyles.homeButton,
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 16),
+                                      Expanded(
+                                        child: ElevatedButton(
+                                          onPressed: () {
+                                            AppLogger.i("Navigating to JoinGamePage");
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (context) => JoinGamePage(),
+                                              ),
+                                            );
+                                          },
+                                          style: ElevatedButton.styleFrom(
+                                            minimumSize: Size(0, 56),
+                                            backgroundColor: ColorConstants.primaryColor,
+                                            foregroundColor: ColorConstants.lightTextColor,
+                                            elevation: 2,
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius: BorderRadius.circular(12),
+                                            ),
+                                          ),
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Icon(Icons.group_add_rounded, size: 24),
+                                              const SizedBox(width: 8),
+                                              Text(
+                                                'Join Game',
+                                                style: AppTextStyles.homeButton,
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: 20),
-                            ElevatedButton(
-                              onPressed: () {
-                                AppLogger.i("Navigating to JoinGamePage");
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => JoinGamePage(),
-                                  ),
-                                );
-                              },
-                              style: ElevatedButton.styleFrom(
-                                minimumSize: Size(280, 56),
-                                backgroundColor:
-                                    ColorConstants.secondaryContainerColor,
-                                foregroundColor: ColorConstants.lightTextColor,
-                                elevation: 2,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(Icons.group_add_rounded, size: 24),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    'Join Game',
-                                    style: AppTextStyles.homeButton,
+                                  const SizedBox(height: 16),
+                                  // Second row of buttons
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: ElevatedButton(
+                                          onPressed: () {
+                                            AppLogger.i("Navigating to CreateQuestionsPage");
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (context) => CreateQuestionsPage(),
+                                              ),
+                                            );
+                                          },
+                                          style: ElevatedButton.styleFrom(
+                                            minimumSize: Size(0, 56),
+                                            backgroundColor: ColorConstants.primaryColor,
+                                            foregroundColor: ColorConstants.lightTextColor,
+                                            elevation: 2,
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius: BorderRadius.circular(12),
+                                            ),
+                                          ),
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Icon(Icons.quiz_outlined, size: 24),
+                                              const SizedBox(width: 8),
+                                              Text(
+                                                'Create Questions',
+                                                style: AppTextStyles.homeButton,
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 16),
+                                      Expanded(
+                                        child: ElevatedButton(
+                                          onPressed: () {
+                                            AppLogger.i("Navigating to MarketplacePage");
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (context) => MarketplacePage(),
+                                              ),
+                                            );
+                                          },
+                                          style: ElevatedButton.styleFrom(
+                                            minimumSize: Size(0, 56),
+                                            backgroundColor: ColorConstants.primaryColor,
+                                            foregroundColor: ColorConstants.lightTextColor,
+                                            elevation: 2,
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius: BorderRadius.circular(12),
+                                            ),
+                                          ),
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Icon(Icons.store, size: 24),
+                                              const SizedBox(width: 8),
+                                              Text(
+                                                'Marketplace',
+                                                style: AppTextStyles.homeButton,
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ],
                               ),
