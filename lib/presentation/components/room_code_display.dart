@@ -1,4 +1,5 @@
 import 'package:buzz5_quiz_app/config/colors.dart';
+import 'package:buzz5_quiz_app/config/app_dimensions.dart';
 import 'package:buzz5_quiz_app/providers/room_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -25,26 +26,26 @@ class RoomCodeDisplay extends StatelessWidget {
         final room = roomProvider.currentRoom!;
         final connectedPlayers = _getConnectedPlayersCount(roomProvider);
 
-        return _buildRoomCodeCard(room, connectedPlayers);
+        return _buildRoomCodeCard(context, room, connectedPlayers);
       },
     );
   }
 
   /// Builds the room code display card
-  Widget _buildRoomCodeCard(room, int connectedPlayers) {
+  Widget _buildRoomCodeCard(BuildContext context, room, int connectedPlayers) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      padding: AppDimensions.modalPadding,
       decoration: _getCardDecoration(),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _buildHeader(),
-          const SizedBox(height: 6),
-          _buildRoomCode(room.formattedRoomCode),
-          const SizedBox(height: 4),
-          _buildPlayerCount(connectedPlayers),
-          const SizedBox(height: 2),
-          _buildInstructions(),
+          _buildHeader(context),
+          SizedBox(height: AppDimensions.extraSmallSpacing + 2),
+          _buildRoomCode(context, room.formattedRoomCode),
+          SizedBox(height: AppDimensions.extraSmallSpacing),
+          _buildPlayerCount(context, connectedPlayers),
+          SizedBox(height: AppDimensions.extraSmallSpacing / 2),
+          _buildInstructions(context),
         ],
       ),
     );
@@ -54,11 +55,11 @@ class RoomCodeDisplay extends StatelessWidget {
   BoxDecoration _getCardDecoration() {
     return BoxDecoration(
       color: Colors.transparent,
-      borderRadius: BorderRadius.circular(25),
+      borderRadius: AppDimensions.modalBorderRadius,
       border: Border.all(color: ColorConstants.primaryColor, width: 2),
       boxShadow: [
         BoxShadow(
-          color: Colors.black.withValues(alpha: 0.3),
+          color: Colors.black.withValues(alpha: AppDimensions.backdropOpacity),
           blurRadius: 12,
           offset: const Offset(0, 4),
         ),
@@ -67,21 +68,20 @@ class RoomCodeDisplay extends StatelessWidget {
   }
 
   /// Builds the header with icon and title
-  Widget _buildHeader() {
+  Widget _buildHeader(BuildContext context) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         Icon(
           Icons.doorbell,
           color: ColorConstants.primaryContainerColor,
-          size: 20,
+          size: AppDimensions.smallIconSize + 4,
         ),
-        const SizedBox(width: 8),
+        SizedBox(width: AppDimensions.smallSpacing),
         Text(
           'Game Code',
-          style: TextStyle(
+          style: Theme.of(context).textTheme.labelMedium?.copyWith(
             color: ColorConstants.surfaceColor,
-            fontSize: 14,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -90,12 +90,11 @@ class RoomCodeDisplay extends StatelessWidget {
   }
 
   /// Builds the formatted room code display
-  Widget _buildRoomCode(String formattedRoomCode) {
+  Widget _buildRoomCode(BuildContext context, String formattedRoomCode) {
     return SelectableText(
       formattedRoomCode,
-      style: TextStyle(
+      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
         color: ColorConstants.primaryContainerColor,
-        fontSize: 24,
         fontWeight: FontWeight.bold,
         letterSpacing: 2.0,
       ),
@@ -103,22 +102,21 @@ class RoomCodeDisplay extends StatelessWidget {
   }
 
   /// Builds the connected players count
-  Widget _buildPlayerCount(int connectedPlayers) {
+  Widget _buildPlayerCount(BuildContext context, int connectedPlayers) {
     return Text(
       '$connectedPlayers players connected',
-      style: TextStyle(
+      style: Theme.of(context).textTheme.labelSmall?.copyWith(
         color: ColorConstants.secondaryContainerColor,
-        fontSize: 12,
         fontWeight: FontWeight.w500,
       ),
     );
   }
 
   /// Builds the instruction text
-  Widget _buildInstructions() {
+  Widget _buildInstructions(BuildContext context) {
     return Text(
       'Join game using the code above',
-      style: TextStyle(
+      style: Theme.of(context).textTheme.labelSmall?.copyWith(
         color: ColorConstants.lightTextColor,
         fontSize: 11,
       ),

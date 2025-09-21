@@ -141,9 +141,8 @@ class _GameRoomPageState extends State<GameRoomPage> {
           Padding(
             padding: EdgeInsets.fromLTRB(16, 0, 16, 16),
             child: Text(
-              "• The Quiz MC will read and display the questions and answers\n"
+              "• The Quiz Emcee will read and display the questions and answers\n"
               "• You'll be able to buzz in when questions are active\n"
-              "• Buzz carefully as there are negative points\n"
               "• Closing the tab/browser will not affect your connection or points\n"
               "• Leaving the game will forfeit your points\n",
               style: AppTextStyles.body.copyWith(
@@ -292,9 +291,9 @@ class _GameRoomPageState extends State<GameRoomPage> {
             ElevatedButton(
               onPressed: () => _showLeaveRoomDialog(context),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red.withValues(alpha: 0.8),
-                foregroundColor: Colors.white,
-                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                minimumSize: Size(150, 50),
+                backgroundColor: ColorConstants.errorContainerColor,
+                foregroundColor: ColorConstants.lightTextColor,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
@@ -302,9 +301,9 @@ class _GameRoomPageState extends State<GameRoomPage> {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.exit_to_app, size: 16),
+                  Icon(Icons.exit_to_app, size: 14),
                   SizedBox(width: 4),
-                  Text("Leave", style: TextStyle(fontSize: 12)),
+                  Text("Leave", style: AppTextStyles.buttonTextSmall),
                 ],
               ),
             ),

@@ -1,5 +1,3 @@
-import 'package:buzz5_quiz_app/config/colors.dart';
-import 'package:buzz5_quiz_app/config/text_styles.dart';
 import 'package:buzz5_quiz_app/providers/player_provider.dart';
 import 'package:buzz5_quiz_app/pages/final_page.dart';
 import 'package:flutter/material.dart';
@@ -20,12 +18,12 @@ class EndGameButton extends StatelessWidget {
     return Center(
       child: ElevatedButton.icon(
         onPressed: () => _handleEndGame(context),
-        style: _getButtonStyle(),
+        style: _getButtonStyle(context),
         icon: const Icon(Icons.emoji_events),
         label: Text(
           'End Game',
-          style: AppTextStyles.titleSmall.copyWith(
-            color: ColorConstants.surfaceColor,
+          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+            color: Theme.of(context).colorScheme.onPrimary,
           ),
         ),
       ),
@@ -50,10 +48,10 @@ class EndGameButton extends StatelessWidget {
   }
 
   /// Gets the button style configuration
-  ButtonStyle _getButtonStyle() {
+  ButtonStyle _getButtonStyle(BuildContext context) {
     return ElevatedButton.styleFrom(
-      minimumSize: const Size(200, 60),
-      backgroundColor: ColorConstants.primaryContainerColor,
+      minimumSize: const Size(150, 50),
+      backgroundColor: Theme.of(context).colorScheme.primary,
     );
   }
 }

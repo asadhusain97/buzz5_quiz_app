@@ -1,5 +1,5 @@
-import 'package:buzz5_quiz_app/config/colors.dart';
-import 'package:buzz5_quiz_app/config/text_styles.dart';
+import 'package:buzz5_quiz_app/config/app_dimensions.dart';
+import 'package:buzz5_quiz_app/config/app_theme_extensions.dart';
 import 'package:buzz5_quiz_app/providers/question_done.dart';
 import 'package:buzz5_quiz_app/providers/player_provider.dart';
 import 'package:buzz5_quiz_app/pages/question_page.dart';
@@ -50,15 +50,18 @@ class QuestionSetWidget extends StatelessWidget {
     return InkWell(
       onTap: () => _showSetInfoPopup(context),
       borderRadius: BorderRadius.circular(8.0),
-      hoverColor: ColorConstants.primaryColor.withValues(alpha: 0.1),
+      hoverColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
       child: Container(
         width: 150,
         height: 80,
         padding: const EdgeInsets.all(8.0),
         margin: const EdgeInsets.symmetric(vertical: 2.0, horizontal: 6.0),
         decoration: BoxDecoration(
-          border: Border.all(color: Colors.grey.shade600, width: 1.0),
-          borderRadius: BorderRadius.circular(8.0),
+          border: Border.all(
+            color: Theme.of(context).colorScheme.outline,
+            width: 1.0,
+          ),
+          borderRadius: AppDimensions.smallBorderRadius,
         ),
         child: Center(
           child: FittedBox(
@@ -67,7 +70,7 @@ class QuestionSetWidget extends StatelessWidget {
               constraints: const BoxConstraints(maxWidth: 130),
               child: Text(
                 data.isNotEmpty ? data[0]['set_name'] : 'No setname present',
-                style: AppTextStyles.titleMedium,
+                style: Theme.of(context).textTheme.titleMedium,
                 textAlign: TextAlign.center,
                 maxLines: 3,
                 overflow: TextOverflow.ellipsis,
@@ -121,7 +124,7 @@ class QuestionSetWidget extends StatelessWidget {
     return ElevatedButton(
       onPressed: () => _navigateToQuestion(context, item, questionId),
       style: ElevatedButton.styleFrom(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(90)),
+        shape: const CircleBorder(),
         padding: EdgeInsets.zero,
         backgroundColor: Colors.transparent,
         shadowColor: Colors.transparent,
@@ -136,13 +139,13 @@ class QuestionSetWidget extends StatelessWidget {
             children: [
               Icon(
                 Icons.check,
-                color: Colors.green.shade300,
+                color: context.gameTheme.answeredQuestionColor,
                 size: 30,
               ),
               Text(
                 item['points'].toString(),
-                style: AppTextStyles.titleSmall.copyWith(
-                  color: Colors.green.shade500,
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  color: context.gameTheme.answeredQuestionColor,
                 ),
               ),
             ],
@@ -161,9 +164,9 @@ class QuestionSetWidget extends StatelessWidget {
     return ElevatedButton(
       onPressed: () => _navigateToQuestion(context, item, questionId),
       style: ElevatedButton.styleFrom(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(45)),
+        shape: const CircleBorder(),
         padding: EdgeInsets.zero,
-        backgroundColor: ColorConstants.primaryContainerColor,
+        backgroundColor: Theme.of(context).colorScheme.primaryContainer,
       ),
       child: Container(
         width: 90,
@@ -172,8 +175,8 @@ class QuestionSetWidget extends StatelessWidget {
         child: Center(
           child: Text(
             item['points'].toString(),
-            style: AppTextStyles.titleMedium.copyWith(
-              color: ColorConstants.surfaceColor,
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
         ),
@@ -233,7 +236,7 @@ class QuestionSetWidget extends StatelessWidget {
       context: context,
       builder: (BuildContext context) {
         return Dialog(
-          backgroundColor: ColorConstants.darkCardColor,
+          backgroundColor: Theme.of(context).cardColor,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.0)),
           child: Container(
             width: 400,
@@ -242,16 +245,16 @@ class QuestionSetWidget extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildPopupHeader(setData),
+                _buildPopupHeader(context, setData),
                 const SizedBox(height: 24),
-                _buildPopupExplanation(setData),
+                _buildPopupExplanation(context, setData),
                 const SizedBox(height: 20),
                 if (_hasExampleQuestion(setData)) ...[
-                  _buildPopupExampleQuestion(setData),
+                  _buildPopupExampleQuestion(context, setData),
                   const SizedBox(height: 20),
                 ],
                 if (_hasExampleAnswer(setData)) ...[
-                  _buildPopupExampleAnswer(setData),
+                  _buildPopupExampleAnswer(context, setData),
                   const SizedBox(height: 24),
                 ],
                 _buildPopupCloseButton(context),
@@ -264,26 +267,26 @@ class QuestionSetWidget extends StatelessWidget {
   }
 
   /// Builds popup header
-  Widget _buildPopupHeader(Map<String, dynamic> setData) {
+  Widget _buildPopupHeader(BuildContext context, Map<String, dynamic> setData) {
     return Center(
       child: Text(
         setData['set_name'] ?? 'Category Info',
-        style: AppTextStyles.titleMedium.copyWith(
-          color: ColorConstants.lightTextColor,
+        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+          color: Theme.of(context).colorScheme.onSurface,
         ),
       ),
     );
   }
 
   /// Builds popup explanation section
-  Widget _buildPopupExplanation(Map<String, dynamic> setData) {
+  Widget _buildPopupExplanation(BuildContext context, Map<String, dynamic> setData) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           'Explanation',
-          style: AppTextStyles.titleSmall.copyWith(
-            color: ColorConstants.secondaryColor,
+          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+            color: Theme.of(context).colorScheme.secondary,
           ),
         ),
         const SizedBox(height: 8),
@@ -292,8 +295,8 @@ class QuestionSetWidget extends StatelessWidget {
             setData['set_explanation'] ?? 'No explanation available',
             500,
           ),
-          style: AppTextStyles.body.copyWith(
-            color: ColorConstants.lightTextColor,
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
       ],
@@ -301,21 +304,21 @@ class QuestionSetWidget extends StatelessWidget {
   }
 
   /// Builds popup example question section
-  Widget _buildPopupExampleQuestion(Map<String, dynamic> setData) {
+  Widget _buildPopupExampleQuestion(BuildContext context, Map<String, dynamic> setData) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           'Example Question',
-          style: AppTextStyles.titleSmall.copyWith(
-            color: ColorConstants.secondaryColor,
+          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+            color: Theme.of(context).colorScheme.secondary,
           ),
         ),
         const SizedBox(height: 8),
         Text(
           _truncateText(setData['set_example_question'], 500),
-          style: AppTextStyles.body.copyWith(
-            color: ColorConstants.lightTextColor,
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
       ],
@@ -323,21 +326,21 @@ class QuestionSetWidget extends StatelessWidget {
   }
 
   /// Builds popup example answer section
-  Widget _buildPopupExampleAnswer(Map<String, dynamic> setData) {
+  Widget _buildPopupExampleAnswer(BuildContext context, Map<String, dynamic> setData) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           'Example Answer',
-          style: AppTextStyles.titleSmall.copyWith(
-            color: ColorConstants.secondaryColor,
+          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+            color: Theme.of(context).colorScheme.secondary,
           ),
         ),
         const SizedBox(height: 8),
         Text(
           _truncateText(setData['set_example_answer'], 500),
-          style: AppTextStyles.body.copyWith(
-            color: ColorConstants.lightTextColor,
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
       ],
@@ -350,14 +353,14 @@ class QuestionSetWidget extends StatelessWidget {
       child: ElevatedButton(
         onPressed: () => Navigator.of(context).pop(),
         style: ElevatedButton.styleFrom(
-          backgroundColor: ColorConstants.primaryContainerColor,
+          backgroundColor: Theme.of(context).colorScheme.primaryContainer,
           padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
         ),
         child: Text(
           'Close',
-          style: AppTextStyles.titleSmall.copyWith(
-            color: ColorConstants.lightTextColor,
+          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
       ),

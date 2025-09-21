@@ -1,12 +1,45 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:buzz5_quiz_app/config/colors.dart';
+import 'package:buzz5_quiz_app/config/app_dimensions.dart';
+import 'package:buzz5_quiz_app/config/app_theme_extensions.dart';
 
 /// The [AppTheme] defines light and dark themes for the app.
+///
+/// This theme system provides:
+/// - Material Design 3 color schemes
+/// - Centralized typography using custom text styles
+/// - Consistent component theming
+/// - Support for both light and dark modes
 abstract final class AppTheme {
+
+  /// Base text theme configuration that works with both light and dark themes
+  static const TextTheme _textTheme = TextTheme(
+    // Headlines
+    headlineLarge: TextStyle(fontSize: 42, fontWeight: FontWeight.bold),
+    headlineMedium: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
+    headlineSmall: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+
+    // Titles
+    titleLarge: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+    titleMedium: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+    titleSmall: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+
+    // Body text
+    bodyLarge: TextStyle(fontSize: 18, fontWeight: FontWeight.normal),
+    bodyMedium: TextStyle(fontSize: 16, fontWeight: FontWeight.normal),
+    bodySmall: TextStyle(fontSize: 14, fontWeight: FontWeight.normal),
+
+    // Labels
+    labelLarge: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+    labelMedium: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+    labelSmall: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+  );
+
   // The defined light theme.
   static ThemeData light = ThemeData(
     useMaterial3: true,
+    textTheme: _textTheme,
     colorScheme: ColorScheme.light(
       primary: ColorConstants.primaryColor,
       onPrimary: ColorConstants.lightTextColor,
@@ -28,23 +61,24 @@ abstract final class AppTheme {
     cardColor: ColorConstants.cardColor,
     appBarTheme: AppBarTheme(
       backgroundColor: ColorConstants.primaryContainerColor,
-      elevation: 0,
+      elevation: AppDimensions.appBarElevation,
       centerTitle: true,
-      titleTextStyle: TextStyle(
+      titleTextStyle: _textTheme.titleLarge?.copyWith(
         color: ColorConstants.lightTextColor,
-        fontSize: 20,
-        fontWeight: FontWeight.bold,
       ),
-      iconTheme: IconThemeData(color: ColorConstants.lightTextColor),
+      iconTheme: IconThemeData(
+        color: ColorConstants.lightTextColor,
+        size: AppDimensions.mediumIconSize,
+      ),
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
         backgroundColor: ColorConstants.primaryColor,
         foregroundColor: ColorConstants.lightTextColor,
-        elevation: 2,
-        minimumSize: Size(200, 56),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+        elevation: AppDimensions.buttonElevation,
+        minimumSize: AppDimensions.defaultButtonSize,
+        shape: RoundedRectangleBorder(borderRadius: AppDimensions.buttonBorderRadius),
+        padding: AppDimensions.buttonPadding,
       ),
     ),
     textButtonTheme: TextButtonThemeData(
@@ -66,11 +100,15 @@ abstract final class AppTheme {
     ),
     visualDensity: VisualDensity.adaptivePlatformDensity,
     cupertinoOverrideTheme: const CupertinoThemeData(applyThemeToAll: true),
+    extensions: const <ThemeExtension<dynamic>>[
+      GameThemeExtension.light,
+    ],
   );
 
   // The defined dark theme.
   static ThemeData dark = ThemeData(
     useMaterial3: true,
+    textTheme: _textTheme,
     colorScheme: ColorScheme.dark(
       primary: ColorConstants.primaryColor,
       onPrimary: ColorConstants.lightTextColor,
@@ -91,23 +129,24 @@ abstract final class AppTheme {
     cardColor: hexToColor('#252525'),
     appBarTheme: AppBarTheme(
       backgroundColor: ColorConstants.primaryContainerColor,
-      elevation: 0,
+      elevation: AppDimensions.appBarElevation,
       centerTitle: true,
-      titleTextStyle: TextStyle(
+      titleTextStyle: _textTheme.titleLarge?.copyWith(
         color: ColorConstants.lightTextColor,
-        fontSize: 20,
-        fontWeight: FontWeight.bold,
       ),
-      iconTheme: IconThemeData(color: ColorConstants.lightTextColor),
+      iconTheme: IconThemeData(
+        color: ColorConstants.lightTextColor,
+        size: AppDimensions.mediumIconSize,
+      ),
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
         backgroundColor: ColorConstants.primaryColor,
         foregroundColor: ColorConstants.lightTextColor,
-        elevation: 2,
-        minimumSize: Size(200, 56),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+        elevation: AppDimensions.buttonElevation,
+        minimumSize: AppDimensions.defaultButtonSize,
+        shape: RoundedRectangleBorder(borderRadius: AppDimensions.buttonBorderRadius),
+        padding: AppDimensions.buttonPadding,
       ),
     ),
     textButtonTheme: TextButtonThemeData(
@@ -129,5 +168,8 @@ abstract final class AppTheme {
     ),
     visualDensity: VisualDensity.adaptivePlatformDensity,
     cupertinoOverrideTheme: const CupertinoThemeData(applyThemeToAll: true),
+    extensions: const <ThemeExtension<dynamic>>[
+      GameThemeExtension.dark,
+    ],
   );
 }

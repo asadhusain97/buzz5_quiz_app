@@ -1,4 +1,5 @@
-import 'package:buzz5_quiz_app/config/text_styles.dart';
+import 'package:buzz5_quiz_app/config/app_dimensions.dart';
+import 'package:buzz5_quiz_app/config/app_theme_extensions.dart';
 import 'package:buzz5_quiz_app/providers/player_provider.dart';
 import 'package:buzz5_quiz_app/providers/room_provider.dart';
 import 'package:buzz5_quiz_app/models/room.dart';
@@ -28,6 +29,7 @@ class GameLeaderboard extends StatelessWidget {
         AppLogger.i("Player list updated: ${playerProvider.playerList}");
 
         return _buildLeaderboardContent(
+          context,
           playerProvider,
           roomProvider,
         );
@@ -37,18 +39,19 @@ class GameLeaderboard extends StatelessWidget {
 
   /// Builds the main leaderboard content
   Widget _buildLeaderboardContent(
+    BuildContext context,
     PlayerProvider playerProvider,
     RoomProvider roomProvider,
   ) {
     return SingleChildScrollView(
       child: SizedBox(
-        width: 250,
+        width: AppDimensions.leaderboardWidth,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text('Leaderboard', style: AppTextStyles.titleMedium),
-            const SizedBox(height: 20.0),
+            Text('Leaderboard', style: Theme.of(context).textTheme.headlineSmall),
+            SizedBox(height: AppDimensions.defaultSpacing),
             _buildPlayersList(playerProvider, roomProvider),
           ],
         ),
@@ -62,7 +65,7 @@ class GameLeaderboard extends StatelessWidget {
     RoomProvider roomProvider,
   ) {
     return SizedBox(
-      width: 180.0,
+      width: AppDimensions.leaderboardItemWidth,
       child: ListView.builder(
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
@@ -76,6 +79,7 @@ class GameLeaderboard extends StatelessWidget {
           final isConnectedToRoom = roomPlayer?.isConnected ?? false;
 
           return _buildPlayerCard(
+            context,
             player,
             isLastPositivePlayer,
             isConnectedToRoom,
@@ -88,15 +92,16 @@ class GameLeaderboard extends StatelessWidget {
 
   /// Builds individual player card with score and connection status
   Widget _buildPlayerCard(
+    BuildContext context,
     player,
     bool isLastPositivePlayer,
     bool isConnectedToRoom,
     bool hasActiveRoom,
   ) {
     return Container(
-      margin: const EdgeInsets.symmetric(vertical: 4.0),
-      padding: const EdgeInsets.all(8.0),
-      decoration: _getCardDecoration(isLastPositivePlayer),
+      margin: EdgeInsets.symmetric(vertical: AppDimensions.extraSmallSpacing / 2),
+      padding: AppDimensions.smallPadding,
+      decoration: _getCardDecoration(isLastPositivePlayer, context),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -104,21 +109,21 @@ class GameLeaderboard extends StatelessWidget {
             child: Row(
               children: [
                 // Connection status indicator
-                if (hasActiveRoom) _buildConnectionIndicator(isConnectedToRoom),
+                if (hasActiveRoom) _buildConnectionIndicator(context, isConnectedToRoom),
                 Expanded(
                   child: Text(
                     player.name,
-                    style: AppTextStyles.scoreCard,
+                    style: context.gameTheme.scoreCardStyle,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(width: 8),
+          SizedBox(width: AppDimensions.extraSmallSpacing),
           Text(
             '${player.score}',
-            style: AppTextStyles.scoreCard,
+            style: context.gameTheme.scoreCardStyle,
           ),
         ],
       ),
@@ -126,35 +131,37 @@ class GameLeaderboard extends StatelessWidget {
   }
 
   /// Creates decoration for player cards
-  BoxDecoration _getCardDecoration(bool isLastPositivePlayer) {
+  BoxDecoration _getCardDecoration(bool isLastPositivePlayer, BuildContext context) {
     return BoxDecoration(
-      color: const Color.fromRGBO(255, 255, 255, 0.1),
+      color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.1),
       border: Border.all(
-        color: isLastPositivePlayer ? Colors.green : Colors.grey,
+        color: isLastPositivePlayer
+          ? Theme.of(context).colorScheme.primary
+          : Theme.of(context).colorScheme.outline,
         width: 2,
       ),
-      borderRadius: BorderRadius.circular(8.0),
-      boxShadow: const [
+      borderRadius: AppDimensions.smallBorderRadius,
+      boxShadow: [
         BoxShadow(
-          color: Color.fromRGBO(0, 0, 0, 0.1),
-          blurRadius: 5,
-          spreadRadius: 1,
+          color: Theme.of(context).shadowColor.withValues(alpha: 0.1),
+          blurRadius: AppDimensions.shadowBlur,
+          spreadRadius: AppDimensions.shadowSpread,
         ),
       ],
     );
   }
 
   /// Builds connection status indicator
-  Widget _buildConnectionIndicator(bool isConnected) {
+  Widget _buildConnectionIndicator(BuildContext context, bool isConnected) {
     return Container(
       width: 8,
       height: 8,
-      margin: const EdgeInsets.only(right: 6),
+      margin: EdgeInsets.only(right: AppDimensions.extraSmallSpacing - 2),
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         color: isConnected
-          ? Colors.green
-          : Colors.grey.withValues(alpha: 0.5),
+          ? Theme.of(context).colorScheme.primary
+          : Theme.of(context).colorScheme.outline.withValues(alpha: 0.5),
       ),
     );
   }

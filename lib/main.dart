@@ -1,5 +1,6 @@
 import 'package:buzz5_quiz_app/config/logger.dart';
 import 'package:buzz5_quiz_app/config/app_config.dart';
+import 'package:buzz5_quiz_app/config/app_theme.dart';
 import 'package:buzz5_quiz_app/providers/question_done.dart';
 import 'package:flutter/material.dart';
 import 'package:buzz5_quiz_app/widgets/auth_gate.dart';
@@ -95,7 +96,8 @@ class MyApp extends StatelessWidget {
       child: MaterialApp(
         title: 'Buzz5 Quiz App',
         debugShowCheckedModeBanner: false,
-        theme: ThemeData.dark(),
+        theme: AppTheme.dark, // App uses only dark theme
+        themeMode: ThemeMode.dark, // Force dark theme always
         home: const AuthGate(),
         routes: {'/forgot-password': (context) => const ForgotPasswordPage()},
       ),
