@@ -1,13 +1,13 @@
 import 'package:buzz5_quiz_app/config/logger.dart';
 import 'package:buzz5_quiz_app/config/app_config.dart';
-import 'package:buzz5_quiz_app/models/question_done.dart';
+import 'package:buzz5_quiz_app/providers/question_done.dart';
 import 'package:flutter/material.dart';
 import 'package:buzz5_quiz_app/widgets/auth_gate.dart';
 import 'package:buzz5_quiz_app/pages/forgot_password_page.dart';
 import 'package:provider/provider.dart';
-import 'package:buzz5_quiz_app/models/player_provider.dart';
-import 'package:buzz5_quiz_app/models/room_provider.dart';
-import 'package:buzz5_quiz_app/models/auth_provider.dart';
+import 'package:buzz5_quiz_app/providers/player_provider.dart';
+import 'package:buzz5_quiz_app/providers/room_provider.dart';
+import 'package:buzz5_quiz_app/providers/auth_provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
 import 'firebase_options.dart';

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:buzz5_quiz_app/models/auth_provider.dart';
-import 'package:buzz5_quiz_app/widgets/appbar.dart';
+import 'package:buzz5_quiz_app/providers/auth_provider.dart';
+import 'package:buzz5_quiz_app/widgets/custom_app_bar.dart';
 import 'package:buzz5_quiz_app/widgets/app_background.dart';
 import 'package:buzz5_quiz_app/config/colors.dart';
 import 'package:buzz5_quiz_app/config/logger.dart';

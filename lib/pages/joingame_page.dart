@@ -1,8 +1,8 @@
 import 'package:buzz5_quiz_app/config/text_styles.dart';
 import 'package:buzz5_quiz_app/config/colors.dart';
-import 'package:buzz5_quiz_app/widgets/appbar.dart';
+import 'package:buzz5_quiz_app/widgets/custom_app_bar.dart';
 import 'package:buzz5_quiz_app/widgets/base_page.dart';
-import 'package:buzz5_quiz_app/models/room_provider.dart';
+import 'package:buzz5_quiz_app/providers/room_provider.dart';
 import 'package:buzz5_quiz_app/pages/game_room_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';

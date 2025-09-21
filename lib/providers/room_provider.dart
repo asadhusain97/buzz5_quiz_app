@@ -3,7 +3,7 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:buzz5_quiz_app/models/room.dart';
 import 'package:buzz5_quiz_app/models/player.dart';
-import 'package:buzz5_quiz_app/models/player_provider.dart';
+import 'package:buzz5_quiz_app/providers/player_provider.dart';
 import 'package:buzz5_quiz_app/config/logger.dart';
 import 'dart:async';
 

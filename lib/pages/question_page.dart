@@ -1,12 +1,12 @@
 import 'package:buzz5_quiz_app/config/colors.dart';
 import 'package:buzz5_quiz_app/config/text_styles.dart';
-import 'package:buzz5_quiz_app/models/question_done.dart';
+import 'package:buzz5_quiz_app/providers/question_done.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:buzz5_quiz_app/config/logger.dart';
 import 'package:provider/provider.dart';
-import 'package:buzz5_quiz_app/models/player_provider.dart';
-import 'package:buzz5_quiz_app/models/room_provider.dart';
+import 'package:buzz5_quiz_app/providers/player_provider.dart';
+import 'package:buzz5_quiz_app/providers/room_provider.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'dart:async';
 
