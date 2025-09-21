@@ -2,7 +2,7 @@ import 'package:buzz5_quiz_app/config/colors.dart';
 import 'package:buzz5_quiz_app/config/text_styles.dart';
 import 'package:buzz5_quiz_app/pages/instructions_page.dart';
 import 'package:buzz5_quiz_app/pages/joingame_page.dart';
-import 'package:buzz5_quiz_app/pages/create_questions_page.dart';
+import 'package:buzz5_quiz_app/pages/create_boards_page.dart';
 import 'package:buzz5_quiz_app/pages/marketplace_page.dart';
 import 'package:buzz5_quiz_app/widgets/custom_app_bar.dart';
 import 'package:flutter/material.dart';
@@ -105,27 +105,37 @@ class HomePage extends StatelessWidget {
                                       Expanded(
                                         child: ElevatedButton(
                                           onPressed: () {
-                                            AppLogger.i("Navigating to InstructionsPage");
+                                            AppLogger.i(
+                                              "Navigating to InstructionsPage",
+                                            );
                                             Navigator.push(
                                               context,
                                               MaterialPageRoute(
-                                                builder: (context) => InstructionsPage(),
+                                                builder:
+                                                    (context) =>
+                                                        InstructionsPage(),
                                               ),
                                             );
                                           },
                                           style: ElevatedButton.styleFrom(
                                             minimumSize: Size(0, 56),
-                                            backgroundColor: ColorConstants.primaryColor,
-                                            foregroundColor: ColorConstants.lightTextColor,
+                                            backgroundColor:
+                                                ColorConstants.primaryColor,
+                                            foregroundColor:
+                                                ColorConstants.lightTextColor,
                                             elevation: 2,
                                             shape: RoundedRectangleBorder(
-                                              borderRadius: BorderRadius.circular(12),
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
                                             ),
                                           ),
                                           child: Row(
                                             mainAxisSize: MainAxisSize.min,
                                             children: [
-                                              Icon(Icons.play_arrow_rounded, size: 24),
+                                              Icon(
+                                                Icons.play_arrow_rounded,
+                                                size: 24,
+                                              ),
                                               const SizedBox(width: 8),
                                               Text(
                                                 'Start Game',
@@ -139,27 +149,36 @@ class HomePage extends StatelessWidget {
                                       Expanded(
                                         child: ElevatedButton(
                                           onPressed: () {
-                                            AppLogger.i("Navigating to JoinGamePage");
+                                            AppLogger.i(
+                                              "Navigating to JoinGamePage",
+                                            );
                                             Navigator.push(
                                               context,
                                               MaterialPageRoute(
-                                                builder: (context) => JoinGamePage(),
+                                                builder:
+                                                    (context) => JoinGamePage(),
                                               ),
                                             );
                                           },
                                           style: ElevatedButton.styleFrom(
                                             minimumSize: Size(0, 56),
-                                            backgroundColor: ColorConstants.primaryColor,
-                                            foregroundColor: ColorConstants.lightTextColor,
+                                            backgroundColor:
+                                                ColorConstants.primaryColor,
+                                            foregroundColor:
+                                                ColorConstants.lightTextColor,
                                             elevation: 2,
                                             shape: RoundedRectangleBorder(
-                                              borderRadius: BorderRadius.circular(12),
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
                                             ),
                                           ),
                                           child: Row(
                                             mainAxisSize: MainAxisSize.min,
                                             children: [
-                                              Icon(Icons.group_add_rounded, size: 24),
+                                              Icon(
+                                                Icons.group_add_rounded,
+                                                size: 24,
+                                              ),
                                               const SizedBox(width: 8),
                                               Text(
                                                 'Join Game',
@@ -178,30 +197,40 @@ class HomePage extends StatelessWidget {
                                       Expanded(
                                         child: ElevatedButton(
                                           onPressed: () {
-                                            AppLogger.i("Navigating to CreateQuestionsPage");
+                                            AppLogger.i(
+                                              "Navigating to CreateBoardsPage",
+                                            );
                                             Navigator.push(
                                               context,
                                               MaterialPageRoute(
-                                                builder: (context) => CreateQuestionsPage(),
+                                                builder:
+                                                    (context) =>
+                                                        CreateBoardsPage(),
                                               ),
                                             );
                                           },
                                           style: ElevatedButton.styleFrom(
                                             minimumSize: Size(0, 56),
-                                            backgroundColor: ColorConstants.primaryColor,
-                                            foregroundColor: ColorConstants.lightTextColor,
+                                            backgroundColor:
+                                                ColorConstants.primaryColor,
+                                            foregroundColor:
+                                                ColorConstants.lightTextColor,
                                             elevation: 2,
                                             shape: RoundedRectangleBorder(
-                                              borderRadius: BorderRadius.circular(12),
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
                                             ),
                                           ),
                                           child: Row(
                                             mainAxisSize: MainAxisSize.min,
                                             children: [
-                                              Icon(Icons.quiz_outlined, size: 24),
+                                              Icon(
+                                                Icons.quiz_outlined,
+                                                size: 24,
+                                              ),
                                               const SizedBox(width: 8),
                                               Text(
-                                                'Create Questions',
+                                                'Create Boards',
                                                 style: AppTextStyles.homeButton,
                                               ),
                                             ],
@@ -212,21 +241,28 @@ class HomePage extends StatelessWidget {
                                       Expanded(
                                         child: ElevatedButton(
                                           onPressed: () {
-                                            AppLogger.i("Navigating to MarketplacePage");
+                                            AppLogger.i(
+                                              "Navigating to MarketplacePage",
+                                            );
                                             Navigator.push(
                                               context,
                                               MaterialPageRoute(
-                                                builder: (context) => MarketplacePage(),
+                                                builder:
+                                                    (context) =>
+                                                        MarketplacePage(),
                                               ),
                                             );
                                           },
                                           style: ElevatedButton.styleFrom(
                                             minimumSize: Size(0, 56),
-                                            backgroundColor: ColorConstants.primaryColor,
-                                            foregroundColor: ColorConstants.lightTextColor,
+                                            backgroundColor:
+                                                ColorConstants.primaryColor,
+                                            foregroundColor:
+                                                ColorConstants.lightTextColor,
                                             elevation: 2,
                                             shape: RoundedRectangleBorder(
-                                              borderRadius: BorderRadius.circular(12),
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
                                             ),
                                           ),
                                           child: Row(

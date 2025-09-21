@@ -2,6 +2,7 @@ import 'package:buzz5_quiz_app/config/logger.dart';
 import 'package:buzz5_quiz_app/config/app_config.dart';
 import 'package:buzz5_quiz_app/config/theme.dart';
 import 'package:buzz5_quiz_app/providers/question_done.dart';
+import 'package:buzz5_quiz_app/providers/question_provider.dart';
 import 'package:buzz5_quiz_app/services/database_cleanup_service.dart';
 import 'package:flutter/material.dart';
 import 'package:buzz5_quiz_app/widgets/auth_gate.dart';
@@ -100,6 +101,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => PlayerProvider()),
         ChangeNotifierProvider(create: (_) => RoomProvider()),
         ChangeNotifierProvider(create: (_) => AnsweredQuestionsProvider()),
+        ChangeNotifierProvider(create: (_) => QuestionProvider()),
         ChangeNotifierProvider(
           create: (_) {
             final provider = AuthProvider();
