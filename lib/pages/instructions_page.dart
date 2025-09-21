@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:buzz5_quiz_app/models/player_provider.dart';
+import 'package:buzz5_quiz_app/models/player.dart';
 import 'package:buzz5_quiz_app/models/room_provider.dart';
 import 'package:buzz5_quiz_app/models/qrow.dart';
 import 'package:provider/provider.dart';
@@ -45,6 +46,12 @@ class _InstructionsPageState extends State<InstructionsPage> {
   bool _hasError = false;
   String _errorMessage = '';
   late Future<List<QRow>> _qrowsFuture;
+
+  // Player management state
+  final TextEditingController _playerNameController = TextEditingController();
+  final FocusNode _playerNameFocusNode = FocusNode();
+  List<String> _manualPlayers = [];
+  static const int maxPlayerLimit = 50;
 
   Future<void> _launchURL(String url) async {
     final Uri uri = Uri.parse(url);
@@ -107,6 +114,93 @@ class _InstructionsPageState extends State<InstructionsPage> {
     super.initState();
     // Start loading boards immediately when page loads
     _fetchQRows();
+  }
+
+  @override
+  void dispose() {
+    _playerNameController.dispose();
+    _playerNameFocusNode.dispose();
+    super.dispose();
+  }
+
+  void _addPlayer() {
+    final playerName = _playerNameController.text.trim();
+
+    if (playerName.isEmpty) {
+      _showSnackBar("Player name cannot be empty", ColorConstants.errorColor);
+      return;
+    }
+
+    if (playerName.length > 15) {
+      _showSnackBar(
+        "Player name must be 15 characters or less",
+        ColorConstants.errorColor,
+      );
+      return;
+    }
+
+    if (_manualPlayers.contains(playerName)) {
+      _showSnackBar("Player already exists", ColorConstants.errorColor);
+      return;
+    }
+
+    if (_manualPlayers.length >= maxPlayerLimit) {
+      _showSnackBar(
+        "Maximum $maxPlayerLimit players reached",
+        ColorConstants.errorColor,
+      );
+      return;
+    }
+
+    setState(() {
+      _manualPlayers.add(playerName);
+    });
+
+    // Add to PlayerProvider
+    final playerProvider = Provider.of<PlayerProvider>(context, listen: false);
+    playerProvider.addPlayer(Player(name: playerName));
+
+    _playerNameController.clear();
+    // No snackbar for successful additions
+    // Keep focus on the input field
+    Future.delayed(Duration(milliseconds: 50), () {
+      _playerNameFocusNode.requestFocus();
+    });
+
+    AppLogger.i("Added player: $playerName");
+  }
+
+  void _removePlayer(String playerName) {
+    setState(() {
+      _manualPlayers.remove(playerName);
+    });
+
+    // Remove from PlayerProvider
+    final playerProvider = Provider.of<PlayerProvider>(context, listen: false);
+    final playerToRemove = playerProvider.playerList.firstWhere(
+      (player) => player.name == playerName,
+    );
+    playerProvider.removePlayer(playerToRemove);
+
+    _showSnackBar(
+      "Player '$playerName' removed",
+      ColorConstants.lightTextColor,
+    );
+
+    AppLogger.i("Removed player: $playerName");
+  }
+
+  void _showSnackBar(String message, Color textColor) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message, style: TextStyle(color: textColor)),
+        backgroundColor: ColorConstants.primaryContainerColor,
+        duration: Duration(seconds: 2),
+        behavior: SnackBarBehavior.floating,
+        margin: EdgeInsets.all(12),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      ),
+    );
   }
 
   @override
@@ -402,29 +496,317 @@ class _InstructionsPageState extends State<InstructionsPage> {
               ),
             ),
           ),
-          AnimatedContainer(
-            duration: Duration(milliseconds: 300),
-            height: _showBuzzerSection ? null : 0,
-            child:
-                _showBuzzerSection
-                    ? Padding(
-                      padding: EdgeInsets.fromLTRB(20, 0, 20, 20),
-                      child: Column(
-                        children: [
-                          Text(
-                            "Great! You can use your own buzzer system and we will handle scoring and question management.",
-                            style: AppTextStyles.body,
-                            textAlign: TextAlign.justify,
-                          ),
-                          Text(
-                            "Add the player names below.",
-                            style: AppTextStyles.body,
-                            textAlign: TextAlign.justify,
-                          ),
-                        ],
-                      ),
-                    )
-                    : SizedBox.shrink(),
+          ClipRect(
+            child: AnimatedContainer(
+              duration: Duration.zero, // Instant expansion
+              height: _showBuzzerSection ? 300 : 0,
+              child:
+                  _showBuzzerSection
+                      ? Padding(
+                        padding: EdgeInsets.fromLTRB(20, 0, 20, 20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Instructions text
+                            Text(
+                              "Great! You can use your own buzzer system and we will handle scoring and question management.",
+                              style: TextStyle(
+                                fontSize: 16,
+                                height: 1.5,
+                                color: ColorConstants.lightTextColor,
+                              ),
+                              textAlign: TextAlign.left,
+                            ),
+                            SizedBox(height: 8),
+                            Text(
+                              "Add the player names below.",
+                              style: TextStyle(
+                                fontSize: 16,
+                                height: 1.5,
+                                color: ColorConstants.lightTextColor,
+                              ),
+                              textAlign: TextAlign.left,
+                            ),
+                            SizedBox(height: 16),
+
+                            // Content row with input/button on left and player list on right
+                            Expanded(
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  // Left side - Input and button
+                                  Expanded(
+                                    flex: 1,
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        // Input field with button beside it
+                                        Row(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Expanded(
+                                              child: SizedBox(
+                                                height:
+                                                    48, // Fixed height to match button
+                                                child: TextField(
+                                                  controller:
+                                                      _playerNameController,
+                                                  focusNode:
+                                                      _playerNameFocusNode,
+                                                  maxLength: 15,
+                                                  decoration: InputDecoration(
+                                                    hintText:
+                                                        "Enter player name",
+                                                    hintStyle: TextStyle(
+                                                      color: ColorConstants
+                                                          .surfaceColor
+                                                          .withValues(
+                                                            alpha: 0.6,
+                                                          ),
+                                                    ),
+                                                    filled: true,
+                                                    fillColor: Colors.grey[800],
+                                                    border: OutlineInputBorder(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            8,
+                                                          ),
+                                                      borderSide: BorderSide(
+                                                        color: ColorConstants
+                                                            .primaryContainerColor
+                                                            .withValues(
+                                                              alpha: 0.3,
+                                                            ),
+                                                      ),
+                                                    ),
+                                                    enabledBorder: OutlineInputBorder(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            8,
+                                                          ),
+                                                      borderSide: BorderSide(
+                                                        color: ColorConstants
+                                                            .primaryContainerColor
+                                                            .withValues(
+                                                              alpha: 0.3,
+                                                            ),
+                                                      ),
+                                                    ),
+                                                    focusedBorder: OutlineInputBorder(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            8,
+                                                          ),
+                                                      borderSide: BorderSide(
+                                                        color:
+                                                            ColorConstants
+                                                                .primaryColor,
+                                                        width: 2,
+                                                      ),
+                                                    ),
+                                                    contentPadding:
+                                                        EdgeInsets.symmetric(
+                                                          horizontal: 12,
+                                                          vertical: 12,
+                                                        ),
+                                                    counterText:
+                                                        "", // Hide character counter
+                                                  ),
+                                                  style: TextStyle(
+                                                    color:
+                                                        ColorConstants
+                                                            .surfaceColor,
+                                                  ),
+                                                  onSubmitted:
+                                                      (value) => _addPlayer(),
+                                                ),
+                                              ),
+                                            ),
+                                            SizedBox(width: 12),
+                                            SizedBox(
+                                              height:
+                                                  48, // Fixed height to match input
+                                              child: ElevatedButton(
+                                                onPressed:
+                                                    _manualPlayers.length >=
+                                                            maxPlayerLimit
+                                                        ? null
+                                                        : _addPlayer,
+                                                style: ElevatedButton.styleFrom(
+                                                  backgroundColor:
+                                                      _manualPlayers.length >=
+                                                              maxPlayerLimit
+                                                          ? Colors.grey
+                                                          : ColorConstants
+                                                              .primaryColor,
+                                                  foregroundColor:
+                                                      ColorConstants
+                                                          .lightTextColor,
+                                                  padding: EdgeInsets.symmetric(
+                                                    horizontal: 16,
+                                                  ),
+                                                  shape: RoundedRectangleBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          8,
+                                                        ),
+                                                  ),
+                                                  disabledBackgroundColor:
+                                                      Colors.grey,
+                                                ),
+                                                child: Text("Add Player"),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+
+                                  SizedBox(width: 20),
+
+                                  // Right side - Player list
+                                  Expanded(
+                                    flex: 1,
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          "Players (${_manualPlayers.length})",
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w600,
+                                            color: ColorConstants.surfaceColor,
+                                          ),
+                                        ),
+                                        SizedBox(height: 8),
+                                        Expanded(
+                                          child:
+                                              _manualPlayers.isEmpty
+                                                  ? Center(
+                                                    child: Text(
+                                                      "No players added yet",
+                                                      style: TextStyle(
+                                                        color:
+                                                            ColorConstants
+                                                                .hintGrey,
+                                                        fontStyle:
+                                                            FontStyle.italic,
+                                                      ),
+                                                    ),
+                                                  )
+                                                  : ListView.separated(
+                                                    padding:
+                                                        EdgeInsets.symmetric(
+                                                          vertical: 4,
+                                                        ),
+                                                    itemCount:
+                                                        _manualPlayers.length,
+                                                    separatorBuilder:
+                                                        (context, index) =>
+                                                            SizedBox(height: 6),
+                                                    itemBuilder: (
+                                                      context,
+                                                      index,
+                                                    ) {
+                                                      // Reverse the order: newest first
+                                                      final playerName =
+                                                          _manualPlayers[_manualPlayers
+                                                                  .length -
+                                                              1 -
+                                                              index];
+                                                      return Container(
+                                                        decoration: BoxDecoration(
+                                                          color:
+                                                              ColorConstants
+                                                                  .darkCardColor,
+                                                          borderRadius:
+                                                              BorderRadius.circular(
+                                                                8,
+                                                              ),
+                                                          border: Border.all(
+                                                            color: ColorConstants
+                                                                .primaryContainerColor
+                                                                .withValues(
+                                                                  alpha: 0.4,
+                                                                ),
+                                                            width: 1.5,
+                                                          ),
+                                                          boxShadow: [
+                                                            BoxShadow(
+                                                              color: ColorConstants
+                                                                  .primaryColor
+                                                                  .withValues(
+                                                                    alpha: 0.1,
+                                                                  ),
+                                                              blurRadius: 4,
+                                                              offset: Offset(
+                                                                0,
+                                                                2,
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                        child: ListTile(
+                                                          dense: true,
+                                                          contentPadding:
+                                                              EdgeInsets.symmetric(
+                                                                horizontal: 16,
+                                                                vertical: 8,
+                                                              ),
+                                                          title: Text(
+                                                            playerName,
+                                                            style: TextStyle(
+                                                              color:
+                                                                  ColorConstants
+                                                                      .lightTextColor,
+                                                              fontSize: 15,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .w600,
+                                                            ),
+                                                          ),
+                                                          trailing: IconButton(
+                                                            onPressed:
+                                                                () =>
+                                                                    _removePlayer(
+                                                                      playerName,
+                                                                    ),
+                                                            icon: Icon(
+                                                              Icons
+                                                                  .delete_outline,
+                                                              color:
+                                                                  ColorConstants
+                                                                      .errorColor,
+                                                              size: 20,
+                                                            ),
+                                                            constraints:
+                                                                BoxConstraints(
+                                                                  minWidth: 36,
+                                                                  minHeight: 36,
+                                                                ),
+                                                            padding:
+                                                                EdgeInsets.zero,
+                                                          ),
+                                                        ),
+                                                      );
+                                                    },
+                                                  ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                      : SizedBox.shrink(),
+            ),
           ),
         ],
       ),
