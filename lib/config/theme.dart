@@ -41,7 +41,7 @@ class AppTheme {
         tertiary: ColorConstants.tertiaryColor,
         onTertiary: ColorConstants.darkTextColor,
         tertiaryContainer: ColorConstants.tertiaryContainerColor,
-        onTertiaryContainer: ColorConstants.lightTextColor,
+        onTertiaryContainer: ColorConstants.correctAnsBtn,
         error: ColorConstants.errorColor,
         surface: ColorConstants.darkSurface,
       ),

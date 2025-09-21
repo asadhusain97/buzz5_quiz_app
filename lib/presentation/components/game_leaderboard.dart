@@ -28,11 +28,7 @@ class GameLeaderboard extends StatelessWidget {
 
         AppLogger.i("Player list updated: ${playerProvider.playerList}");
 
-        return _buildLeaderboardContent(
-          context,
-          playerProvider,
-          roomProvider,
-        );
+        return _buildLeaderboardContent(context, playerProvider, roomProvider);
       },
     );
   }
@@ -50,7 +46,10 @@ class GameLeaderboard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.center,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text('Leaderboard', style: Theme.of(context).textTheme.headlineSmall),
+            Text(
+              'Leaderboard',
+              style: Theme.of(context).textTheme.headlineSmall,
+            ),
             SizedBox(height: AppDimensions.defaultSpacing),
             _buildPlayersList(playerProvider, roomProvider),
           ],
@@ -72,7 +71,8 @@ class GameLeaderboard extends StatelessWidget {
         itemCount: playerProvider.playerList.length,
         itemBuilder: (context, index) {
           final player = playerProvider.playerList[index];
-          final isLastPositivePlayer = playerProvider.lastPositivePlayer == player;
+          final isLastPositivePlayer =
+              playerProvider.lastPositivePlayer == player;
 
           // Check room connection status
           final roomPlayer = _getRoomPlayer(roomProvider, player.name);
@@ -99,7 +99,7 @@ class GameLeaderboard extends StatelessWidget {
     bool hasActiveRoom,
   ) {
     return Container(
-      margin: EdgeInsets.symmetric(vertical: AppDimensions.extraSmallSpacing / 2),
+      margin: EdgeInsets.symmetric(vertical: AppDimensions.extraSmallSpacing),
       padding: AppDimensions.smallPadding,
       decoration: _getCardDecoration(isLastPositivePlayer, context),
       child: Row(
@@ -109,7 +109,8 @@ class GameLeaderboard extends StatelessWidget {
             child: Row(
               children: [
                 // Connection status indicator
-                if (hasActiveRoom) _buildConnectionIndicator(context, isConnectedToRoom),
+                if (hasActiveRoom)
+                  _buildConnectionIndicator(context, isConnectedToRoom),
                 Expanded(
                   child: Text(
                     player.name,
@@ -121,26 +122,27 @@ class GameLeaderboard extends StatelessWidget {
             ),
           ),
           SizedBox(width: AppDimensions.extraSmallSpacing),
-          Text(
-            '${player.score}',
-            style: AppTextStyles.scoreCard,
-          ),
+          Text('${player.score}', style: AppTextStyles.scoreCard),
         ],
       ),
     );
   }
 
   /// Creates decoration for player cards
-  BoxDecoration _getCardDecoration(bool isLastPositivePlayer, BuildContext context) {
+  BoxDecoration _getCardDecoration(
+    bool isLastPositivePlayer,
+    BuildContext context,
+  ) {
     return BoxDecoration(
       color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.1),
       border: Border.all(
-        color: isLastPositivePlayer
-          ? Theme.of(context).colorScheme.primary
-          : Theme.of(context).colorScheme.outline,
+        color:
+            isLastPositivePlayer
+                ? Theme.of(context).colorScheme.onTertiaryContainer
+                : Theme.of(context).colorScheme.outline,
         width: 2,
       ),
-      borderRadius: AppDimensions.smallBorderRadius,
+      borderRadius: AppDimensions.defaultBorderRadius,
       boxShadow: [
         BoxShadow(
           color: Theme.of(context).shadowColor.withValues(alpha: 0.1),
@@ -156,12 +158,13 @@ class GameLeaderboard extends StatelessWidget {
     return Container(
       width: 8,
       height: 8,
-      margin: EdgeInsets.only(right: AppDimensions.extraSmallSpacing - 2),
+      margin: EdgeInsets.only(right: AppDimensions.smallSpacing),
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: isConnected
-          ? Theme.of(context).colorScheme.primary
-          : Theme.of(context).colorScheme.outline.withValues(alpha: 0.5),
+        color:
+            isConnected
+                ? Theme.of(context).colorScheme.onTertiaryContainer
+                : Theme.of(context).colorScheme.outline.withValues(alpha: 0.5),
       ),
     );
   }
