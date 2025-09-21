@@ -119,39 +119,42 @@ class _GameRoomPageState extends State<GameRoomPage> {
         color: ColorConstants.darkCardColor.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(8),
       ),
-      child: ExpansionTile(
-        initiallyExpanded: _isHelpExpanded,
-        onExpansionChanged: (expanded) {
-          setState(() {
-            _isHelpExpanded = expanded;
-          });
-        },
-        leading: Icon(
-          Icons.info_outline,
-          color: ColorConstants.primaryContainerColor,
-          size: 20,
-        ),
-        title: Text(
-          "What happens next?",
-          style: AppTextStyles.titleSmall.copyWith(
+      child: Theme(
+        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          initiallyExpanded: _isHelpExpanded,
+          onExpansionChanged: (expanded) {
+            setState(() {
+              _isHelpExpanded = expanded;
+            });
+          },
+          leading: Icon(
+            Icons.info_outline,
             color: ColorConstants.primaryContainerColor,
+            size: 20,
           ),
-        ),
-        children: [
-          Padding(
-            padding: EdgeInsets.fromLTRB(16, 0, 16, 16),
-            child: Text(
-              "• The Quiz Emcee will read and display the questions and answers\n"
-              "• You'll be able to buzz in when questions are active\n"
-              "• Closing the tab/browser will not affect your connection or points\n"
-              "• Leaving the game will forfeit your points\n",
-              style: AppTextStyles.body.copyWith(
-                color: ColorConstants.lightTextColor,
-                fontSize: 14,
-              ),
+          title: Text(
+            "What happens next?",
+            style: AppTextStyles.titleSmall.copyWith(
+              color: ColorConstants.primaryContainerColor,
             ),
           ),
-        ],
+          children: [
+            Padding(
+              padding: EdgeInsets.fromLTRB(16, 0, 16, 16),
+              child: Text(
+                "• The Quiz Emcee will read and display the questions and answers\n"
+                "• You'll be able to buzz in when questions are active\n"
+                "• Closing the tab/browser will not affect your connection or points\n"
+                "• Leaving the game will forfeit your points\n",
+                style: AppTextStyles.body.copyWith(
+                  color: ColorConstants.lightTextColor,
+                  fontSize: 14,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -265,34 +268,12 @@ class _GameRoomPageState extends State<GameRoomPage> {
         Row(
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
-            // Refresh Button
-            IconButton(
-              onPressed: () {
-                final roomProvider = Provider.of<RoomProvider>(
-                  context,
-                  listen: false,
-                );
-                roomProvider.refreshPlayerList();
-                AppLogger.i("Refreshing room status");
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text("Room status refreshed"),
-                    duration: Duration(seconds: 1),
-                  ),
-                );
-              },
-              icon: Icon(Icons.refresh),
-              color: ColorConstants.primaryColor,
-              tooltip: "Refresh",
-            ),
-            SizedBox(width: 8),
-
             // Leave Room Button
             ElevatedButton(
               onPressed: () => _showLeaveRoomDialog(context),
               style: ElevatedButton.styleFrom(
-                minimumSize: Size(150, 50),
-                backgroundColor: ColorConstants.wrongAnsBtn,
+                minimumSize: Size(120, 40),
+                backgroundColor: ColorConstants.danger,
                 foregroundColor: ColorConstants.lightTextColor,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
@@ -531,6 +512,7 @@ class _GameRoomPageState extends State<GameRoomPage> {
                 _leaveRoom();
               },
               style: ElevatedButton.styleFrom(
+                minimumSize: Size(120, 40),
                 backgroundColor: ColorConstants.danger,
                 foregroundColor: ColorConstants.lightTextColor,
               ),
