@@ -2,7 +2,7 @@ import 'package:buzz5_quiz_app/config/colors.dart';
 import 'package:buzz5_quiz_app/config/text_styles.dart';
 import 'package:buzz5_quiz_app/pages/instructions_page.dart';
 import 'package:buzz5_quiz_app/pages/joingame_page.dart';
-import 'package:buzz5_quiz_app/pages/create_boards_page.dart';
+import 'package:buzz5_quiz_app/pages/creations_page.dart';
 import 'package:buzz5_quiz_app/pages/marketplace_page.dart';
 import 'package:buzz5_quiz_app/widgets/custom_app_bar.dart';
 import 'package:flutter/material.dart';
@@ -138,7 +138,7 @@ class HomePage extends StatelessWidget {
                                               ),
                                               const SizedBox(width: 8),
                                               Text(
-                                                'Start Game',
+                                                'Host',
                                                 style: AppTextStyles.homeButton,
                                               ),
                                             ],
@@ -181,7 +181,7 @@ class HomePage extends StatelessWidget {
                                               ),
                                               const SizedBox(width: 8),
                                               Text(
-                                                'Join Game',
+                                                'Join',
                                                 style: AppTextStyles.homeButton,
                                               ),
                                             ],
@@ -198,7 +198,7 @@ class HomePage extends StatelessWidget {
                                         child: ElevatedButton(
                                           onPressed: () {
                                             AppLogger.i(
-                                              "Navigating to CreateBoardsPage",
+                                              "Navigating to CreationsPage",
                                             );
                                             Navigator.push(
                                               context,
@@ -230,7 +230,7 @@ class HomePage extends StatelessWidget {
                                               ),
                                               const SizedBox(width: 8),
                                               Text(
-                                                'Create Boards',
+                                                'Create',
                                                 style: AppTextStyles.homeButton,
                                               ),
                                             ],
@@ -242,7 +242,7 @@ class HomePage extends StatelessWidget {
                                         child: ElevatedButton(
                                           onPressed: () {
                                             AppLogger.i(
-                                              "Navigating to MarketplacePage",
+                                              "Navigating to Marketplace",
                                             );
                                             Navigator.push(
                                               context,
@@ -271,7 +271,7 @@ class HomePage extends StatelessWidget {
                                               Icon(Icons.store, size: 24),
                                               const SizedBox(width: 8),
                                               Text(
-                                                'Marketplace',
+                                                'Discover',
                                                 style: AppTextStyles.homeButton,
                                               ),
                                             ],

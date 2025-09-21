@@ -269,8 +269,8 @@ class Player {
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     return other is Player &&
-           other.name == name &&
-           other.accountId == accountId;
+        other.name == name &&
+        other.accountId == accountId;
   }
 
   /// Generates a hash code for the Player based on name and accountId.
@@ -322,7 +322,7 @@ class Player {
   ///
   /// This is useful for storing player data in databases or APIs.
   ///
-  /// Returns a Map<String, dynamic> representation of the player.
+  /// Returns a Map[String, dynamic] representation of the player.
   Map<String, dynamic> toMap() {
     return {
       'name': name,
@@ -342,7 +342,7 @@ class Player {
   /// This is useful for deserializing player data from databases or APIs.
   ///
   /// Parameters:
-  /// - [map]: The Map<String, dynamic> containing player data
+  /// - [map]: The Map[String, dynamic] containing player data
   ///
   /// Returns a new Player instance with data from the map.
   ///
