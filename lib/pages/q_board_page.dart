@@ -14,7 +14,16 @@ import 'package:buzz5_quiz_app/config/logger.dart';
 import 'package:buzz5_quiz_app/models/qrow.dart';
 
 class QuestionBoardPage extends StatelessWidget {
-  const QuestionBoardPage({super.key});
+  final String? selectedRound;
+  final List<QRow>? allQRows;
+  final bool hasManualPlayers;
+
+  const QuestionBoardPage({
+    super.key,
+    this.selectedRound,
+    this.allQRows,
+    this.hasManualPlayers = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -26,7 +35,13 @@ class QuestionBoardPage extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           crossAxisAlignment: CrossAxisAlignment.center,
-          children: [QuestionBoardContent()],
+          children: [
+            QuestionBoardContent(
+              selectedRound: selectedRound,
+              allQRows: allQRows,
+              hasManualPlayers: hasManualPlayers,
+            )
+          ],
         ),
       ),
     );
@@ -34,7 +49,16 @@ class QuestionBoardPage extends StatelessWidget {
 }
 
 class QuestionBoardContent extends StatefulWidget {
-  const QuestionBoardContent({super.key});
+  final String? selectedRound;
+  final List<QRow>? allQRows;
+  final bool hasManualPlayers;
+
+  const QuestionBoardContent({
+    super.key,
+    this.selectedRound,
+    this.allQRows,
+    this.hasManualPlayers = false,
+  });
 
   @override
   // ignore: library_private_types_in_public_api
@@ -42,81 +66,22 @@ class QuestionBoardContent extends StatefulWidget {
 }
 
 class _QuestionBoardContentState extends State<QuestionBoardContent> {
-  String? selectedRound;
-  late Future<List<QRow>> _qrowsFuture;
+  late String selectedRound;
   List<QRow> _allQRows = [];
   List<QRow> _filteredQRows = [];
-  List<String> uniqueRounds = [];
   List<String> uniqueSetNames = [];
-  bool isDataLoaded = false;
-  bool hasError = false;
-  String errorMessage = '';
 
   @override
   void initState() {
     super.initState();
     AppLogger.i("QuestionBoardContent initState called");
-    _fetchQRows();
-  }
 
-  Future<void> _fetchQRows() async {
-    setState(() {
-      isDataLoaded = false;
-      hasError = false;
-    });
+    // Use the data passed from InstructionsPage
+    selectedRound = widget.selectedRound!;
+    _allQRows = widget.allQRows!;
 
-    try {
-      _qrowsFuture = QRow.fetchAll();
-      await _loadData();
-    } catch (e) {
-      AppLogger.e("Error in _fetchQRows: $e");
-      setState(() {
-        isDataLoaded = true;
-        hasError = true;
-        errorMessage = "Failed to initialize data: ${e.toString()}";
-      });
-    }
-  }
-
-  Future<void> _loadData() async {
-    try {
-      _allQRows = await _qrowsFuture;
-
-      // Add debug logging
-      AppLogger.i("Loaded ${_allQRows.length} QRows from API");
-
-      final uniqueRoundsResult = QRow.getUniqueRounds(_allQRows);
-
-      // Add debug logging for rounds
-      AppLogger.i(
-        "Found ${uniqueRoundsResult.length} unique rounds: $uniqueRoundsResult",
-      );
-
-      setState(() {
-        uniqueRounds = uniqueRoundsResult;
-        isDataLoaded = true;
-        hasError = false;
-      });
-    } catch (e) {
-      AppLogger.e("Error loading QRows: $e");
-      setState(() {
-        isDataLoaded = true; // Still mark as loaded to show error message
-        hasError = true;
-        errorMessage = e.toString();
-      });
-
-      // Show error snackbar
-      if (context.mounted) {
-        // ignore: use_build_context_synchronously
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to load questions: ${e.toString()}'),
-            backgroundColor: Colors.red,
-            duration: Duration(seconds: 5),
-          ),
-        );
-      }
-    }
+    // Filter the questions by the selected round
+    _filterQRowsByRound(selectedRound);
   }
 
   void _filterQRowsByRound(String round) {
@@ -133,7 +98,6 @@ class _QuestionBoardContentState extends State<QuestionBoardContent> {
     );
 
     setState(() {
-      selectedRound = round;
       _filteredQRows = filteredRows;
       uniqueSetNames = setNames;
     });
@@ -150,106 +114,32 @@ class _QuestionBoardContentState extends State<QuestionBoardContent> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         // Left side with controls
-        if (!isDataLoaded) ...[
-          // Show loading indicator in the center of the screen
-          Center(
-            child: Container(
-              width: 300,
-              padding: EdgeInsets.all(24),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
+        SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Column(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  CircularProgressIndicator(),
-                  SizedBox(height: 24),
-                  Text(
-                    'Loading boards...',
-                    style: AppTextStyles.bodyBig,
-                    textAlign: TextAlign.center,
-                  ),
+                  // Only show room code if NOT in manual players mode
+                  if (!widget.hasManualPlayers) ...[
+                    RoomCodeDisplay(),
+                    SizedBox(height: 30),
+                  ],
+                  Leaderboard(),
+                  SizedBox(height: 45),
+                  EndGameButton(),
                 ],
               ),
-            ),
+            ],
           ),
-        ] else ...[
-          SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                if (hasError) ...[
-                  SizedBox(height: 20),
-                  Container(
-                    padding: EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(Icons.error_outline, color: Colors.red),
-                            SizedBox(width: 8),
-                            Text(
-                              'Error loading boards',
-                              style: AppTextStyles.bodyBig.copyWith(
-                                color: Colors.red,
-                              ),
-                            ),
-                          ],
-                        ),
-                        SizedBox(height: 8),
-                        Text(
-                          errorMessage,
-                          style: AppTextStyles.body.copyWith(color: Colors.red),
-                        ),
-                        SizedBox(height: 16),
-                        ElevatedButton.icon(
-                          onPressed: () {
-                            setState(() {
-                              isDataLoaded = false;
-                              hasError = false;
-                            });
-                            _fetchQRows();
-                          },
-                          icon: Icon(Icons.refresh),
-                          label: Text('Try Again'),
-                        ),
-                      ],
-                    ),
-                  ),
-                ] else ...[
-                  Center(
-                    child: RoundDropDown(
-                      selectedRound: selectedRound,
-                      onRoundSelected: (String? round) {
-                        if (round != null) {
-                          _filterQRowsByRound(round);
-                        }
-                      },
-                      rounds: uniqueRounds,
-                    ),
-                  ),
-                  SizedBox(height: 30),
-                  if (selectedRound != null) ...[
-                    Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        RoomCodeDisplay(),
-                        SizedBox(height: 30),
-                        Leaderboard(),
-                        SizedBox(height: 45),
-                        EndGameButton(),
-                      ],
-                    ),
-                  ],
-                ],
-              ],
-            ),
-          ),
+        ),
 
-          // Spacing between controls and question board
-          if (selectedRound != null) ...[SizedBox(width: 80)],
+        // Spacing between controls and question board
+        SizedBox(width: 80),
 
-          // Question board area - only show if round is selected and there are set names
-          if (selectedRound != null) ...[
-            if (uniqueSetNames.isEmpty) ...[
+        // Question board area
+        if (uniqueSetNames.isEmpty) ...[
               SizedBox(
                 width: 400,
                 child: Center(
@@ -317,8 +207,6 @@ class _QuestionBoardContentState extends State<QuestionBoardContent> {
                 ),
               ),
             ],
-          ],
-        ],
       ],
     );
   }
