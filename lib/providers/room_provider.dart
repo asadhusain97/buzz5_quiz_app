@@ -3,7 +3,7 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:buzz5_quiz_app/models/room.dart';
 import 'package:buzz5_quiz_app/models/player.dart';
-import 'package:buzz5_quiz_app/models/player_provider.dart';
+import 'package:buzz5_quiz_app/providers/player_provider.dart';
 import 'package:buzz5_quiz_app/config/logger.dart';
 import 'dart:async';
 
@@ -196,7 +196,7 @@ class RoomProvider with ChangeNotifier {
         _error = "Room not found";
         return false;
       }
-      
+
       if (!room.isActive || room.isExpired) {
         _error = "Room is no longer active";
         return false;
@@ -212,22 +212,31 @@ class RoomProvider with ChangeNotifier {
         }
       }
 
-      // Add player to room
+      // Check if this user is the host
+      final isHost = user.uid == room.hostId;
+
+      // Add player to room (if host, update existing host entry with new name if provided)
       final player = RoomPlayer(
         playerId: user.uid,
-        name: playerName?.trim() ?? user.displayName ?? user.email?.split('@')[0] ?? 'Player',
+        name: playerName?.trim() ?? user.displayName ?? user.email?.split('@')[0] ?? (isHost ? 'Host' : 'Player'),
+        isHost: isHost,
         joinedAt: DateTime.now().millisecondsSinceEpoch,
       );
-      
+
       await _database
           .child('rooms')
           .child(room.roomId)
           .child('players')
           .child(user.uid)
           .set(player.toMap());
-      
+
       _currentRoom = room;
-      AppLogger.i("Joined room: $roomCode with player name: ${player.name}");
+
+      if (isHost) {
+        AppLogger.i("Host rejoined room: $roomCode with display name: ${player.name}");
+      } else {
+        AppLogger.i("Player joined room: $roomCode with name: ${player.name}");
+      }
       
       // Set up presence tracking for this player
       await _setupPresenceTracking(room.roomId, user.uid);

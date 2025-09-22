@@ -1,12 +1,12 @@
 import 'package:buzz5_quiz_app/config/colors.dart';
 import 'package:buzz5_quiz_app/config/text_styles.dart';
-import 'package:buzz5_quiz_app/models/question_done.dart';
+import 'package:buzz5_quiz_app/providers/question_done.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:buzz5_quiz_app/config/logger.dart';
 import 'package:provider/provider.dart';
-import 'package:buzz5_quiz_app/models/player_provider.dart';
-import 'package:buzz5_quiz_app/models/room_provider.dart';
+import 'package:buzz5_quiz_app/providers/player_provider.dart';
+import 'package:buzz5_quiz_app/providers/room_provider.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'dart:async';
 
@@ -90,11 +90,18 @@ class _QuestionPageState extends State<QuestionPage> {
           .child(_currentRoomId!)
           .child('currentQuestion');
 
-      // Set question as active with start time
+      // Set question as active with start time and full question data
       await questionRef.set({
         'isActive': true,
         'startTime': timestamp,
         'questionId': 'q_$timestamp', // Simple question ID
+        // Include full question data for host control panel
+        'setName': setname,
+        'question': question,
+        'answer': answer,
+        'points': score,
+        'qstnMedia': qstnMedia,
+        'ansMedia': ansMedia,
       });
 
       // Clear current question buzzes
@@ -155,14 +162,14 @@ class _QuestionPageState extends State<QuestionPage> {
               GestureDetector(
                 onTap: () => Navigator.of(context).pop(),
                 child: Container(
-                  color: Colors.transparent,
+                  color: ColorConstants.transparent,
                   child: SizedBox.expand(),
                 ),
               ),
               // Actual dialog content
               Center(
                 child: Material(
-                  color: Colors.transparent,
+                  color: ColorConstants.transparent,
                   child: Container(
                     constraints: BoxConstraints(minWidth: 200, maxWidth: 500),
                     padding: EdgeInsets.all(20),
@@ -171,7 +178,7 @@ class _QuestionPageState extends State<QuestionPage> {
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.3),
+                          color: ColorConstants.overlayMedium,
                           blurRadius: 10,
                           offset: Offset(0, 5),
                         ),
@@ -485,7 +492,7 @@ class _QuestionPageState extends State<QuestionPage> {
             ),
           ),
         ],
-        backgroundColor: Colors.transparent,
+        backgroundColor: ColorConstants.transparent,
         title: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
@@ -948,7 +955,7 @@ class SimplerNetworkImage extends StatelessWidget {
         height: 150,
         width: 150,
         child: Center(
-          child: Icon(Icons.image_not_supported, color: Colors.grey),
+          child: Icon(Icons.image_not_supported, color: ColorConstants.greyMedium),
         ),
       );
     }
@@ -996,7 +1003,7 @@ class SimplerNetworkImage extends StatelessWidget {
             Positioned.fill(
               child: GestureDetector(
                 onTap: () => overlayEntry.remove(),
-                child: Container(color: Colors.transparent),
+                child: Container(color: ColorConstants.transparent),
               ),
             ),
             // Image container centered on screen
@@ -1012,7 +1019,7 @@ class SimplerNetworkImage extends StatelessWidget {
                   color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(8.0),
                   boxShadow: [
-                    BoxShadow(color: Colors.black26, blurRadius: 10.0),
+                    BoxShadow(color: ColorConstants.shadow, blurRadius: 10.0),
                   ],
                 ),
                 child: ClipRRect(
@@ -1182,10 +1189,8 @@ class _PlayerNameWithRankState extends State<_PlayerNameWithRank> {
               ),
               child: Text(
                 "#${buzzerEntry.position}",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 8,
-                  fontWeight: FontWeight.bold,
+                style: AppTextStyles.smallCaption.copyWith(
+                  color: ColorConstants.lightTextColor,
                 ),
               ),
             ),

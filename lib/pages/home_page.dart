@@ -1,12 +1,13 @@
 import 'package:buzz5_quiz_app/config/colors.dart';
+import 'package:buzz5_quiz_app/config/text_styles.dart';
 import 'package:buzz5_quiz_app/pages/instructions_page.dart';
 import 'package:buzz5_quiz_app/pages/joingame_page.dart';
-import 'package:buzz5_quiz_app/widgets/appbar.dart';
+import 'package:buzz5_quiz_app/widgets/custom_app_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:buzz5_quiz_app/config/logger.dart';
 import 'package:buzz5_quiz_app/widgets/app_background.dart';
 import 'package:provider/provider.dart';
-import 'package:buzz5_quiz_app/models/auth_provider.dart';
+import 'package:buzz5_quiz_app/providers/auth_provider.dart';
 import 'package:buzz5_quiz_app/widgets/auth_modal.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -82,8 +83,7 @@ class HomePage extends StatelessWidget {
                           const SizedBox(height: 12),
                           Text(
                             'The jeopardy style ultimate quiz experience',
-                            style: TextStyle(
-                              fontSize: 18,
+                            style: AppTextStyles.homeSubtitle.copyWith(
                               color: ColorConstants.hintGrey,
                             ),
                             textAlign: TextAlign.center,
@@ -119,10 +119,7 @@ class HomePage extends StatelessWidget {
                                   const SizedBox(width: 8),
                                   Text(
                                     'Start Game',
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.w600,
-                                    ),
+                                    style: AppTextStyles.homeButton,
                                   ),
                                 ],
                               ),
@@ -155,10 +152,7 @@ class HomePage extends StatelessWidget {
                                   const SizedBox(width: 8),
                                   Text(
                                     'Join Game',
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.w600,
-                                    ),
+                                    style: AppTextStyles.homeButton,
                                   ),
                                 ],
                               ),
@@ -183,10 +177,7 @@ class HomePage extends StatelessWidget {
                                   const SizedBox(width: 8),
                                   Text(
                                     'Login to Play',
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.w600,
-                                    ),
+                                    style: AppTextStyles.homeButton,
                                   ),
                                 ],
                               ),
@@ -217,10 +208,8 @@ class HomePage extends StatelessWidget {
                     children: [
                       Text(
                         '© 2025 Asad Husain',
-                        style: TextStyle(
-                          fontSize: 12,
+                        style: AppTextStyles.homeFooter.copyWith(
                           color: ColorConstants.hintGrey.withValues(alpha: 0.7),
-                          fontWeight: FontWeight.w300,
                         ),
                       ),
                       const SizedBox(width: 8),
