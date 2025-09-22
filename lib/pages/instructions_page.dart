@@ -17,8 +17,10 @@ const String howToPlayMD = """
   Once you are ready, click the button to start the game.
   - When you reach the next page, select a question board to play from the dropdown
   - Ask players to join the room using the game code from the 'Join Game' page
+  - You can also add players manually if you have an external buzzer system
   - Each Board has 5 sets of 5 questions; each with increasing difficulty from 10 to 50 points
   - Click on the set name to learn about what the set means and see example question (if available)
+  - The Emcee can join the game room as well to look at the answers
   - A random player starts the game (Green border indicates the player in control of the board)
   - The player in control chooses a question tile. (All questions are open for everyone for answering)
   - A player retains control to pick the next question, until another player scores
@@ -656,7 +658,9 @@ class _InstructionsPageState extends State<InstructionsPage> {
                                                 ),
                                                 child: Text(
                                                   "Add Player",
-                                                  style: TextStyle(fontSize: 13),
+                                                  style: TextStyle(
+                                                    fontSize: 13,
+                                                  ),
                                                 ),
                                               ),
                                             ),
