@@ -31,6 +31,7 @@ class _GameRoomPageState extends State<GameRoomPage> {
   // Question state variables
   bool _isQuestionActive = false;
   int? _questionStartTime;
+  Map<String, dynamic>? _currentQuestionData;
 
   @override
   void initState() {
@@ -51,8 +52,8 @@ class _GameRoomPageState extends State<GameRoomPage> {
   Widget build(BuildContext context) {
     return BasePage(
       appBar: CustomAppBar(title: "Game Room", showBackButton: false),
-      child: Consumer2<RoomProvider, PlayerProvider>(
-        builder: (context, roomProvider, playerProvider, child) {
+      child: Consumer3<RoomProvider, PlayerProvider, AuthProvider>(
+        builder: (context, roomProvider, playerProvider, authProvider, child) {
           // Set up playerProvider synchronization with roomProvider if not already set
           if (roomProvider.hasActiveRoom) {
             roomProvider.setPlayerProvider(playerProvider);
@@ -70,6 +71,9 @@ class _GameRoomPageState extends State<GameRoomPage> {
                     RoomPlayer(playerId: '', name: 'Unknown Host', joinedAt: 0),
           );
 
+          // Determine if current user is the host
+          final isHost = authProvider.user?.uid == room?.hostId;
+
           return SingleChildScrollView(
             padding: EdgeInsets.symmetric(
               horizontal: MediaQuery.of(context).size.width > 600 ? 80 : 16,
@@ -77,37 +81,778 @@ class _GameRoomPageState extends State<GameRoomPage> {
             ),
             child: Column(
               children: [
-                // Collapsible Help Widget
-                _buildHelpWidget(),
-                SizedBox(height: 20),
-
-                // Header Row: Left Info | Right Actions
-                Row(
-                  children: [
-                    // Left third: Room info
-                    Expanded(
-                      child: _buildLeftInfoPanel(room, hostPlayer, roomPlayers),
-                    ),
-                    // Center third: Empty space
-                    Expanded(child: SizedBox()),
-                    // Right third: Actions
-                    Expanded(child: _buildRightActionsPanel()),
-                  ],
-                ),
-
-                SizedBox(height: 40),
-
-                // Center: Large Buzzer Button
-                _buildBuzzerButton(),
-
-                SizedBox(height: 40),
-
-                // Bottom: Connected Players List (excluding host)
-                _buildPlayersList(roomPlayers.where((p) => !p.isHost).toList()),
+                // Conditional UI based on host status
+                if (isHost)
+                  ..._buildHostView(room, hostPlayer, roomPlayers)
+                else
+                  ..._buildPlayerView(room, hostPlayer, roomPlayers),
               ],
             ),
           );
         },
+      ),
+    );
+  }
+
+  // Build host view widgets
+  List<Widget> _buildHostView(
+    Room? room,
+    RoomPlayer hostPlayer,
+    List<RoomPlayer> roomPlayers,
+  ) {
+    return [
+      // Host Control Panel Header
+      _buildHostControlPanel(),
+      SizedBox(height: 40),
+
+      // Bottom: Connected Players List (excluding host)
+      _buildPlayersList(roomPlayers.where((p) => !p.isHost).toList()),
+    ];
+  }
+
+  // Build player view widgets (existing layout)
+  List<Widget> _buildPlayerView(
+    Room? room,
+    RoomPlayer hostPlayer,
+    List<RoomPlayer> roomPlayers,
+  ) {
+    return [
+      // Collapsible Help Widget
+      _buildHelpWidget(),
+      SizedBox(height: 20),
+
+      // Header Row: Left Info | Right Actions
+      Row(
+        children: [
+          // Left third: Room info
+          Expanded(child: _buildLeftInfoPanel(room, hostPlayer, roomPlayers)),
+          // Center third: Empty space
+          Expanded(child: SizedBox()),
+          // Right third: Actions
+          Expanded(child: _buildRightActionsPanel()),
+        ],
+      ),
+
+      SizedBox(height: 40),
+
+      // Center: Large Buzzer Button
+      _buildBuzzerButton(),
+
+      SizedBox(height: 40),
+
+      // Bottom: Connected Players List (excluding host)
+      _buildPlayersList(roomPlayers.where((p) => !p.isHost).toList()),
+    ];
+  }
+
+  // Build the host control panel widget
+  Widget _buildHostControlPanel() {
+    return Container(
+      padding: EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: ColorConstants.darkCardColor.withValues(alpha: 0.7),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: ColorConstants.primaryContainerColor.withValues(alpha: 0.3),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Host Control Panel Header
+          Row(
+            children: [
+              Icon(
+                Icons.dashboard,
+                color: ColorConstants.primaryContainerColor,
+                size: 24,
+              ),
+              SizedBox(width: 12),
+              Text(
+                "Host Control Panel",
+                style: AppTextStyles.titleLarge.copyWith(
+                  color: ColorConstants.primaryContainerColor,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+
+          SizedBox(height: 24),
+
+          // Current Question Information
+          if (_currentQuestionData != null && _isQuestionActive) ...[
+            _buildQuestionInfoSection(),
+          ] else if (_currentQuestionData != null && !_isQuestionActive) ...[
+            _buildLastQuestionSection(),
+          ] else ...[
+            _buildNoQuestionSection(),
+          ],
+        ],
+      ),
+    );
+  }
+
+  // Build the question info section when a question is active
+  Widget _buildQuestionInfoSection() {
+    final questionData = _currentQuestionData!;
+    final setName = questionData['setName'] ?? 'Unknown Set';
+    final questionText =
+        questionData['question'] ?? 'No question text available';
+    final answerText =
+        questionData['answer']?.toString() ?? 'No answer available';
+    final points = questionData['points'] ?? 0;
+    final questionMedia = questionData['qstnMedia'];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Top Left: Set Name and Points
+        Row(
+          children: [
+            Expanded(
+              child: _buildCompactInfoCard(
+                setName,
+                Icons.category,
+                ColorConstants.secondaryContainerColor,
+              ),
+            ),
+            SizedBox(width: 12),
+            _buildPointsBadge(points),
+          ],
+        ),
+
+        SizedBox(height: 24),
+
+        // Current Question Text (only if not empty)
+        if (questionText.isNotEmpty &&
+            questionText != 'No question text available') ...[
+          _buildQuestionSection(questionText),
+          SizedBox(height: 16),
+        ],
+
+        // Question Media (if available)
+        if (questionMedia != null && questionMedia.toString().isNotEmpty) ...[
+          _buildMediaSection(questionMedia.toString()),
+          SizedBox(height: 16),
+        ],
+
+        // PRIMARY: Answer Text (Biggest Element) - only if not empty
+        if (answerText.isNotEmpty && answerText != 'No answer available') ...[
+          _buildAnswerSection(answerText),
+        ],
+      ],
+    );
+  }
+
+  // Build section when no question is active
+  Widget _buildNoQuestionSection() {
+    return Container(
+      padding: EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: ColorConstants.overlayLight,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: ColorConstants.hintGrey.withValues(alpha: 0.3),
+        ),
+      ),
+      child: Column(
+        children: [
+          Icon(Icons.quiz_outlined, size: 48, color: ColorConstants.hintGrey),
+          SizedBox(height: 12),
+          Text(
+            "No Active Question",
+            style: AppTextStyles.titleMedium.copyWith(
+              color: ColorConstants.hintGrey,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          SizedBox(height: 8),
+          Text(
+            "Waiting for the quiz to begin...",
+            style: AppTextStyles.body.copyWith(color: ColorConstants.hintGrey),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Build media section for question images
+  Widget _buildMediaSection(String mediaUrl) {
+    return Container(
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: ColorConstants.overlayLight,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: ColorConstants.primaryColor.withValues(alpha: 0.3),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.image, color: ColorConstants.primaryColor, size: 20),
+              SizedBox(width: 8),
+              Text(
+                "Question Media",
+                style: AppTextStyles.titleSmall.copyWith(
+                  color: ColorConstants.primaryColor,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 12),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: Image.network(
+              mediaUrl,
+              width: double.infinity,
+              height: 200,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                return Container(
+                  height: 200,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: ColorConstants.overlayMedium,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.broken_image,
+                        size: 48,
+                        color: ColorConstants.hintGrey,
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        "Failed to load media",
+                        style: AppTextStyles.body.copyWith(
+                          color: ColorConstants.hintGrey,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+              loadingBuilder: (context, child, loadingProgress) {
+                if (loadingProgress == null) return child;
+                return Container(
+                  height: 200,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: ColorConstants.overlayMedium,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Center(
+                    child: CircularProgressIndicator(
+                      color: ColorConstants.primaryColor,
+                      value:
+                          loadingProgress.expectedTotalBytes != null
+                              ? loadingProgress.cumulativeBytesLoaded /
+                                  loadingProgress.expectedTotalBytes!
+                              : null,
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Build section when showing the last question (inactive)
+  Widget _buildLastQuestionSection() {
+    final questionData = _currentQuestionData!;
+    final setName = questionData['setName'] ?? 'Unknown Set';
+    final questionText =
+        questionData['question'] ?? 'No question text available';
+    final answerText =
+        questionData['answer']?.toString() ?? 'No answer available';
+    final points = questionData['points'] ?? 0;
+    final questionMedia = questionData['qstnMedia'];
+
+    return Container(
+      padding: EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        // Muted/discolored background for inactive state
+        color: ColorConstants.hintGrey.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: ColorConstants.hintGrey.withValues(alpha: 0.3),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Last Question Header with indicator
+          Row(
+            children: [
+              Icon(Icons.history, color: ColorConstants.hintGrey, size: 24),
+              SizedBox(width: 12),
+              Text(
+                "LAST QUESTION",
+                style: AppTextStyles.titleMedium.copyWith(
+                  color: ColorConstants.hintGrey,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1.2,
+                ),
+              ),
+            ],
+          ),
+
+          SizedBox(height: 20),
+
+          // Top Row: Set Name and Points (muted)
+          Row(
+            children: [
+              Expanded(
+                child: _buildMutedCompactInfoCard(
+                  setName,
+                  Icons.category,
+                  ColorConstants.hintGrey,
+                ),
+              ),
+              SizedBox(width: 12),
+              _buildMutedPointsBadge(points),
+            ],
+          ),
+
+          SizedBox(height: 24),
+
+          // Current Question Text (only if not empty)
+          if (questionText.isNotEmpty &&
+              questionText != 'No question text available') ...[
+            _buildMutedQuestionSection(questionText),
+            SizedBox(height: 16),
+          ],
+
+          // Question Media (if available)
+          if (questionMedia != null && questionMedia.toString().isNotEmpty) ...[
+            _buildMutedMediaSection(questionMedia.toString()),
+            SizedBox(height: 16),
+          ],
+
+          // Answer Text (only if not empty)
+          if (answerText.isNotEmpty && answerText != 'No answer available') ...[
+            _buildMutedAnswerSection(answerText),
+          ],
+        ],
+      ),
+    );
+  }
+
+  // Build compact info card for set name
+  Widget _buildCompactInfoCard(String text, IconData icon, Color color) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withValues(alpha: 0.4), width: 1),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: color, size: 16),
+          SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              text,
+              style: AppTextStyles.titleSmall.copyWith(
+                color: color,
+                fontWeight: FontWeight.w600,
+                fontSize: 14,
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Build points badge
+  Widget _buildPointsBadge(int points) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: ColorConstants.secondaryContainerColor.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: ColorConstants.secondaryContainerColor.withValues(alpha: 0.4),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.stars,
+            color: ColorConstants.secondaryContainerColor,
+            size: 16,
+          ),
+          SizedBox(width: 4),
+          Text(
+            "$points",
+            style: AppTextStyles.titleSmall.copyWith(
+              color: ColorConstants.secondaryContainerColor,
+              fontWeight: FontWeight.bold,
+              fontSize: 14,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Build answer section - The biggest and most prominent element
+  Widget _buildAnswerSection(String answerText) {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            ColorConstants.connected.withValues(alpha: 0.15),
+            ColorConstants.connected.withValues(alpha: 0.05),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: ColorConstants.connected.withValues(alpha: 0.4),
+          width: 2,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: ColorConstants.connected.withValues(alpha: 0.1),
+            offset: Offset(0, 4),
+            blurRadius: 12,
+            spreadRadius: 0,
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.lightbulb, color: ColorConstants.connected, size: 24),
+              SizedBox(width: 12),
+              Text(
+                "Answer",
+                style: AppTextStyles.titleSmall.copyWith(
+                  color: ColorConstants.connected,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                  letterSpacing: 1.2,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 16),
+          Text(
+            answerText,
+            style: AppTextStyles.titleLarge.copyWith(
+              color: ColorConstants.lightTextColor,
+              fontWeight: FontWeight.w600,
+              fontSize: 24,
+              height: 1.3,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Build question section
+  Widget _buildQuestionSection(String questionText) {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: ColorConstants.primaryContainerColor.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: ColorConstants.primaryContainerColor.withValues(alpha: 0.2),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.help_outline,
+                color: ColorConstants.primaryContainerColor,
+                size: 18,
+              ),
+              SizedBox(width: 8),
+              Text(
+                "Question",
+                style: AppTextStyles.titleSmall.copyWith(
+                  color: ColorConstants.primaryContainerColor,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 12),
+          Text(
+            questionText,
+            style: AppTextStyles.body.copyWith(
+              color: ColorConstants.lightTextColor,
+              fontSize: 16,
+              height: 1.4,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Muted versions for "Last Question" display
+  Widget _buildMutedCompactInfoCard(String text, IconData icon, Color color) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: ColorConstants.hintGrey.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: ColorConstants.hintGrey.withValues(alpha: 0.2),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: ColorConstants.hintGrey, size: 16),
+          SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              text,
+              style: AppTextStyles.titleSmall.copyWith(
+                color: ColorConstants.hintGrey,
+                fontWeight: FontWeight.w500,
+                fontSize: 14,
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMutedPointsBadge(int points) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: ColorConstants.hintGrey.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: ColorConstants.hintGrey.withValues(alpha: 0.2),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.stars, color: ColorConstants.hintGrey, size: 16),
+          SizedBox(width: 4),
+          Text(
+            "$points",
+            style: AppTextStyles.titleSmall.copyWith(
+              color: ColorConstants.hintGrey,
+              fontWeight: FontWeight.w500,
+              fontSize: 14,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMutedQuestionSection(String questionText) {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: ColorConstants.hintGrey.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: ColorConstants.hintGrey.withValues(alpha: 0.15),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.help_outline,
+                color: ColorConstants.hintGrey,
+                size: 18,
+              ),
+              SizedBox(width: 8),
+              Text(
+                "Question",
+                style: AppTextStyles.titleSmall.copyWith(
+                  color: ColorConstants.hintGrey,
+                  fontWeight: FontWeight.w500,
+                  fontSize: 13,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 12),
+          Text(
+            questionText,
+            style: AppTextStyles.body.copyWith(
+              color: ColorConstants.hintGrey,
+              fontSize: 15,
+              height: 1.4,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMutedAnswerSection(String answerText) {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: ColorConstants.hintGrey.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: ColorConstants.hintGrey.withValues(alpha: 0.2),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.lightbulb_outline,
+                color: ColorConstants.hintGrey,
+                size: 20,
+              ),
+              SizedBox(width: 12),
+              Text(
+                "Answer",
+                style: AppTextStyles.titleSmall.copyWith(
+                  color: ColorConstants.hintGrey,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
+                  letterSpacing: 1.0,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 14),
+          Text(
+            answerText,
+            style: AppTextStyles.titleMedium.copyWith(
+              color: ColorConstants.hintGrey,
+              fontWeight: FontWeight.w500,
+              fontSize: 18,
+              height: 1.3,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMutedMediaSection(String mediaUrl) {
+    return Container(
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: ColorConstants.hintGrey.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: ColorConstants.hintGrey.withValues(alpha: 0.15),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.image_outlined,
+                color: ColorConstants.hintGrey,
+                size: 20,
+              ),
+              SizedBox(width: 8),
+              Text(
+                "Question Media",
+                style: AppTextStyles.titleSmall.copyWith(
+                  color: ColorConstants.hintGrey,
+                  fontWeight: FontWeight.w500,
+                  fontSize: 13,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 12),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: ColorFiltered(
+              colorFilter: ColorFilter.mode(Colors.grey, BlendMode.saturation),
+              child: Opacity(
+                opacity: 0.6,
+                child: Image.network(
+                  mediaUrl,
+                  width: double.infinity,
+                  height: 150,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      height: 150,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: ColorConstants.hintGrey.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.broken_image_outlined,
+                            size: 40,
+                            color: ColorConstants.hintGrey,
+                          ),
+                          SizedBox(height: 8),
+                          Text(
+                            "Media unavailable",
+                            style: AppTextStyles.body.copyWith(
+                              color: ColorConstants.hintGrey,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -610,9 +1355,10 @@ class _GameRoomPageState extends State<GameRoomPage> {
       final data = event.snapshot.value;
       bool isActive = false;
       int? startTime;
+      Map<String, dynamic>? questionData;
 
       if (data != null && data is Map) {
-        final questionData = Map<String, dynamic>.from(data);
+        questionData = Map<String, dynamic>.from(data);
         isActive = questionData['isActive'] ?? false;
         startTime = questionData['startTime'];
       }
@@ -621,6 +1367,7 @@ class _GameRoomPageState extends State<GameRoomPage> {
         setState(() {
           _isQuestionActive = isActive;
           _questionStartTime = startTime;
+          _currentQuestionData = questionData;
           // Reset buzzer state when question changes
           if (!isActive) {
             _hasPlayerBuzzed = false;

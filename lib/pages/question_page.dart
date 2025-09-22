@@ -90,11 +90,18 @@ class _QuestionPageState extends State<QuestionPage> {
           .child(_currentRoomId!)
           .child('currentQuestion');
 
-      // Set question as active with start time
+      // Set question as active with start time and full question data
       await questionRef.set({
         'isActive': true,
         'startTime': timestamp,
         'questionId': 'q_$timestamp', // Simple question ID
+        // Include full question data for host control panel
+        'setName': setname,
+        'question': question,
+        'answer': answer,
+        'points': score,
+        'qstnMedia': qstnMedia,
+        'ansMedia': ansMedia,
       });
 
       // Clear current question buzzes
