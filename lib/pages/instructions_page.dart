@@ -15,12 +15,12 @@ import 'package:buzz5_quiz_app/config/logger.dart';
 const String howToPlayMD = """
   YOU are the reader/ Quiz Emcee. You will conduct the quiz and 'read' the questions.
   Once you are ready, click the button to start the game.
-  - When you reach the next page, select a question board to play from the dropdown
-  - Ask players to join the room using the game code from the 'Join Game' page
-  - You can also add players manually if you have an external buzzer system
+  - Select a question board to play from the dropdown above
+  - Add players manually if you have an external buzzer system otherwise click 'Let's Go!'
+  - Ask players to join the room using the game code displayed on the next screen
+  - The Emcee can join the game room as well, using another device, to look at the answers
   - Each Board has 5 sets of 5 questions; each with increasing difficulty from 10 to 50 points
   - Click on the set name to learn about what the set means and see example question (if available)
-  - The Emcee can join the game room as well to look at the answers
   - A random player starts the game (Green border indicates the player in control of the board)
   - The player in control chooses a question tile. (All questions are open for everyone for answering)
   - A player retains control to pick the next question, until another player scores
