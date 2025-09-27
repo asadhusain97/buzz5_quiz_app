@@ -359,7 +359,9 @@ class _QuestionPageState extends State<QuestionPage> {
         .child('currentQuestionBuzzes')
         .orderByChild('timestamp');
 
-    AppLogger.i("Starting to listen for buzzer entries in room: $_currentRoomId");
+    AppLogger.i(
+      "Starting to listen for buzzer entries in room: $_currentRoomId",
+    );
 
     _buzzerSubscription = buzzersRef.onValue.listen((event) {
       if (!mounted) return;
@@ -400,18 +402,26 @@ class _QuestionPageState extends State<QuestionPage> {
       // Track first hits: if we have new buzzer entries and the first one is new
       if (newBuzzerEntries.isNotEmpty) {
         final firstBuzzer = newBuzzerEntries.first;
-        final playerProvider = Provider.of<PlayerProvider>(context, listen: false);
-        final firstPlayer = playerProvider.getPlayerByName(firstBuzzer.playerName);
+        final playerProvider = Provider.of<PlayerProvider>(
+          context,
+          listen: false,
+        );
+        final firstPlayer = playerProvider.getPlayerByName(
+          firstBuzzer.playerName,
+        );
 
         // Only increment if this is a new first buzzer (position 1)
         if (firstPlayer != null && firstBuzzer.position == 1) {
           // Check if this is a new first buzzer by comparing with previous state
-          final wasFirstBefore = _buzzerEntries.isNotEmpty &&
-                                _buzzerEntries.first.playerName == firstBuzzer.playerName;
+          final wasFirstBefore =
+              _buzzerEntries.isNotEmpty &&
+              _buzzerEntries.first.playerName == firstBuzzer.playerName;
 
           if (!wasFirstBefore) {
             playerProvider.incrementFirstHits(firstPlayer);
-            AppLogger.i("Incremented first hits for first buzzer: ${firstBuzzer.playerName}");
+            AppLogger.i(
+              "Incremented first hits for first buzzer: ${firstBuzzer.playerName}",
+            );
           }
         }
       }
@@ -427,7 +437,9 @@ class _QuestionPageState extends State<QuestionPage> {
   // Get buzzer entry for a specific player
   BuzzerEntry? _getBuzzerEntryForPlayer(String playerName) {
     try {
-      return _buzzerEntries.firstWhere((entry) => entry.playerName == playerName);
+      return _buzzerEntries.firstWhere(
+        (entry) => entry.playerName == playerName,
+      );
     } catch (e) {
       return null;
     }
@@ -633,7 +645,9 @@ class _QuestionPageState extends State<QuestionPage> {
                               padding: EdgeInsets.only(left: 2, right: 2),
                               child: _PlayerNameWithRank(
                                 player: player,
-                                buzzerEntry: _getBuzzerEntryForPlayer(player.name),
+                                buzzerEntry: _getBuzzerEntryForPlayer(
+                                  player.name,
+                                ),
                                 onEditTap:
                                     () => _showAwardPointDialog(player.name),
                               ),
@@ -672,7 +686,7 @@ class _QuestionPageState extends State<QuestionPage> {
 
     // Define consistent maximum width for the entire question section
     const double maxSectionWidth = 800.0;
-    const double maxTextWidth = 400.0;
+    const double maxTextWidth = 600.0;
 
     if (displayText.isEmpty && mediaUrl.isEmpty) {
       // Case 1: Nothing - show default message in centered container
@@ -955,7 +969,10 @@ class SimplerNetworkImage extends StatelessWidget {
         height: 150,
         width: 150,
         child: Center(
-          child: Icon(Icons.image_not_supported, color: ColorConstants.greyMedium),
+          child: Icon(
+            Icons.image_not_supported,
+            color: ColorConstants.greyMedium,
+          ),
         ),
       );
     }
@@ -964,24 +981,27 @@ class SimplerNetworkImage extends StatelessWidget {
       onTap: () {
         _showImageOverlay(context, imageUrl);
       },
-      child: SizedBox(
-        height: 150,
-        width: 150,
-        child: Image.network(
-          imageUrl,
-          fit: BoxFit.contain,
-          loadingBuilder: (context, child, loadingProgress) {
-            if (loadingProgress == null) return child;
-            return Center(
-              child: CircularProgressIndicator(
-                value:
-                    loadingProgress.expectedTotalBytes != null
-                        ? loadingProgress.cumulativeBytesLoaded /
-                            loadingProgress.expectedTotalBytes!
-                        : null,
-              ),
-            );
-          },
+      child: Container(
+        padding: EdgeInsets.all(6),
+        child: SizedBox(
+          height: 150,
+          width: 150,
+          child: Image.network(
+            imageUrl,
+            fit: BoxFit.contain,
+            loadingBuilder: (context, child, loadingProgress) {
+              if (loadingProgress == null) return child;
+              return Center(
+                child: CircularProgressIndicator(
+                  value:
+                      loadingProgress.expectedTotalBytes != null
+                          ? loadingProgress.cumulativeBytesLoaded /
+                              loadingProgress.expectedTotalBytes!
+                          : null,
+                ),
+              );
+            },
+          ),
         ),
       ),
     );
@@ -1018,6 +1038,7 @@ class SimplerNetworkImage extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(8.0),
+                  border: Border.all(color: Colors.grey.shade300, width: 1),
                   boxShadow: [
                     BoxShadow(color: ColorConstants.shadow, blurRadius: 10.0),
                   ],
@@ -1171,7 +1192,8 @@ class _PlayerNameWithRankState extends State<_PlayerNameWithRank> {
   Widget build(BuildContext context) {
     final playerName = widget.player.name;
     final buzzerEntry = widget.buzzerEntry;
-    final questionPageState = context.findAncestorStateOfType<_QuestionPageState>();
+    final questionPageState =
+        context.findAncestorStateOfType<_QuestionPageState>();
 
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
@@ -1184,7 +1206,9 @@ class _PlayerNameWithRankState extends State<_PlayerNameWithRank> {
             Container(
               padding: EdgeInsets.symmetric(horizontal: 4, vertical: 1),
               decoration: BoxDecoration(
-                color: questionPageState?._getRankingColor(buzzerEntry.position) ?? Colors.grey,
+                color:
+                    questionPageState?._getRankingColor(buzzerEntry.position) ??
+                    Colors.grey,
                 borderRadius: BorderRadius.circular(6),
               ),
               child: Text(
