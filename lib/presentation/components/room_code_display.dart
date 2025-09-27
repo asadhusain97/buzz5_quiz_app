@@ -94,7 +94,7 @@ class RoomCodeDisplay extends StatelessWidget {
     return SelectableText(
       formattedRoomCode,
       style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-        color: ColorConstants.primaryContainerColor,
+        color: ColorConstants.surfaceColor,
         fontWeight: FontWeight.bold,
         letterSpacing: 2.0,
       ),
