@@ -11,10 +11,6 @@ import 'package:buzz5_quiz_app/providers/question_provider.dart';
 import 'package:buzz5_quiz_app/providers/auth_provider.dart';
 import 'package:buzz5_quiz_app/pages/question_input_form.dart';
 
-// Import new components
-import 'package:buzz5_quiz_app/widgets/creations/minimalist_tab_bar.dart';
-import 'package:buzz5_quiz_app/widgets/creations/filter_panel.dart';
-
 class CreateBoardsPage extends StatefulWidget {
   const CreateBoardsPage({super.key});
 
@@ -24,14 +20,13 @@ class CreateBoardsPage extends StatefulWidget {
 
 class _CreateBoardsPageState extends State<CreateBoardsPage>
     with TickerProviderStateMixin {
-  late TabController _tabController;
+  late TabController _mainTabController;
   late TabController _questionsTabController;
-  FilterState _filterState = FilterState();
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _mainTabController = TabController(length: 3, vsync: this);
     _questionsTabController = TabController(length: 3, vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadQuestions();
@@ -40,7 +35,7 @@ class _CreateBoardsPageState extends State<CreateBoardsPage>
 
   @override
   void dispose() {
-    _tabController.dispose();
+    _mainTabController.dispose();
     _questionsTabController.dispose();
     super.dispose();
   }
@@ -62,7 +57,8 @@ class _CreateBoardsPageState extends State<CreateBoardsPage>
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => QuestionInputForm(existingQuestion: existingQuestion),
+        builder:
+            (context) => QuestionInputForm(existingQuestion: existingQuestion),
       ),
     );
 
@@ -71,48 +67,6 @@ class _CreateBoardsPageState extends State<CreateBoardsPage>
     }
   }
 
-  void _onFiltersChanged(FilterState newState) {
-    setState(() {
-      _filterState = newState;
-    });
-  }
-
-  List<Question> _filterQuestions(List<Question> questions) {
-    var filtered = questions;
-
-    // Search filter
-    if (_filterState.searchQuery.isNotEmpty) {
-      final query = _filterState.searchQuery.toLowerCase();
-      filtered = filtered.where((q) =>
-        q.questionName.toLowerCase().contains(query) ||
-        q.questionText.toLowerCase().contains(query)
-      ).toList();
-    }
-
-    // Category filter
-    if (_filterState.selectedCategory != 'All') {
-      filtered = filtered.where((q) =>
-        q.category == _filterState.selectedCategory
-      ).toList();
-    }
-
-    // Status filter
-    if (!_filterState.selectedStatuses.contains('All')) {
-      filtered = filtered.where((q) {
-        if (_filterState.selectedStatuses.contains('Complete') && q.isActive) {
-          return true;
-        }
-        if (_filterState.selectedStatuses.contains('Drafts') && !q.isActive) {
-          return true;
-        }
-        return false;
-      }).toList();
-    }
-
-    return filtered;
-  }
-
-
   @override
   Widget build(BuildContext context) {
     AppLogger.i("CreateBoardsPage built");
@@ -120,62 +74,48 @@ class _CreateBoardsPageState extends State<CreateBoardsPage>
     return Scaffold(
       appBar: CustomAppBar(title: "Create", showBackButton: true),
       body: AppBackground(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 800),
-            child: Column(
-              children: [
-                // Custom Tab Bar
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: MinimalistTabBar(
-                      controller: _tabController,
-                      tabs: const ['Boards', 'Sets', 'Questions'],
-                      width: 400,
-                    ),
-                  ),
-                ),
-
-                // Two-column layout
-                Expanded(
-                  child: Padding(
-                    padding: AppConstants.defaultHorizontalPadding,
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Filter Panel (Left Column)
-                        FilterPanel(
-                          initialState: _filterState,
-                          onFiltersChanged: _onFiltersChanged,
-                        ),
-                        const SizedBox(width: AppConstants.defaultSpacing),
-
-                        // Content List (Right Column)
-                        Expanded(
-                          child: TabBarView(
-                            controller: _tabController,
-                            children: [
-                              _buildBoardsContent(),
-                              _buildSetsContent(),
-                              _buildQuestionsContent(),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
+        child: Column(
+          children: [
+            Container(
+              margin: AppConstants.smallPadding.add(
+                AppConstants.smallVerticalPadding,
+              ),
+              decoration: BoxDecoration(
+                color:
+                    Theme.of(context).brightness == Brightness.dark
+                        ? ColorConstants.darkCard
+                        : Colors.white,
+                borderRadius: BorderRadius.circular(AppConstants.defaultRadius),
+              ),
+              child: TabBar(
+                controller: _mainTabController,
+                labelColor: ColorConstants.primaryColor,
+                unselectedLabelColor: ColorConstants.hintGrey,
+                indicatorColor: ColorConstants.primaryColor,
+                tabs: const [
+                  Tab(text: 'Boards'),
+                  Tab(text: 'Sets'),
+                  Tab(text: 'Questions'),
+                ],
+              ),
             ),
-          ),
+            Expanded(
+              child: TabBarView(
+                controller: _mainTabController,
+                children: [
+                  _buildBoardsTab(),
+                  _buildSetsTab(),
+                  _buildQuestionsTab(),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildBoardsContent() {
+  Widget _buildBoardsTab() {
     return Padding(
       padding: AppConstants.defaultPadding,
       child: Column(
@@ -241,7 +181,7 @@ class _CreateBoardsPageState extends State<CreateBoardsPage>
     );
   }
 
-  Widget _buildSetsContent() {
+  Widget _buildSetsTab() {
     return Padding(
       padding: AppConstants.defaultPadding,
       child: Column(
@@ -307,7 +247,7 @@ class _CreateBoardsPageState extends State<CreateBoardsPage>
     );
   }
 
-  Widget _buildQuestionsContent() {
+  Widget _buildQuestionsTab() {
     return Padding(
       padding: AppConstants.defaultPadding,
       child: Column(
@@ -384,7 +324,7 @@ class _CreateBoardsPageState extends State<CreateBoardsPage>
           );
         }
 
-        return _buildQuestionsList(_filterQuestions(allQuestions));
+        return _buildQuestionsList(allQuestions);
       },
     );
   }
@@ -402,7 +342,7 @@ class _CreateBoardsPageState extends State<CreateBoardsPage>
           );
         }
 
-        return _buildQuestionsList(_filterQuestions(activeQuestions));
+        return _buildQuestionsList(activeQuestions);
       },
     );
   }
@@ -420,7 +360,7 @@ class _CreateBoardsPageState extends State<CreateBoardsPage>
           );
         }
 
-        return _buildQuestionsList(_filterQuestions(draftQuestions));
+        return _buildQuestionsList(draftQuestions);
       },
     );
   }
