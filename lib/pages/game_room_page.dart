@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:buzz5_quiz_app/config/text_styles.dart';
 import 'package:buzz5_quiz_app/config/colors.dart';
@@ -27,6 +28,7 @@ class _GameRoomPageState extends State<GameRoomPage> {
   StreamSubscription? _buzzerSubscription;
   StreamSubscription? _questionSubscription;
   final DatabaseReference _database = FirebaseDatabase.instance.ref();
+  final FocusNode _focusNode = FocusNode();
 
   // Question state variables
   bool _isQuestionActive = false;
@@ -45,15 +47,27 @@ class _GameRoomPageState extends State<GameRoomPage> {
   void dispose() {
     _buzzerSubscription?.cancel();
     _questionSubscription?.cancel();
+    _focusNode.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return BasePage(
-      appBar: CustomAppBar(title: "Game Room", showBackButton: false),
-      child: Consumer3<RoomProvider, PlayerProvider, AuthProvider>(
-        builder: (context, roomProvider, playerProvider, authProvider, child) {
+    return KeyboardListener(
+      focusNode: _focusNode,
+      autofocus: true,
+      onKeyEvent: (KeyEvent event) {
+        if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.space) {
+          final bool canBuzz = _isQuestionActive && !_hasPlayerBuzzed;
+          if (canBuzz) {
+            _onBuzzerPressed();
+          }
+        }
+      },
+      child: BasePage(
+        appBar: CustomAppBar(title: "Game Room", showBackButton: false),
+        child: Consumer3<RoomProvider, PlayerProvider, AuthProvider>(
+          builder: (context, roomProvider, playerProvider, authProvider, child) {
           // Set up playerProvider synchronization with roomProvider if not already set
           if (roomProvider.hasActiveRoom) {
             roomProvider.setPlayerProvider(playerProvider);
@@ -90,6 +104,7 @@ class _GameRoomPageState extends State<GameRoomPage> {
             ),
           );
         },
+        ),
       ),
     );
   }
@@ -1187,27 +1202,6 @@ class _GameRoomPageState extends State<GameRoomPage> {
                         isCurrentUser ? FontWeight.w600 : FontWeight.normal,
                   ),
                 ),
-                // You badge (immediate right of name)
-                if (isCurrentUser) ...[
-                  SizedBox(width: 8),
-                  Container(
-                    padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: ColorConstants.secondaryColor.withValues(
-                        alpha: 0.3,
-                      ),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Text(
-                      "YOU",
-                      style: TextStyle(
-                        color: ColorConstants.secondaryContainerColor,
-                        fontSize: 9,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
               ],
             ),
           ),

@@ -541,22 +541,25 @@ class _QuestionPageState extends State<QuestionPage> {
           ],
         ),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // Question section with intelligent layout based on content
-            _buildQuestionSection(question, qstnMedia),
-            SizedBox(height: 40),
-            _playerGrid(playerProvider),
-            SizedBox(height: 5),
-            _showAnswerButton(),
-            SizedBox(height: 30),
-            if (_showAnswer) _buildAnswerSection(answer, ansMedia),
-            SizedBox(height: 5),
-          ],
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Question section with intelligent layout based on content
+              _buildQuestionSection(question, qstnMedia),
+              SizedBox(height: 40),
+              _playerGrid(playerProvider),
+              SizedBox(height: 5),
+              _showAnswerButton(),
+              SizedBox(height: 30),
+              if (_showAnswer) _buildAnswerSection(answer, ansMedia),
+              // Extra padding at bottom to ensure Done button is easily scrollable
+              SizedBox(height: 30),
+            ],
+          ),
         ),
       ),
     );

@@ -6,6 +6,7 @@ import 'package:buzz5_quiz_app/widgets/base_page.dart';
 import 'package:flutter/material.dart';
 import 'package:buzz5_quiz_app/config/logger.dart';
 import 'package:buzz5_quiz_app/providers/player_provider.dart';
+import 'package:buzz5_quiz_app/models/player.dart';
 import 'package:provider/provider.dart';
 
 class FinalPage extends StatelessWidget {
@@ -28,14 +29,62 @@ class FinalPage extends StatelessWidget {
   }
 }
 
-class ScoreBoard extends StatelessWidget {
+class ScoreBoard extends StatefulWidget {
   const ScoreBoard({super.key});
 
   @override
+  State<ScoreBoard> createState() => _ScoreBoardState();
+}
+
+class _ScoreBoardState extends State<ScoreBoard> {
+  late final List<Player> _sortedPlayerList;
+
+  @override
+  void initState() {
+    super.initState();
+    // Capture and sort the player list once at initialization
+    // This ensures the leaderboard never changes after being displayed
+    final playerProvider = Provider.of<PlayerProvider>(context, listen: false);
+    _sortedPlayerList = List<Player>.from(playerProvider.playerList);
+    _sortPlayerListLocally();
+  }
+
+  /// Sort the player list using the same logic as PlayerProvider
+  /// to ensure consistent ordering
+  void _sortPlayerListLocally() {
+    _sortedPlayerList.sort((a, b) {
+      // 1. Sort by decreasing score (highest score first)
+      if (b.score != a.score) {
+        return b.score.compareTo(a.score);
+      }
+
+      // 2. Sort by lowest sum of negative points descending
+      // (players with fewer negative points come first)
+      int sumNegativeA = a.allPoints.fold(
+        0,
+        (value, point) => point < 0 ? value + point : value,
+      );
+      int sumNegativeB = b.allPoints.fold(
+        0,
+        (value, point) => point < 0 ? value + point : value,
+      );
+      if (sumNegativeA != sumNegativeB) {
+        return sumNegativeB.compareTo(sumNegativeA);
+      }
+
+      // 3. Sort by first hits (more first hits come first)
+      if (b.firstHits != a.firstHits) {
+        return b.firstHits.compareTo(a.firstHits);
+      }
+
+      // 4. Sort alphabetically by name as final tiebreaker
+      return a.name.compareTo(b.name);
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Consumer<PlayerProvider>(
-      builder: (context, playerProvider, child) {
-        return SizedBox(
+    return SizedBox(
           width: 300,
           height: 900,
           child: Column(
@@ -47,9 +96,9 @@ class ScoreBoard extends StatelessWidget {
               SizedBox(height: 20),
               Flexible(
                 child: ListView.builder(
-                  itemCount: playerProvider.playerList.length,
+                  itemCount: _sortedPlayerList.length,
                   itemBuilder: (context, index) {
-                    final player = playerProvider.playerList[index];
+                    final player = _sortedPlayerList[index];
                     return Container(
                       width: 100,
                       margin: const EdgeInsets.symmetric(vertical: 2.0),
@@ -136,8 +185,6 @@ class ScoreBoard extends StatelessWidget {
             ],
           ),
         );
-      },
-    );
   }
 }
 
