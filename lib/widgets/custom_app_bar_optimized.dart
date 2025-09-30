@@ -46,7 +46,8 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
       builder: (context, authProvider, child) {
         return AppBar(
           title: Text(title, style: AppTextStyles.titleBig),
-          backgroundColor: backgroundColor ?? ColorConstants.primaryContainerColor,
+          backgroundColor:
+              backgroundColor ?? ColorConstants.primaryContainerColor,
           leading: _buildLeadingWidget(context),
           actions: customActions ?? _buildDefaultActions(authProvider),
         );
@@ -90,11 +91,10 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
 /// This widget is stateless and uses const constructors where possible
 /// to minimize rebuilds when the user data doesn't change.
 class _UserProfileMenu extends StatelessWidget {
-  final dynamic user; // Using dynamic to match the existing AuthProvider interface
+  final dynamic
+  user; // Using dynamic to match the existing AuthProvider interface
 
-  const _UserProfileMenu({
-    required this.user,
-  });
+  const _UserProfileMenu({required this.user});
 
   @override
   Widget build(BuildContext context) {
@@ -103,11 +103,9 @@ class _UserProfileMenu extends StatelessWidget {
       onSelected: (String value) => _handleMenuSelection(context, value),
       color: Theme.of(context).colorScheme.surface,
       elevation: 8,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: _buildMenuButton(),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       tooltip: 'User menu',
+      child: _buildMenuButton(),
     );
   }
 
@@ -194,15 +192,16 @@ class _UserProfileMenu extends StatelessWidget {
         border: Border.all(color: ColorConstants.lightTextColor, width: 2),
       ),
       child: ClipOval(
-        child: user.hasProfilePhoto
-            ? Image.network(
-                user.photoURL,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return _buildInitialsAvatar(user.initials);
-                },
-              )
-            : _buildInitialsAvatar(user.initials),
+        child:
+            user.hasProfilePhoto
+                ? Image.network(
+                  user.photoURL,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return _buildInitialsAvatar(user.initials);
+                  },
+                )
+                : _buildInitialsAvatar(user.initials),
       ),
     );
   }
@@ -266,17 +265,11 @@ class _MenuItemWidget extends StatelessWidget {
 
     return Row(
       children: [
-        Icon(
-          icon,
-          color: effectiveIconColor,
-          size: 20,
-        ),
+        Icon(icon, color: effectiveIconColor, size: 20),
         const SizedBox(width: 12),
         Text(
           text,
-          style: TextStyle(
-            color: iconColor == Colors.red ? Colors.red : null,
-          ),
+          style: TextStyle(color: iconColor == Colors.red ? Colors.red : null),
         ),
       ],
     );
