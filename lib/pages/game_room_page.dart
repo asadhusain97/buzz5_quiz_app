@@ -1187,27 +1187,6 @@ class _GameRoomPageState extends State<GameRoomPage> {
                         isCurrentUser ? FontWeight.w600 : FontWeight.normal,
                   ),
                 ),
-                // You badge (immediate right of name)
-                if (isCurrentUser) ...[
-                  SizedBox(width: 8),
-                  Container(
-                    padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: ColorConstants.secondaryColor.withValues(
-                        alpha: 0.3,
-                      ),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Text(
-                      "YOU",
-                      style: TextStyle(
-                        color: ColorConstants.secondaryContainerColor,
-                        fontSize: 9,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
               ],
             ),
           ),
