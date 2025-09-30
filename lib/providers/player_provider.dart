@@ -53,12 +53,13 @@ class PlayerProvider with ChangeNotifier {
 
   void sortPlayerList() {
     _playerList.sort((a, b) {
-      // 1. Sort by decreasing score
+      // 1. Sort by decreasing score (highest score first)
       if (b.score != a.score) {
         return b.score.compareTo(a.score);
       }
 
-      // 2. Sort by lowest sum of negative points descending (players with less negative total come first)
+      // 2. Sort by lowest sum of negative points descending
+      // (players with fewer negative points come first)
       int sumNegativeA = a.allPoints.fold(
         0,
         (value, point) => point < 0 ? value + point : value,
@@ -71,7 +72,12 @@ class PlayerProvider with ChangeNotifier {
         return sumNegativeB.compareTo(sumNegativeA);
       }
 
-      // 3. Sort alphabetically by name
+      // 3. Sort by first hits (more first hits come first)
+      if (b.firstHits != a.firstHits) {
+        return b.firstHits.compareTo(a.firstHits);
+      }
+
+      // 4. Sort alphabetically by name as final tiebreaker
       return a.name.compareTo(b.name);
     });
     AppLogger.i("Player list sorted");
