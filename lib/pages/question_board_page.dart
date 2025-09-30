@@ -121,6 +121,98 @@ class _QuestionBoardContentState extends State<QuestionBoardContent> {
       _filteredQRows = filteredRows;
       uniqueSetNames = setNames;
     });
+
+    // Precache all images in the background after the UI is rendered
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _precacheAllQuestionImages();
+    });
+  }
+
+  /// Precaches all question and answer images for instant loading.
+  ///
+  /// This method:
+  /// - Runs in the background without blocking UI
+  /// - Downloads all images to browser cache
+  /// - Makes question pages load instantly when clicked
+  /// - Handles errors gracefully without affecting game flow
+  ///
+  /// Images are cached using Flutter's image cache which:
+  /// - Stores images in browser memory
+  /// - Persists during the session
+  /// - Automatically manages cache size
+  Future<void> _precacheAllQuestionImages() async {
+    // Capture context before async operations
+    // ignore: use_build_context_synchronously
+    final buildContext = context;
+    if (!mounted) return;
+
+    int imageCount = 0;
+    int successCount = 0;
+    int errorCount = 0;
+
+    AppLogger.i("Starting to precache images for ${_filteredQRows.length} questions");
+
+    for (final qrow in _filteredQRows) {
+      // Check if widget is still mounted before each async operation
+      if (!mounted) {
+        AppLogger.w("Widget unmounted during image precaching, stopping");
+        return;
+      }
+
+      // Precache question media if it exists
+      if (qrow.qstnMedia.isNotEmpty) {
+        imageCount++;
+        try {
+          await precacheImage( // ignore: use_build_context_synchronously
+            NetworkImage(qrow.qstnMedia),
+            buildContext,
+            onError: (exception, stackTrace) {
+              errorCount++;
+              AppLogger.w(
+                "Failed to precache question image: ${qrow.qstnMedia} - $exception",
+              );
+            },
+          );
+          successCount++;
+          AppLogger.d("Precached question image for: ${qrow.question}");
+        } catch (e) {
+          errorCount++;
+          AppLogger.w("Error precaching question image: $e");
+        }
+      }
+
+      // Check mounted again before next async operation
+      if (!mounted) {
+        AppLogger.w("Widget unmounted during image precaching, stopping");
+        return;
+      }
+
+      // Precache answer media if it exists
+      if (qrow.ansMedia.isNotEmpty) {
+        imageCount++;
+        try {
+          await precacheImage( // ignore: use_build_context_synchronously
+            NetworkImage(qrow.ansMedia),
+            buildContext,
+            onError: (exception, stackTrace) {
+              errorCount++;
+              AppLogger.w(
+                "Failed to precache answer image: ${qrow.ansMedia} - $exception",
+              );
+            },
+          );
+          successCount++;
+          AppLogger.d("Precached answer image for: ${qrow.question}");
+        } catch (e) {
+          errorCount++;
+          AppLogger.w("Error precaching answer image: $e");
+        }
+      }
+    }
+
+    AppLogger.i(
+      "Image precaching complete: $successCount/$imageCount succeeded, $errorCount failed",
+    );
   }
 
   /// Gets all questions for a specific set/category name
