@@ -140,7 +140,7 @@ Follow these steps to get your app up and running:
 ## Usage
 
 1. **Create a Quiz:**
-   Set up your questions in [this Google Sheet](https://docs.google.com/spreadsheets/d/149cG62dE_5H9JYmNYoJ_h0w5exYSFNY-HvX8Yq-HZrI/edit?usp=sharing) with rounds and question sets.
+   Set up your questions in the Google Sheet with rounds and question sets. Ask me for the link.
 
 2. **Host a Game:**
    - Sign in to your account
