@@ -541,24 +541,32 @@ class _QuestionPageState extends State<QuestionPage> {
           ],
         ),
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // Question section with intelligent layout based on content
-              _buildQuestionSection(question, qstnMedia),
-              SizedBox(height: 40),
-              _playerGrid(playerProvider),
-              SizedBox(height: 5),
-              _showAnswerButton(),
-              SizedBox(height: 30),
-              if (_showAnswer) _buildAnswerSection(answer, ansMedia),
-              // Extra padding at bottom to ensure Done button is easily scrollable
-              SizedBox(height: 30),
-            ],
+      body: Padding(
+        padding: const EdgeInsets.only(top: 40),
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Question section with intelligent layout based on content
+                SizedBox(height: 40),
+                _buildQuestionSection(question, qstnMedia),
+                SizedBox(height: 40),
+                _playerGrid(playerProvider),
+                SizedBox(height: 30),
+                _showAnswerButton(),
+                SizedBox(height: 30),
+                if (_showAnswer) ...[
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                    child: _buildAnswerSection(answer, ansMedia),
+                  ),
+                  SizedBox(height: 30),
+                ],
+              ],
+            ),
           ),
         ),
       ),
@@ -589,94 +597,90 @@ class _QuestionPageState extends State<QuestionPage> {
   }
 
   Center _playerGrid(PlayerProvider playerProvider) {
+    // Return empty container if no players
+    if (playerProvider.playerList.isEmpty) {
+      return Center(child: SizedBox.shrink());
+    }
+
     return Center(
       child: Padding(
-        padding: EdgeInsets.all(20),
-        child: SizedBox(
-          height: 200,
-          width: _calculatePlayerBoardContainerWidth(
-            playerProvider.playerList.length,
+        padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxWidth: _calculatePlayerBoardContainerWidth(
+              playerProvider.playerList.length,
+            ),
           ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              GridView.builder(
-                gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                  maxCrossAxisExtent: 290,
-                  childAspectRatio: 4,
-                  crossAxisSpacing: 10,
-                  mainAxisSpacing: 10,
-                  mainAxisExtent:
-                      50, // Specify the minimum height for the child
-                ),
-                itemCount: playerProvider.playerList.length,
-                shrinkWrap: true,
-                physics: AlwaysScrollableScrollPhysics(),
-                itemBuilder: (context, index) {
-                  final player = playerProvider.playerList[index];
-                  final buttonState = playerButtonStates[player.name]!;
-                  return Center(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        border: Border.all(
-                          color: ColorConstants.primaryContainerColor,
-                        ),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          ToggleButton(
-                            key: ValueKey('correct_${player.name}'),
-                            initialOn: buttonState.correctOn,
-                            isDisabled: buttonState.correctDisabled,
-                            iconData: Icons.check,
-                            onColor: ColorConstants.correctAnsBtn,
-                            offColor: ColorConstants.cardColor,
-                            onToggle: (isOn) {
-                              // force update the UI
-                              setState(() {
-                                buttonState.setCorrect(isOn);
-                              });
-                            },
-                          ),
-                          SizedBox(
-                            width: 100,
-                            child: Padding(
-                              padding: EdgeInsets.only(left: 2, right: 2),
-                              child: _PlayerNameWithRank(
-                                player: player,
-                                buzzerEntry: _getBuzzerEntryForPlayer(
-                                  player.name,
-                                ),
-                                onEditTap:
-                                    () => _showAwardPointDialog(player.name),
-                              ),
-                            ),
-                          ),
-                          ToggleButton(
-                            key: ValueKey('wrong_${player.name}'),
-                            initialOn: buttonState.wrongOn,
-                            isDisabled: buttonState.wrongDisabled,
-                            iconData: Icons.cancel_outlined,
-                            onColor: ColorConstants.wrongAnsBtn,
-                            offColor: ColorConstants.cardColor,
-                            onToggle: (isOn) {
-                              // force update the UI
-                              setState(() {
-                                buttonState.setWrong(isOn);
-                              });
-                            },
-                          ),
-                        ],
-                      ),
+          child: GridView.builder(
+            gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+              maxCrossAxisExtent: 290,
+              childAspectRatio: 4,
+              crossAxisSpacing: 10,
+              mainAxisSpacing: 10,
+              mainAxisExtent: 50, // Each row is 50 high
+            ),
+            itemCount: playerProvider.playerList.length,
+            shrinkWrap: true,
+            physics: NeverScrollableScrollPhysics(),
+            itemBuilder: (context, index) {
+              final player = playerProvider.playerList[index];
+              final buttonState = playerButtonStates[player.name]!;
+              return Center(
+                child: Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: ColorConstants.primaryContainerColor,
                     ),
-                  );
-                },
-              ),
-            ],
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      ToggleButton(
+                        key: ValueKey('correct_${player.name}'),
+                        initialOn: buttonState.correctOn,
+                        isDisabled: buttonState.correctDisabled,
+                        iconData: Icons.check,
+                        onColor: ColorConstants.correctAnsBtn,
+                        offColor: ColorConstants.cardColor,
+                        onToggle: (isOn) {
+                          // force update the UI
+                          setState(() {
+                            buttonState.setCorrect(isOn);
+                          });
+                        },
+                      ),
+                      SizedBox(
+                        width: 100,
+                        child: Padding(
+                          padding: EdgeInsets.only(left: 2, right: 2),
+                          child: _PlayerNameWithRank(
+                            player: player,
+                            buzzerEntry: _getBuzzerEntryForPlayer(player.name),
+                            onEditTap: () => _showAwardPointDialog(player.name),
+                          ),
+                        ),
+                      ),
+                      ToggleButton(
+                        key: ValueKey('wrong_${player.name}'),
+                        initialOn: buttonState.wrongOn,
+                        isDisabled: buttonState.wrongDisabled,
+                        iconData: Icons.cancel_outlined,
+                        onColor: ColorConstants.wrongAnsBtn,
+                        offColor: ColorConstants.cardColor,
+                        onToggle: (isOn) {
+                          // force update the UI
+                          setState(() {
+                            buttonState.setWrong(isOn);
+                          });
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
           ),
         ),
       ),
