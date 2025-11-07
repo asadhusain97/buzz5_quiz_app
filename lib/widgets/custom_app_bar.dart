@@ -134,6 +134,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                     Padding(
                       padding: const EdgeInsets.only(right: 8.0),
                       child: PopupMenuButton<String>(
+                        offset: Offset(0, 50),
                         itemBuilder:
                             (BuildContext context) {
                               // Show different menu items based on user type
