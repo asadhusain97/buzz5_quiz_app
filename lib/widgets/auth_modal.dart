@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:buzz5_quiz_app/providers/auth_provider.dart';
+import 'package:buzz5_quiz_app/providers/player_provider.dart';
+import 'package:buzz5_quiz_app/utils/guest_name_utils.dart';
 
 class AuthModal extends StatefulWidget {
   const AuthModal({super.key});
@@ -26,6 +28,7 @@ class _AuthModalState extends State<AuthModal>
   bool _obscureConfirmPassword = true;
   bool _isLogin = true;
   bool _showGuestLogin = false;
+  bool _isGuestNameValid = false;
 
   @override
   void initState() {
@@ -35,6 +38,13 @@ class _AuthModalState extends State<AuthModal>
       setState(() {
         _isLogin = _tabController.index == 0;
         _clearForm();
+      });
+    });
+
+    // Listen to guest name changes for validation
+    _guestNameController.addListener(() {
+      setState(() {
+        _isGuestNameValid = _guestNameController.text.trim().isNotEmpty;
       });
     });
   }
@@ -57,6 +67,7 @@ class _AuthModalState extends State<AuthModal>
     _displayNameController.clear();
     _guestNameController.clear();
     _showGuestLogin = false;
+    _isGuestNameValid = false;
     _formKey.currentState?.reset();
   }
 
@@ -90,6 +101,28 @@ class _AuthModalState extends State<AuthModal>
 
   Future<void> _handleForgotPassword() async {
     Navigator.of(context).pushNamed('/forgot-password');
+  }
+
+  Future<void> _handleGuestLogin() async {
+    if (!_isGuestNameValid) return;
+
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final playerProvider = Provider.of<PlayerProvider>(context, listen: false);
+
+    // Generate a unique name by checking against existing players
+    final desiredName = _guestNameController.text.trim();
+    final uniqueName = GuestNameUtils.generateUniqueName(
+      desiredName: desiredName,
+      existingPlayers: playerProvider.playerList,
+    );
+
+    bool success = await authProvider.signInAsGuest(
+      guestName: uniqueName,
+    );
+
+    if (success && mounted) {
+      Navigator.of(context).pop();
+    }
   }
 
   @override
@@ -635,35 +668,58 @@ class _AuthModalState extends State<AuthModal>
                                           ),
                                           style: const TextStyle(fontSize: 12),
                                           textInputAction: TextInputAction.done,
+                                          onFieldSubmitted:
+                                              _isGuestNameValid
+                                                  ? (_) => _handleGuestLogin()
+                                                  : null,
                                         ),
                                       ),
                                       const SizedBox(width: 8),
                                       SizedBox(
                                         width: 80,
-                                        child: ElevatedButton(
-                                          onPressed: () {
-                                            // TODO: Handle guest login
+                                        child: Consumer<AuthProvider>(
+                                          builder:
+                                              (context, authProvider, child) {
+                                            return ElevatedButton(
+                                              onPressed:
+                                                  _isGuestNameValid &&
+                                                          !authProvider.isLoading
+                                                      ? _handleGuestLogin
+                                                      : null,
+                                              style: ElevatedButton.styleFrom(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      vertical: 16,
+                                                    ),
+                                                minimumSize: const Size(0, 0),
+                                                tapTargetSize:
+                                                    MaterialTapTargetSize
+                                                        .shrinkWrap,
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(8),
+                                                ),
+                                              ),
+                                              child:
+                                                  authProvider.isLoading
+                                                      ? const SizedBox(
+                                                        height: 12,
+                                                        width: 12,
+                                                        child:
+                                                            CircularProgressIndicator(
+                                                              strokeWidth: 2,
+                                                            ),
+                                                        )
+                                                      : const Text(
+                                                        "Let's Go",
+                                                        style: TextStyle(
+                                                          fontSize: 12,
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                        ),
+                                                      ),
+                                            );
                                           },
-                                          style: ElevatedButton.styleFrom(
-                                            padding: const EdgeInsets.symmetric(
-                                              vertical: 16,
-                                            ),
-                                            minimumSize: const Size(0, 0),
-                                            tapTargetSize:
-                                                MaterialTapTargetSize
-                                                    .shrinkWrap,
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(8),
-                                            ),
-                                          ),
-                                          child: const Text(
-                                            "Let's Go",
-                                            style: TextStyle(
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
                                         ),
                                       ),
                                     ],

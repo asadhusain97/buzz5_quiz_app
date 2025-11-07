@@ -16,6 +16,7 @@ class AuthProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
   bool get isAuthenticated => _user != null;
+  bool get isGuest => _user?.isGuest ?? false;
 
   AuthProvider({AuthService? authService})
     : _authService = authService ?? AuthService();
@@ -128,15 +129,79 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+  // Sign in as guest
+  Future<bool> signInAsGuest({required String guestName}) async {
+    if (guestName.trim().isEmpty) {
+      _setError('Guest name cannot be empty');
+      return false;
+    }
+
+    _setLoading(true);
+    _clearError();
+
+    try {
+      _user = AppUser.guest(guestName: guestName.trim());
+      AppLogger.i('Guest login successful: ${_user!.displayName}');
+      notifyListeners();
+      return true;
+    } catch (e) {
+      AppLogger.e('Guest login error: $e');
+      _setError('Failed to sign in as guest');
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  // Update guest name
+  Future<bool> updateGuestName({required String newName}) async {
+    if (_user == null || !_user!.isGuest) {
+      _setError('Can only update guest user names');
+      return false;
+    }
+
+    if (newName.trim().isEmpty) {
+      _setError('Guest name cannot be empty');
+      return false;
+    }
+
+    _setLoading(true);
+    _clearError();
+
+    try {
+      _user = _user!.copyWith(
+        displayName: newName.trim(),
+        updatedAt: DateTime.now(),
+      );
+      AppLogger.i('Guest name updated to: ${_user!.displayName}');
+      notifyListeners();
+      return true;
+    } catch (e) {
+      AppLogger.e('Failed to update guest name: $e');
+      _setError('Failed to update guest name');
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
   // Sign out
   Future<void> signOut() async {
     _setLoading(true);
     _clearError();
 
     try {
-      await _authService.signOut();
-      _user = null;
-      // Auth state listener will handle the UI update
+      // If guest user, just clear the user data
+      if (_user?.isGuest ?? false) {
+        _user = null;
+        AppLogger.i('Guest user signed out');
+      } else {
+        // For authenticated users, sign out from Firebase
+        await _authService.signOut();
+        _user = null;
+        AppLogger.i('Authenticated user signed out');
+        // Auth state listener will handle the UI update
+      }
     } catch (e) {
       _setError('Failed to sign out');
     } finally {
