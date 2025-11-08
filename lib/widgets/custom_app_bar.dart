@@ -3,7 +3,10 @@ import 'package:buzz5_quiz_app/config/text_styles.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:buzz5_quiz_app/providers/auth_provider.dart';
+import 'package:buzz5_quiz_app/providers/player_provider.dart';
 import 'package:buzz5_quiz_app/pages/profile_page.dart';
+import 'package:buzz5_quiz_app/widgets/auth_modal.dart';
+import 'package:buzz5_quiz_app/utils/guest_name_utils.dart';
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
@@ -14,6 +17,97 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     required this.title,
     required this.showBackButton,
   });
+
+  void _showChangeNameDialog(BuildContext context) {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final playerProvider = Provider.of<PlayerProvider>(context, listen: false);
+    final nameController = TextEditingController(
+      text: authProvider.user?.displayName ?? '',
+    );
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Change Guest Name'),
+        content: TextField(
+          controller: nameController,
+          decoration: const InputDecoration(
+            labelText: 'New Name',
+            hintText: 'Enter your new name',
+            prefixIcon: Icon(Icons.person_outline),
+          ),
+          autofocus: true,
+          textInputAction: TextInputAction.done,
+          onSubmitted: (value) async {
+            if (value.trim().isNotEmpty) {
+              // Generate unique name
+              final uniqueName = GuestNameUtils.generateUniqueName(
+                desiredName: value.trim(),
+                existingPlayers: playerProvider.playerList,
+              );
+
+              final success = await authProvider.updateGuestName(
+                newName: uniqueName,
+              );
+
+              if (success && dialogContext.mounted) {
+                Navigator.of(dialogContext).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Name updated to: $uniqueName'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              }
+            }
+          },
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final newName = nameController.text.trim();
+              if (newName.isNotEmpty) {
+                // Generate unique name
+                final uniqueName = GuestNameUtils.generateUniqueName(
+                  desiredName: newName,
+                  existingPlayers: playerProvider.playerList,
+                );
+
+                final success = await authProvider.updateGuestName(
+                  newName: uniqueName,
+                );
+
+                if (success && dialogContext.mounted) {
+                  Navigator.of(dialogContext).pop();
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Name updated to: $uniqueName'),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                  }
+                }
+              }
+            },
+            child: const Text('Update'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showAuthModal(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) => const AuthModal(),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -40,42 +134,87 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                     Padding(
                       padding: const EdgeInsets.only(right: 8.0),
                       child: PopupMenuButton<String>(
+                        offset: Offset(0, 50),
                         itemBuilder:
-                            (BuildContext context) => [
-                              PopupMenuItem<String>(
-                                value: 'profile',
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      Icons.person,
-                                      color: ColorConstants.primaryColor,
-                                      size: 20,
+                            (BuildContext context) {
+                              // Show different menu items based on user type
+                              if (authProvider.isGuest) {
+                                // Guest user menu
+                                return [
+                                  PopupMenuItem<String>(
+                                    value: 'change_name',
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          Icons.edit,
+                                          color: ColorConstants.primaryColor,
+                                          size: 20,
+                                        ),
+                                        const SizedBox(width: 12),
+                                        const Text('Change Name'),
+                                      ],
                                     ),
-                                    const SizedBox(width: 12),
-                                    const Text('Profile'),
-                                  ],
-                                ),
-                              ),
-                              PopupMenuItem<String>(
-                                value: 'logout',
-                                child: Row(
-                                  children: [
-                                    const Icon(
-                                      Icons.logout,
-                                      color: Colors.red,
-                                      size: 20,
+                                  ),
+                                  PopupMenuItem<String>(
+                                    value: 'sign_in',
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          Icons.login,
+                                          color: ColorConstants.primaryColor,
+                                          size: 20,
+                                        ),
+                                        const SizedBox(width: 12),
+                                        const Text('Sign In'),
+                                      ],
                                     ),
-                                    const SizedBox(width: 12),
-                                    const Text(
-                                      'Logout',
-                                      style: TextStyle(color: Colors.red),
+                                  ),
+                                ];
+                              } else {
+                                // Authenticated user menu
+                                return [
+                                  PopupMenuItem<String>(
+                                    value: 'profile',
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          Icons.person,
+                                          color: ColorConstants.primaryColor,
+                                          size: 20,
+                                        ),
+                                        const SizedBox(width: 12),
+                                        const Text('Profile'),
+                                      ],
                                     ),
-                                  ],
-                                ),
-                              ),
-                            ],
+                                  ),
+                                  PopupMenuItem<String>(
+                                    value: 'logout',
+                                    child: Row(
+                                      children: [
+                                        const Icon(
+                                          Icons.logout,
+                                          color: Colors.red,
+                                          size: 20,
+                                        ),
+                                        const SizedBox(width: 12),
+                                        const Text(
+                                          'Logout',
+                                          style: TextStyle(color: Colors.red),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ];
+                              }
+                            },
                         onSelected: (String value) async {
                           switch (value) {
+                            case 'change_name':
+                              _showChangeNameDialog(context);
+                              break;
+                            case 'sign_in':
+                              _showAuthModal(context);
+                              break;
                             case 'profile':
                               Navigator.push(
                                 context,
@@ -143,16 +282,31 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                                 ),
                               ),
                               const SizedBox(width: 8),
-                              // User Name
+                              // User Name with Guest Badge
                               Flexible(
-                                child: Text(
-                                  authProvider.user!.displayNameOrEmail,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      authProvider.user!.displayNameOrEmail,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    if (authProvider.isGuest)
+                                      Text(
+                                        'Guest',
+                                        style: TextStyle(
+                                          color: Colors.white.withValues(alpha: 0.7),
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.w400,
+                                        ),
+                                      ),
+                                  ],
                                 ),
                               ),
                               const SizedBox(width: 4),

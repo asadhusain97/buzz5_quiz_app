@@ -81,7 +81,6 @@ class MyApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => PlayerProvider()),
-        ChangeNotifierProvider(create: (_) => RoomProvider()),
         ChangeNotifierProvider(create: (_) => AnsweredQuestionsProvider()),
         ChangeNotifierProvider(
           create: (_) {
@@ -91,7 +90,13 @@ class MyApp extends StatelessWidget {
             return provider;
           },
         ),
-        // ...other providers
+        ChangeNotifierProxyProvider<AuthProvider, RoomProvider>(
+          create: (_) => RoomProvider(),
+          update: (context, authProvider, roomProvider) {
+            roomProvider?.setAuthProvider(authProvider);
+            return roomProvider ?? RoomProvider();
+          },
+        ),
       ],
       child: MaterialApp(
         title: 'Buzz5 Quiz App',

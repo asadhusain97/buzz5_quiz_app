@@ -7,6 +7,7 @@ import 'package:buzz5_quiz_app/config/logger.dart';
 import 'package:provider/provider.dart';
 import 'package:buzz5_quiz_app/providers/player_provider.dart';
 import 'package:buzz5_quiz_app/providers/room_provider.dart';
+import 'package:buzz5_quiz_app/providers/auth_provider.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'dart:async';
 
@@ -81,9 +82,77 @@ class _QuestionPageState extends State<QuestionPage> {
 
   // Firebase question state management
   Future<void> _startQuestion() async {
-    if (_currentRoomId == null) return;
+    if (_currentRoomId == null) {
+      AppLogger.e("BUZZER FLOW [HOST]: Cannot start question - no room ID");
+      return;
+    }
 
     try {
+      // Get room provider and auth provider to access current user info
+      final roomProvider = Provider.of<RoomProvider>(context, listen: false);
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final currentRoom = roomProvider.currentRoom;
+      final currentUser = authProvider.user;
+
+      AppLogger.i(
+        "BUZZER FLOW [HOST]: Starting question in room $_currentRoomId",
+      );
+      AppLogger.i(
+        "BUZZER FLOW [HOST]: Current user auth.uid: ${currentUser?.uid}",
+      );
+      AppLogger.i(
+        "BUZZER FLOW [HOST]: Current room hostId: ${currentRoom?.hostId}",
+      );
+
+      if (currentUser == null) {
+        AppLogger.e(
+          "BUZZER FLOW [HOST]: ERROR - User is not authenticated! "
+          "Cannot write to Firebase without authentication.",
+        );
+        return;
+      }
+
+      if (currentUser.uid != currentRoom?.hostId) {
+        AppLogger.e(
+          "BUZZER FLOW [HOST]: ERROR - User is not the host! "
+          "auth.uid (${currentUser.uid}) != hostId (${currentRoom?.hostId}). "
+          "Only the host can start questions.",
+        );
+        return;
+      }
+
+      // Verify roomInfo exists and check hostId
+      final roomInfoSnapshot = await _database
+          .child('rooms')
+          .child(_currentRoomId!)
+          .child('roomInfo')
+          .get();
+
+      if (!roomInfoSnapshot.exists) {
+        AppLogger.e(
+          "BUZZER FLOW [HOST]: ERROR - roomInfo does not exist in Firebase! "
+          "This will cause permission denied. Room structure may be corrupted.",
+        );
+      } else {
+        final roomInfoData = Map<String, dynamic>.from(
+          roomInfoSnapshot.value as Map,
+        );
+        final firebaseHostId = roomInfoData['hostId'];
+        AppLogger.i(
+          "BUZZER FLOW [HOST]: Firebase roomInfo/hostId: $firebaseHostId",
+        );
+        AppLogger.i(
+          "BUZZER FLOW [HOST]: Local room hostId: ${currentRoom?.hostId}",
+        );
+
+        if (firebaseHostId != currentRoom?.hostId) {
+          AppLogger.e(
+            "BUZZER FLOW [HOST]: WARNING - hostId mismatch! "
+            "Firebase: $firebaseHostId, Local: ${currentRoom?.hostId}",
+          );
+        }
+      }
+
       final timestamp = DateTime.now().millisecondsSinceEpoch;
       final questionRef = _database
           .child('rooms')
@@ -104,28 +173,68 @@ class _QuestionPageState extends State<QuestionPage> {
         'ansMedia': ansMedia,
       });
 
+      AppLogger.i(
+        "BUZZER FLOW [HOST]: Successfully wrote currentQuestion with isActive=true, startTime=$timestamp",
+      );
+
       // Clear current question buzzes
+      AppLogger.i(
+        "BUZZER FLOW [HOST]: Attempting to clear currentQuestionBuzzes from Firebase...",
+      );
+
       await _database
           .child('rooms')
           .child(_currentRoomId!)
           .child('currentQuestionBuzzes')
           .remove();
 
+      AppLogger.i(
+        "BUZZER FLOW [HOST]: Successfully cleared all previous buzzer entries from Firebase",
+      );
+
+      // Verify it's cleared
+      final verifySnapshot = await _database
+          .child('rooms')
+          .child(_currentRoomId!)
+          .child('currentQuestionBuzzes')
+          .get();
+
+      if (!verifySnapshot.exists) {
+        AppLogger.i(
+          "BUZZER FLOW [HOST]: ✓ Verified - currentQuestionBuzzes is empty in Firebase",
+        );
+      } else {
+        AppLogger.e(
+          "BUZZER FLOW [HOST]: ✗ WARNING - currentQuestionBuzzes still has data after clear attempt!",
+        );
+      }
+
       // Start listening to buzzer entries
       _startListeningToBuzzers();
 
       AppLogger.i(
-        "Question started in room $_currentRoomId at timestamp $timestamp",
+        "BUZZER FLOW [HOST]: Question activated! Buzzers should now be enabled for all players.",
       );
-    } catch (e) {
-      AppLogger.e("Error starting question: $e");
+    } catch (e, stackTrace) {
+      AppLogger.e("BUZZER FLOW [HOST]: ERROR starting question: $e");
+      AppLogger.e("BUZZER FLOW [HOST]: Stack trace: $stackTrace");
+      AppLogger.e(
+        "BUZZER FLOW [HOST]: This is likely a Firebase security rules issue. "
+        "Make sure you've deployed the updated database.rules.json with: "
+        "'firebase deploy --only database'",
+      );
     }
   }
 
   Future<void> _endQuestion() async {
-    if (_currentRoomId == null) return;
+    if (_currentRoomId == null) {
+      AppLogger.e("BUZZER FLOW: Cannot end question - no room ID");
+      return;
+    }
 
     try {
+      AppLogger.i("BUZZER FLOW [HOST]: Ending question in room $_currentRoomId");
+
       await _database
           .child('rooms')
           .child(_currentRoomId!)
@@ -133,9 +242,11 @@ class _QuestionPageState extends State<QuestionPage> {
           .child('isActive')
           .set(false);
 
-      AppLogger.i("Question ended in room $_currentRoomId");
+      AppLogger.i(
+        "BUZZER FLOW [HOST]: Question ended (isActive=false). Buzzers should now be disabled.",
+      );
     } catch (e) {
-      AppLogger.e("Error ending question: $e");
+      AppLogger.e("BUZZER FLOW [HOST]: ERROR ending question: $e");
     }
   }
 
@@ -353,15 +464,20 @@ class _QuestionPageState extends State<QuestionPage> {
 
     _buzzerSubscription?.cancel();
 
+    // Clear existing buzzer entries for new question
+    setState(() {
+      _buzzerEntries.clear();
+    });
+
+    AppLogger.i(
+      "BUZZER FLOW [HOST]: Cleared local buzzer state and starting to listen for new entries",
+    );
+
     final buzzersRef = _database
         .child('rooms')
         .child(_currentRoomId!)
         .child('currentQuestionBuzzes')
         .orderByChild('timestamp');
-
-    AppLogger.i(
-      "Starting to listen for buzzer entries in room: $_currentRoomId",
-    );
 
     _buzzerSubscription = buzzersRef.onValue.listen((event) {
       if (!mounted) return;
@@ -430,7 +546,17 @@ class _QuestionPageState extends State<QuestionPage> {
         _buzzerEntries = newBuzzerEntries;
       });
 
-      AppLogger.i("Buzzer entries updated: ${_buzzerEntries.length} entries");
+      if (newBuzzerEntries.isNotEmpty) {
+        final topBuzzers = newBuzzerEntries
+            .take(3)
+            .map((e) => "${e.playerName} (#${e.position})")
+            .join(", ");
+        AppLogger.i(
+          "BUZZER FLOW [HOST]: Received ${newBuzzerEntries.length} buzzer entries. Top 3: $topBuzzers",
+        );
+      } else {
+        AppLogger.i("BUZZER FLOW [HOST]: No buzzer entries yet");
+      }
     });
   }
 
@@ -541,24 +667,32 @@ class _QuestionPageState extends State<QuestionPage> {
           ],
         ),
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // Question section with intelligent layout based on content
-              _buildQuestionSection(question, qstnMedia),
-              SizedBox(height: 40),
-              _playerGrid(playerProvider),
-              SizedBox(height: 5),
-              _showAnswerButton(),
-              SizedBox(height: 30),
-              if (_showAnswer) _buildAnswerSection(answer, ansMedia),
-              // Extra padding at bottom to ensure Done button is easily scrollable
-              SizedBox(height: 30),
-            ],
+      body: Padding(
+        padding: const EdgeInsets.only(top: 40),
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Question section with intelligent layout based on content
+                SizedBox(height: 40),
+                _buildQuestionSection(question, qstnMedia),
+                SizedBox(height: 40),
+                _playerGrid(playerProvider),
+                SizedBox(height: 30),
+                _showAnswerButton(),
+                SizedBox(height: 30),
+                if (_showAnswer) ...[
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                    child: _buildAnswerSection(answer, ansMedia),
+                  ),
+                  SizedBox(height: 30),
+                ],
+              ],
+            ),
           ),
         ),
       ),
@@ -589,94 +723,90 @@ class _QuestionPageState extends State<QuestionPage> {
   }
 
   Center _playerGrid(PlayerProvider playerProvider) {
+    // Return empty container if no players
+    if (playerProvider.playerList.isEmpty) {
+      return Center(child: SizedBox.shrink());
+    }
+
     return Center(
       child: Padding(
-        padding: EdgeInsets.all(20),
-        child: SizedBox(
-          height: 200,
-          width: _calculatePlayerBoardContainerWidth(
-            playerProvider.playerList.length,
+        padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxWidth: _calculatePlayerBoardContainerWidth(
+              playerProvider.playerList.length,
+            ),
           ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              GridView.builder(
-                gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                  maxCrossAxisExtent: 290,
-                  childAspectRatio: 4,
-                  crossAxisSpacing: 10,
-                  mainAxisSpacing: 10,
-                  mainAxisExtent:
-                      50, // Specify the minimum height for the child
-                ),
-                itemCount: playerProvider.playerList.length,
-                shrinkWrap: true,
-                physics: AlwaysScrollableScrollPhysics(),
-                itemBuilder: (context, index) {
-                  final player = playerProvider.playerList[index];
-                  final buttonState = playerButtonStates[player.name]!;
-                  return Center(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        border: Border.all(
-                          color: ColorConstants.primaryContainerColor,
-                        ),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          ToggleButton(
-                            key: ValueKey('correct_${player.name}'),
-                            initialOn: buttonState.correctOn,
-                            isDisabled: buttonState.correctDisabled,
-                            iconData: Icons.check,
-                            onColor: ColorConstants.correctAnsBtn,
-                            offColor: ColorConstants.cardColor,
-                            onToggle: (isOn) {
-                              // force update the UI
-                              setState(() {
-                                buttonState.setCorrect(isOn);
-                              });
-                            },
-                          ),
-                          SizedBox(
-                            width: 100,
-                            child: Padding(
-                              padding: EdgeInsets.only(left: 2, right: 2),
-                              child: _PlayerNameWithRank(
-                                player: player,
-                                buzzerEntry: _getBuzzerEntryForPlayer(
-                                  player.name,
-                                ),
-                                onEditTap:
-                                    () => _showAwardPointDialog(player.name),
-                              ),
-                            ),
-                          ),
-                          ToggleButton(
-                            key: ValueKey('wrong_${player.name}'),
-                            initialOn: buttonState.wrongOn,
-                            isDisabled: buttonState.wrongDisabled,
-                            iconData: Icons.cancel_outlined,
-                            onColor: ColorConstants.wrongAnsBtn,
-                            offColor: ColorConstants.cardColor,
-                            onToggle: (isOn) {
-                              // force update the UI
-                              setState(() {
-                                buttonState.setWrong(isOn);
-                              });
-                            },
-                          ),
-                        ],
-                      ),
+          child: GridView.builder(
+            gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+              maxCrossAxisExtent: 290,
+              childAspectRatio: 4,
+              crossAxisSpacing: 10,
+              mainAxisSpacing: 10,
+              mainAxisExtent: 50, // Each row is 50 high
+            ),
+            itemCount: playerProvider.playerList.length,
+            shrinkWrap: true,
+            physics: NeverScrollableScrollPhysics(),
+            itemBuilder: (context, index) {
+              final player = playerProvider.playerList[index];
+              final buttonState = playerButtonStates[player.name]!;
+              return Center(
+                child: Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: ColorConstants.primaryContainerColor,
                     ),
-                  );
-                },
-              ),
-            ],
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      ToggleButton(
+                        key: ValueKey('correct_${player.name}'),
+                        initialOn: buttonState.correctOn,
+                        isDisabled: buttonState.correctDisabled,
+                        iconData: Icons.check,
+                        onColor: ColorConstants.correctAnsBtn,
+                        offColor: ColorConstants.cardColor,
+                        onToggle: (isOn) {
+                          // force update the UI
+                          setState(() {
+                            buttonState.setCorrect(isOn);
+                          });
+                        },
+                      ),
+                      SizedBox(
+                        width: 100,
+                        child: Padding(
+                          padding: EdgeInsets.only(left: 2, right: 2),
+                          child: _PlayerNameWithRank(
+                            player: player,
+                            buzzerEntry: _getBuzzerEntryForPlayer(player.name),
+                            onEditTap: () => _showAwardPointDialog(player.name),
+                          ),
+                        ),
+                      ),
+                      ToggleButton(
+                        key: ValueKey('wrong_${player.name}'),
+                        initialOn: buttonState.wrongOn,
+                        isDisabled: buttonState.wrongDisabled,
+                        iconData: Icons.cancel_outlined,
+                        onColor: ColorConstants.wrongAnsBtn,
+                        offColor: ColorConstants.cardColor,
+                        onToggle: (isOn) {
+                          // force update the UI
+                          setState(() {
+                            buttonState.setWrong(isOn);
+                          });
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
           ),
         ),
       ),

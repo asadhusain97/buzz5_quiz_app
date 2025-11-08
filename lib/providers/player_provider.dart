@@ -18,7 +18,7 @@ class PlayerProvider with ChangeNotifier {
   /// status persists reliably across:
   /// - Player list sorting (sortPlayerList)
   /// - Player list updates (setPlayerList)
-  /// - Player disconnections/reconnections in multiplayer
+  /// - Player disconnections/re-connections in multiplayer
   /// - Questions with no correct answers
   ///
   /// The active player remains highlighted until a different player answers
@@ -201,7 +201,9 @@ class PlayerProvider with ChangeNotifier {
     int playerIndex = _playerList.indexOf(player);
     if (playerIndex != -1) {
       _playerList[playerIndex].firstHits++;
-      AppLogger.i("Incremented first hits for ${player.name}: ${_playerList[playerIndex].firstHits}");
+      AppLogger.i(
+        "Incremented first hits for ${player.name}: ${_playerList[playerIndex].firstHits}",
+      );
       notifyListeners();
     }
   }

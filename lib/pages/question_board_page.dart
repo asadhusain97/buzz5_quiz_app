@@ -1,3 +1,5 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'package:buzz5_quiz_app/config/text_styles.dart';
 import 'package:buzz5_quiz_app/presentation/components/game_leaderboard.dart';
 import 'package:buzz5_quiz_app/presentation/components/room_code_display.dart';
@@ -142,7 +144,6 @@ class _QuestionBoardContentState extends State<QuestionBoardContent> {
   /// - Automatically manages cache size
   Future<void> _precacheAllQuestionImages() async {
     // Capture context before async operations
-    // ignore: use_build_context_synchronously
     final buildContext = context;
     if (!mounted) return;
 
@@ -150,7 +151,9 @@ class _QuestionBoardContentState extends State<QuestionBoardContent> {
     int successCount = 0;
     int errorCount = 0;
 
-    AppLogger.i("Starting to precache images for ${_filteredQRows.length} questions");
+    AppLogger.i(
+      "Starting to precache images for ${_filteredQRows.length} questions",
+    );
 
     for (final qrow in _filteredQRows) {
       // Check if widget is still mounted before each async operation
@@ -163,7 +166,7 @@ class _QuestionBoardContentState extends State<QuestionBoardContent> {
       if (qrow.qstnMedia.isNotEmpty) {
         imageCount++;
         try {
-          await precacheImage( // ignore: use_build_context_synchronously
+          await precacheImage(
             NetworkImage(qrow.qstnMedia),
             buildContext,
             onError: (exception, stackTrace) {
@@ -191,7 +194,7 @@ class _QuestionBoardContentState extends State<QuestionBoardContent> {
       if (qrow.ansMedia.isNotEmpty) {
         imageCount++;
         try {
-          await precacheImage( // ignore: use_build_context_synchronously
+          await precacheImage(
             NetworkImage(qrow.ansMedia),
             buildContext,
             onError: (exception, stackTrace) {
