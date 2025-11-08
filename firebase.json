@@ -1,15 +1,6 @@
 {
-  "flutter": {
-    "platforms": {
-      "dart": {
-        "lib/firebase_options.dart": {
-          "projectId": "buzz5quiz",
-          "configurations": {
-            "web": "1:1057835105317:web:e8151cbc08f2595b1553cc"
-          }
-        }
-      }
-    }
+  "database": {
+    "rules": "database.rules.json"
   },
   "hosting": {
     "public": "build/web",
@@ -24,5 +15,17 @@
         "destination": "/index.html"
       }
     ]
+  },
+  "flutter": {
+    "platforms": {
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "buzz5quiz",
+          "configurations": {
+            "web": "1:1057835105317:web:e8151cbc08f2595b1553cc"
+          }
+        }
+      }
+    }
   }
 }

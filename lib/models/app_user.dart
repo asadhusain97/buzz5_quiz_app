@@ -30,6 +30,18 @@ class AppUser {
     );
   }
 
+  // Create AppUser for guest login
+  factory AppUser.guest({required String guestName}) {
+    final guestId = 'guest_${DateTime.now().millisecondsSinceEpoch}';
+    return AppUser(
+      uid: guestId,
+      email: '',
+      displayName: guestName,
+      photoURL: '',
+      createdAt: DateTime.now(),
+    );
+  }
+
   // Create AppUser from Firestore document
   factory AppUser.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
@@ -137,6 +149,9 @@ class AppUser {
 
   // Check if user has profile photo
   bool get hasProfilePhoto => photoURL.isNotEmpty;
+
+  // Check if user is a guest (not authenticated via Firebase)
+  bool get isGuest => uid.startsWith('guest_');
 
   @override
   String toString() {

@@ -94,7 +94,7 @@ class HomePage extends StatelessWidget {
                           if (authProvider.isAuthenticated) ...[
                             // Authenticated user - show game buttons
                             ElevatedButton(
-                              onPressed: () {
+                              onPressed: authProvider.isGuest ? null : () {
                                 AppLogger.i("Navigating to InstructionsPage");
                                 Navigator.push(
                                   context,
@@ -105,12 +105,18 @@ class HomePage extends StatelessWidget {
                               },
                               style: ElevatedButton.styleFrom(
                                 minimumSize: Size(280, 56),
-                                backgroundColor: ColorConstants.primaryColor,
-                                foregroundColor: ColorConstants.lightTextColor,
-                                elevation: 2,
+                                backgroundColor: authProvider.isGuest
+                                    ? Colors.grey.shade700
+                                    : ColorConstants.primaryColor,
+                                foregroundColor: authProvider.isGuest
+                                    ? Colors.grey.shade400
+                                    : ColorConstants.lightTextColor,
+                                elevation: authProvider.isGuest ? 0 : 2,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
                                 ),
+                                disabledBackgroundColor: Colors.grey.shade700,
+                                disabledForegroundColor: Colors.grey.shade400,
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
@@ -124,6 +130,19 @@ class HomePage extends StatelessWidget {
                                 ],
                               ),
                             ),
+                            // Show helper text for guest users
+                            if (authProvider.isGuest) ...[
+                              const SizedBox(height: 8),
+                              Text(
+                                'Guest users can only join games, not host them',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: ColorConstants.hintGrey,
+                                  fontStyle: FontStyle.italic,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
                             const SizedBox(height: 20),
                             ElevatedButton(
                               onPressed: () {
