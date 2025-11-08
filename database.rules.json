@@ -1,0 +1,26 @@
+{
+  "rules": {
+    "rooms": {
+      "$roomId": {
+        ".read": true,
+        "roomInfo": {
+          ".write": "!data.exists() || data.child('hostId').val() === auth.uid"
+        },
+        "players": {
+          "$playerId": {
+            ".read": true,
+            ".write": "!data.exists() || $playerId === auth.uid || $playerId.beginsWith('guest_')"
+          }
+        },
+        "allowedPlayers": {
+          ".read": true,
+          ".write": "root.child('rooms').child($roomId).child('roomInfo').child('hostId').val() === auth.uid"
+        },
+        "gameState": {
+          ".read": true,
+          ".write": "root.child('rooms').child($roomId).child('roomInfo').child('hostId').val() === auth.uid"
+        }
+      }
+    }
+  }
+}

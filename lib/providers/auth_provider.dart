@@ -129,7 +129,7 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  // Sign in as guest
+  // Sign in as guest (local only, no Firebase Auth)
   Future<bool> signInAsGuest({required String guestName}) async {
     if (guestName.trim().isEmpty) {
       _setError('Guest name cannot be empty');
@@ -191,10 +191,11 @@ class AuthProvider extends ChangeNotifier {
     _clearError();
 
     try {
-      // If guest user, just clear the user data
+      // If guest user, just clear the user data locally
       if (_user?.isGuest ?? false) {
         _user = null;
         AppLogger.i('Guest user signed out');
+        notifyListeners();
       } else {
         // For authenticated users, sign out from Firebase
         await _authService.signOut();

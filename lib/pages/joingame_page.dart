@@ -3,12 +3,13 @@ import 'package:buzz5_quiz_app/config/colors.dart';
 import 'package:buzz5_quiz_app/widgets/custom_app_bar.dart';
 import 'package:buzz5_quiz_app/widgets/base_page.dart';
 import 'package:buzz5_quiz_app/providers/room_provider.dart';
+import 'package:buzz5_quiz_app/providers/auth_provider.dart';
 import 'package:buzz5_quiz_app/pages/game_room_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:buzz5_quiz_app/config/logger.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 
 class JoinGamePage extends StatefulWidget {
   const JoinGamePage({super.key});
@@ -23,6 +24,19 @@ class _JoinGamePageState extends State<JoinGamePage> {
   final _playerNameController = TextEditingController();
   bool _isJoining = false;
   String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    // Pre-fill the player name with the current user's display name
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      if (authProvider.user != null &&
+          authProvider.user!.displayName.isNotEmpty) {
+        _playerNameController.text = authProvider.user!.displayName;
+      }
+    });
+  }
 
   @override
   void dispose() {
@@ -90,7 +104,7 @@ class _JoinGamePageState extends State<JoinGamePage> {
       if (success && mounted) {
         // Player has been added to Firebase roomPlayers via joinRoom()
         // The playerList will be automatically synchronized via RoomProvider listener
-        final user = FirebaseAuth.instance.currentUser;
+        final user = firebase_auth.FirebaseAuth.instance.currentUser;
 
         if (user != null) {
           AppLogger.i(

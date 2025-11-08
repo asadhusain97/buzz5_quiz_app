@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:buzz5_quiz_app/models/room.dart';
 import 'package:buzz5_quiz_app/models/player.dart';
 import 'package:buzz5_quiz_app/providers/player_provider.dart';
+import 'package:buzz5_quiz_app/providers/auth_provider.dart' as app_auth;
 import 'package:buzz5_quiz_app/config/logger.dart';
 import 'dart:async';
 
@@ -15,6 +16,7 @@ class RoomProvider with ChangeNotifier {
   List<RoomPlayer> _roomPlayers = [];
   StreamSubscription? _playersSubscription;
   PlayerProvider? _playerProvider;
+  app_auth.AuthProvider? _authProvider;
 
   // Database reference
   final DatabaseReference _database = FirebaseDatabase.instance.ref();
@@ -38,6 +40,12 @@ class RoomProvider with ChangeNotifier {
   void setPlayerProvider(PlayerProvider playerProvider) {
     _playerProvider = playerProvider;
     AppLogger.i("PlayerProvider set for synchronization");
+  }
+
+  // Set AuthProvider for user authentication (supports both Firebase auth and local guests)
+  void setAuthProvider(app_auth.AuthProvider authProvider) {
+    _authProvider = authProvider;
+    AppLogger.i("AuthProvider set for RoomProvider");
   }
 
   // Sync roomPlayers to local playerList (excluding host)
@@ -69,10 +77,14 @@ class RoomProvider with ChangeNotifier {
         );
       } else {
         // Create new player for scoring
-        final user = FirebaseAuth.instance.currentUser;
+        // Try Firebase user first, then fall back to AuthProvider for guests
+        final firebaseUser = FirebaseAuth.instance.currentUser;
+        final appUser = _authProvider?.user;
+        final currentUid = firebaseUser?.uid ?? appUser?.uid;
+
         final accountId =
-            (roomPlayer.playerId == user?.uid)
-                ? user?.uid
+            (roomPlayer.playerId == currentUid)
+                ? currentUid
                 : roomPlayer.playerId;
 
         newPlayerList.add(Player(name: roomPlayer.name, accountId: accountId));
@@ -96,8 +108,13 @@ class RoomProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      final user = FirebaseAuth.instance.currentUser;
-      if (user == null) {
+      // Get user from Firebase Auth or local guest
+      final firebaseUser = FirebaseAuth.instance.currentUser;
+      final appUser = _authProvider?.user;
+      final uid = firebaseUser?.uid ?? appUser?.uid;
+      final displayName = firebaseUser?.displayName ?? appUser?.displayName;
+
+      if (uid == null) {
         _error = "Please log in to host a game";
         AppLogger.e("Cannot create room: User not authenticated");
         return false;
@@ -110,7 +127,7 @@ class RoomProvider with ChangeNotifier {
       final room = Room(
         roomId: roomId,
         roomCode: roomCode,
-        hostId: user.uid,
+        hostId: uid,
         status: RoomStatus.waiting,
         createdAt: now,
       );
@@ -137,18 +154,23 @@ class RoomProvider with ChangeNotifier {
 
       // Add host as first player
       final hostPlayer = RoomPlayer(
-        playerId: user.uid,
-        name: user.displayName ?? user.email?.split('@')[0] ?? 'Host',
+        playerId: uid,
+        name: displayName ?? 'Host',
         isHost: true,
         joinedAt: now,
       );
-      await roomRef.child('players').child(user.uid).set(hostPlayer.toMap());
+      await roomRef.child('players').child(uid).set(hostPlayer.toMap());
 
       _currentRoom = room;
-      AppLogger.i("Room created successfully: $roomCode with ID: $roomId");
+      final userType = appUser?.isGuest == true ? 'Guest' : 'Authenticated';
+      AppLogger.i("Room created successfully: $roomCode with ID: $roomId ($userType user)");
 
-      // Set up presence tracking for the host
-      await _setupPresenceTracking(roomId, user.uid);
+      // Set up presence tracking for the host (skip for guests as they don't have Firebase auth)
+      if (firebaseUser != null) {
+        await _setupPresenceTracking(roomId, uid);
+      } else {
+        AppLogger.i("Skipping presence tracking for guest user");
+      }
 
       // Start listening for player changes
       _startListeningToPlayers();
@@ -185,9 +207,15 @@ class RoomProvider with ChangeNotifier {
   // Join an existing room with player name validation
   Future<bool> joinRoom(String roomCode, {String? playerName}) async {
     try {
-      final user = FirebaseAuth.instance.currentUser;
-      if (user == null) {
+      // Get user from Firebase Auth or local guest
+      final firebaseUser = FirebaseAuth.instance.currentUser;
+      final appUser = _authProvider?.user;
+      final uid = firebaseUser?.uid ?? appUser?.uid;
+      final displayName = firebaseUser?.displayName ?? appUser?.displayName;
+
+      if (uid == null) {
         _error = "User not authenticated";
+        AppLogger.e("Cannot join room: User not authenticated");
         return false;
       }
 
@@ -219,15 +247,14 @@ class RoomProvider with ChangeNotifier {
       }
 
       // Check if this user is the host
-      final isHost = user.uid == room.hostId;
+      final isHost = uid == room.hostId;
 
       // Add player to room (if host, update existing host entry with new name if provided)
       final player = RoomPlayer(
-        playerId: user.uid,
+        playerId: uid,
         name:
             playerName?.trim() ??
-            user.displayName ??
-            user.email?.split('@')[0] ??
+            displayName ??
             (isHost ? 'Host' : 'Player'),
         isHost: isHost,
         joinedAt: DateTime.now().millisecondsSinceEpoch,
@@ -237,21 +264,28 @@ class RoomProvider with ChangeNotifier {
           .child('rooms')
           .child(room.roomId)
           .child('players')
-          .child(user.uid)
+          .child(uid)
           .set(player.toMap());
 
       _currentRoom = room;
 
+      final userType = appUser?.isGuest == true ? 'Guest' : 'Authenticated';
       if (isHost) {
         AppLogger.i(
-          "Host rejoined room: $roomCode with display name: ${player.name}",
+          "Host rejoined room: $roomCode with display name: ${player.name} ($userType user)",
         );
       } else {
-        AppLogger.i("Player joined room: $roomCode with name: ${player.name}");
+        AppLogger.i(
+          "Player joined room: $roomCode with name: ${player.name} ($userType user)",
+        );
       }
 
-      // Set up presence tracking for this player
-      await _setupPresenceTracking(room.roomId, user.uid);
+      // Set up presence tracking for this player (skip for guests as they don't have Firebase auth)
+      if (firebaseUser != null) {
+        await _setupPresenceTracking(room.roomId, uid);
+      } else {
+        AppLogger.i("Skipping presence tracking for guest user");
+      }
 
       // Start listening for player changes
       _startListeningToPlayers();
@@ -434,18 +468,22 @@ class RoomProvider with ChangeNotifier {
     if (_currentRoom == null) return;
 
     try {
-      final user = FirebaseAuth.instance.currentUser;
-      if (user != null) {
+      // Get user from Firebase Auth or local guest
+      final firebaseUser = FirebaseAuth.instance.currentUser;
+      final appUser = _authProvider?.user;
+      final uid = firebaseUser?.uid ?? appUser?.uid;
+
+      if (uid != null) {
         // Remove player from the room in Firebase
         await _database
             .child('rooms')
             .child(_currentRoom!.roomId)
             .child('players')
-            .child(user.uid)
+            .child(uid)
             .remove();
 
         AppLogger.i(
-          "Removed player ${user.uid} from room ${_currentRoom!.roomId}",
+          "Removed player $uid from room ${_currentRoom!.roomId}",
         );
       }
     } catch (e) {
