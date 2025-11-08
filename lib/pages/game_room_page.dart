@@ -1155,24 +1155,12 @@ class _GameRoomPageState extends State<GameRoomPage> {
   }
 
   Widget _buildPlayerTile(RoomPlayer player) {
-    final playerProvider = Provider.of<PlayerProvider>(context, listen: false);
-    final isCurrentUser =
-        playerProvider.playerList.isNotEmpty &&
-        player.name == playerProvider.playerList.first.name;
-
     return Container(
       margin: EdgeInsets.only(bottom: 8),
       padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color:
-            isCurrentUser
-                ? ColorConstants.primaryColor.withValues(alpha: 0.1)
-                : ColorConstants.darkCardColor.withValues(alpha: 0.5),
+        color: ColorConstants.darkCardColor.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(8),
-        border:
-            isCurrentUser
-                ? Border.all(color: ColorConstants.primaryColor, width: 1)
-                : null,
       ),
       child: Row(
         children: [
@@ -1190,19 +1178,14 @@ class _GameRoomPageState extends State<GameRoomPage> {
           ),
           SizedBox(width: 12),
 
-          // Player name with YOU tag
+          // Player name
           Expanded(
-            child: Row(
-              children: [
-                Text(
-                  player.name,
-                  style: AppTextStyles.body.copyWith(
-                    color: ColorConstants.lightTextColor,
-                    fontWeight:
-                        isCurrentUser ? FontWeight.w600 : FontWeight.normal,
-                  ),
-                ),
-              ],
+            child: Text(
+              player.name,
+              style: AppTextStyles.body.copyWith(
+                color: ColorConstants.lightTextColor,
+                fontWeight: FontWeight.normal,
+              ),
             ),
           ),
 
