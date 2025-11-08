@@ -488,14 +488,17 @@ class _QuestionPageState extends State<QuestionPage> {
       if (data != null && data is Map) {
         final buzzersMap = Map<String, dynamic>.from(data);
         for (final entry in buzzersMap.entries) {
+          // OPTIMIZATION: Read playerId from the key (path), not from data value
           final playerId = entry.key;
           final buzzerData = Map<String, dynamic>.from(entry.value);
+
+          // OPTIMIZATION: Simplified data structure - only playerName and timestamp in value
           final buzzerEntry = BuzzerEntry(
-            playerId: buzzerData['playerId'] ?? playerId,
+            playerId: playerId,
             playerName: buzzerData['playerName'] ?? 'Unknown',
             timestamp: buzzerData['timestamp'] ?? 0,
             questionNumber: 1, // Default question number
-            position: buzzerData['position'] ?? 0,
+            position: 0, // Position will be calculated below after sorting
           );
           newBuzzerEntries.add(buzzerEntry);
         }

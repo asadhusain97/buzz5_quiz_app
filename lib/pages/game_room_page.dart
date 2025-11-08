@@ -1275,14 +1275,17 @@ class _GameRoomPageState extends State<GameRoomPage> {
       if (data != null && data is Map) {
         final buzzersMap = Map<String, dynamic>.from(data);
         for (final entry in buzzersMap.entries) {
+          // OPTIMIZATION: Read playerId from the key (path), not from data value
           final playerId = entry.key;
           final buzzerData = Map<String, dynamic>.from(entry.value);
+
+          // OPTIMIZATION: Simplified data structure - only playerName and timestamp in value
           final buzzerEntry = BuzzerEntry(
-            playerId: buzzerData['playerId'] ?? playerId,
+            playerId: playerId,
             playerName: buzzerData['playerName'] ?? 'Unknown',
             timestamp: buzzerData['timestamp'] ?? 0,
             questionNumber: 1, // Default question number
-            position: buzzerData['position'] ?? 0,
+            position: 0, // Position will be calculated below after sorting
           );
           newBuzzerEntries.add(buzzerEntry);
         }
@@ -1421,9 +1424,12 @@ class _GameRoomPageState extends State<GameRoomPage> {
       return;
     }
 
+    // OPTIMIZATION 3: Optimistic UI update - set flag immediately for instant feedback
+    setState(() {
+      _hasPlayerBuzzed = true;
+    });
+
     try {
-      final timestamp = DateTime.now().millisecondsSinceEpoch;
-      final position = _buzzerEntries.length + 1;
       final roomPlayer = roomProvider.roomPlayers.firstWhere(
         (p) => p.playerId == currentUser.uid,
         orElse:
@@ -1436,7 +1442,7 @@ class _GameRoomPageState extends State<GameRoomPage> {
       final playerName = roomPlayer.name;
 
       AppLogger.i(
-        "BUZZER FLOW [PLAYER]: Attempting to record buzz for $playerName (position: $position, timestamp: $timestamp)",
+        "BUZZER FLOW [PLAYER]: Attempting to record buzz for $playerName (using server timestamp)",
       );
       AppLogger.i(
         "BUZZER FLOW [PLAYER]: Player auth.uid: ${currentUser.uid}",
@@ -1462,21 +1468,21 @@ class _GameRoomPageState extends State<GameRoomPage> {
         AppLogger.i("BUZZER FLOW [PLAYER]: Player exists in Firebase players list");
       }
 
-      // Save to Firebase under currentQuestionBuzzes
+      // OPTIMIZATION 1 & 2: Save optimized payload with server-side timestamp
+      // Removed: playerId (redundant - already in key), position (calculated by host)
+      // Changed: timestamp now uses ServerValue.timestamp instead of client time
       await _database
           .child('rooms')
           .child(currentRoom.roomId)
           .child('currentQuestionBuzzes')
           .child(currentUser.uid)
           .set({
-            'playerId': currentUser.uid,
             'playerName': playerName,
-            'timestamp': timestamp,
-            'position': position,
+            'timestamp': ServerValue.timestamp,
           });
 
       AppLogger.i(
-        "BUZZER FLOW [PLAYER]: SUCCESS! Buzzer press recorded for $playerName at position #$position",
+        "BUZZER FLOW [PLAYER]: SUCCESS! Buzzer press recorded for $playerName with server timestamp",
       );
 
       // Update player's buzz count
@@ -1498,6 +1504,11 @@ class _GameRoomPageState extends State<GameRoomPage> {
         );
       }
     } catch (e, stackTrace) {
+      // Revert optimistic update on error
+      setState(() {
+        _hasPlayerBuzzed = false;
+      });
+
       AppLogger.e("BUZZER FLOW [PLAYER]: ERROR recording buzzer press: $e");
       AppLogger.e("BUZZER FLOW [PLAYER]: Stack trace: $stackTrace");
 
