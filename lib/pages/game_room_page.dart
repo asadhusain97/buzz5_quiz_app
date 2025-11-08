@@ -1303,6 +1303,11 @@ class _GameRoomPageState extends State<GameRoomPage> {
           );
           newBuzzerEntries.add(buzzerEntry);
         }
+      } else {
+        // Data is null - buzzer entries have been cleared
+        AppLogger.i(
+          "BUZZER FLOW [PLAYER]: Buzzer entries CLEARED from Firebase (received null/empty data)",
+        );
       }
 
       // Sort by timestamp (fastest first)
@@ -1326,12 +1331,28 @@ class _GameRoomPageState extends State<GameRoomPage> {
           currentUser != null &&
           newBuzzerEntries.any((entry) => entry.playerId == currentUser.uid);
 
+      // Detect if buzzer state was reset (went from having entries to empty)
+      final oldEntriesCount = _buzzerEntries.length;
+      final wasReset = oldEntriesCount > 0 && newBuzzerEntries.isEmpty;
+
       setState(() {
         _buzzerEntries = newBuzzerEntries;
         _hasPlayerBuzzed = hasPlayerBuzzed;
       });
 
-      AppLogger.i("Buzzer entries updated: ${_buzzerEntries.length} entries");
+      if (wasReset) {
+        AppLogger.i(
+          "BUZZER FLOW [PLAYER]: ✓ Buzzer state RESET! Cleared $oldEntriesCount previous entries. Ready for new question.",
+        );
+      } else if (newBuzzerEntries.isNotEmpty) {
+        final topBuzzers = newBuzzerEntries
+            .take(3)
+            .map((e) => "${e.playerName} (#${e.position})")
+            .join(", ");
+        AppLogger.i(
+          "BUZZER FLOW [PLAYER]: Buzzer rankings updated. Total: ${newBuzzerEntries.length}. Top 3: $topBuzzers",
+        );
+      }
     });
   }
 
@@ -1341,7 +1362,9 @@ class _GameRoomPageState extends State<GameRoomPage> {
         .child(roomId)
         .child('currentQuestion');
 
-    AppLogger.i("Starting to listen for question state in room: $roomId");
+    AppLogger.i(
+      "BUZZER FLOW [PLAYER]: Starting to listen for question state in room: $roomId",
+    );
 
     _questionSubscription = questionRef.onValue.listen((event) {
       if (!mounted) return;
@@ -1357,33 +1380,51 @@ class _GameRoomPageState extends State<GameRoomPage> {
         startTime = questionData['startTime'];
       }
 
+      // Check if this is a NEW question (different startTime)
+      final isNewQuestion = startTime != null && startTime != _questionStartTime;
+
       if (mounted) {
         setState(() {
+          // Reset buzzer state when:
+          // 1. Question becomes inactive (!isActive)
+          // 2. OR a new question starts (different startTime and isActive)
+          if (!isActive || (isActive && isNewQuestion)) {
+            _hasPlayerBuzzed = false;
+            _buzzerEntries.clear();
+
+            if (isNewQuestion && isActive) {
+              AppLogger.i(
+                "BUZZER FLOW [PLAYER]: NEW question detected! Resetting buzzer state. New startTime=$startTime",
+              );
+            }
+          }
+
           _isQuestionActive = isActive;
           _questionStartTime = startTime;
           _currentQuestionData = questionData;
-          // Reset buzzer state when question changes
-          if (!isActive) {
-            _hasPlayerBuzzed = false;
-            _buzzerEntries.clear();
-          }
         });
       }
 
-      AppLogger.i(
-        "Question state updated: active=$isActive, startTime=$startTime",
-      );
+      if (isActive) {
+        AppLogger.i(
+          "BUZZER FLOW [PLAYER]: Question ACTIVATED! isActive=true, startTime=$startTime. Buzzer is now ENABLED.",
+        );
+      } else {
+        AppLogger.i(
+          "BUZZER FLOW [PLAYER]: Question DEACTIVATED! isActive=false. Buzzer is now DISABLED.",
+        );
+      }
     });
   }
 
   Future<void> _onBuzzerPressed() async {
     if (!_isQuestionActive) {
-      AppLogger.i("No question active, buzzer disabled");
+      AppLogger.i("BUZZER FLOW [PLAYER]: Cannot buzz - no question active");
       return;
     }
 
     if (_hasPlayerBuzzed) {
-      AppLogger.i("Player has already buzzed, ignoring");
+      AppLogger.i("BUZZER FLOW [PLAYER]: Already buzzed - ignoring");
       return;
     }
 
@@ -1393,7 +1434,7 @@ class _GameRoomPageState extends State<GameRoomPage> {
     final currentUser = authProvider.user;
 
     if (currentRoom == null || currentUser == null) {
-      AppLogger.e("Cannot buzz: no active room or user");
+      AppLogger.e("BUZZER FLOW [PLAYER]: Cannot buzz - no active room or user");
       return;
     }
 
@@ -1411,6 +1452,33 @@ class _GameRoomPageState extends State<GameRoomPage> {
       );
       final playerName = roomPlayer.name;
 
+      AppLogger.i(
+        "BUZZER FLOW [PLAYER]: Attempting to record buzz for $playerName (position: $position, timestamp: $timestamp)",
+      );
+      AppLogger.i(
+        "BUZZER FLOW [PLAYER]: Player auth.uid: ${currentUser.uid}",
+      );
+      AppLogger.i(
+        "BUZZER FLOW [PLAYER]: Writing to path: rooms/${currentRoom.roomId}/currentQuestionBuzzes/${currentUser.uid}",
+      );
+
+      // Check if the player exists in Firebase
+      final playerSnapshot = await _database
+          .child('rooms')
+          .child(currentRoom.roomId)
+          .child('players')
+          .child(currentUser.uid)
+          .get();
+
+      if (!playerSnapshot.exists) {
+        AppLogger.w(
+          "BUZZER FLOW [PLAYER]: WARNING - Player does not exist in Firebase players list yet. "
+          "This might cause permission issues.",
+        );
+      } else {
+        AppLogger.i("BUZZER FLOW [PLAYER]: Player exists in Firebase players list");
+      }
+
       // Save to Firebase under currentQuestionBuzzes
       await _database
           .child('rooms')
@@ -1423,6 +1491,10 @@ class _GameRoomPageState extends State<GameRoomPage> {
             'timestamp': timestamp,
             'position': position,
           });
+
+      AppLogger.i(
+        "BUZZER FLOW [PLAYER]: SUCCESS! Buzzer press recorded for $playerName at position #$position",
+      );
 
       // Update player's buzz count
       final playerRef = _database
@@ -1438,16 +1510,29 @@ class _GameRoomPageState extends State<GameRoomPage> {
         );
         final currentBuzzCount = playerData['buzzCount'] ?? 0;
         await playerRef.child('buzzCount').set(currentBuzzCount + 1);
+        AppLogger.i(
+          "BUZZER FLOW [PLAYER]: Updated buzz count for $playerName: ${currentBuzzCount + 1}",
+        );
+      }
+    } catch (e, stackTrace) {
+      AppLogger.e("BUZZER FLOW [PLAYER]: ERROR recording buzzer press: $e");
+      AppLogger.e("BUZZER FLOW [PLAYER]: Stack trace: $stackTrace");
+
+      // Check if it's a permission error
+      if (e.toString().contains('permission') || e.toString().contains('PERMISSION_DENIED')) {
+        AppLogger.e(
+          "BUZZER FLOW [PLAYER]: This is a Firebase security rules issue. "
+          "Make sure the host has deployed the updated database.rules.json with: "
+          "'firebase deploy --only database'",
+        );
       }
 
-      AppLogger.i("Buzzer pressed by $playerName at timestamp: $timestamp");
-    } catch (e) {
-      AppLogger.e("Error recording buzzer press: $e");
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text("Error recording buzz: $e"),
+            content: Text("Error recording buzz: ${e.toString().split(':').last}"),
             backgroundColor: Colors.red,
+            duration: Duration(seconds: 5),
           ),
         );
       }

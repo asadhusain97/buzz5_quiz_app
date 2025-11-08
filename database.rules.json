@@ -19,6 +19,18 @@
         "gameState": {
           ".read": true,
           ".write": "root.child('rooms').child($roomId).child('roomInfo').child('hostId').val() === auth.uid"
+        },
+        "currentQuestion": {
+          ".read": true,
+          ".write": "root.child('rooms').child($roomId).child('roomInfo').child('hostId').val() === auth.uid"
+        },
+        "currentQuestionBuzzes": {
+          ".read": true,
+          ".write": "root.child('rooms').child($roomId).child('roomInfo').child('hostId').val() === auth.uid",
+          "$playerId": {
+            ".read": true,
+            ".write": "!data.exists() || $playerId === auth.uid || $playerId.beginsWith('guest_')"
+          }
         }
       }
     }
