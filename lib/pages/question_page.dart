@@ -60,6 +60,7 @@ class _QuestionPageState extends State<QuestionPage> {
   // Buzzer functionality
   List<BuzzerEntry> _buzzerEntries = [];
   StreamSubscription? _buzzerSubscription;
+  int? _questionStartTime; // Track current question start time for validation
 
   // Timer management methods
   void _startTimer() {
@@ -154,6 +155,12 @@ class _QuestionPageState extends State<QuestionPage> {
       }
 
       final timestamp = DateTime.now().millisecondsSinceEpoch;
+
+      // Store the question start time for validation
+      setState(() {
+        _questionStartTime = timestamp;
+      });
+
       final questionRef = _database
           .child('rooms')
           .child(_currentRoomId!)
@@ -501,23 +508,62 @@ class _QuestionPageState extends State<QuestionPage> {
         }
       }
 
-      // Sort by timestamp (fastest first)
-      newBuzzerEntries.sort((a, b) => a.timestamp.compareTo(b.timestamp));
+      // TIMESTAMP VALIDATION: Filter out buzzes from previous questions
+      // Only include buzzes that occurred AFTER the current question started
+      final validBuzzerEntries = <BuzzerEntry>[];
+      int rejectedOldBuzzesCount = 0;
+
+      for (final buzz in newBuzzerEntries) {
+        // Only include buzzes from the CURRENT question
+        // A buzz is valid if: buzz.timestamp >= currentQuestion.startTime
+        if (_questionStartTime == null) {
+          // No question active, reject all buzzes
+          rejectedOldBuzzesCount++;
+          AppLogger.w(
+            "BUZZER FLOW [HOST]: Rejecting buzz from ${buzz.playerName} - no active question",
+          );
+          continue;
+        }
+
+        final isFromCurrentQuestion = buzz.timestamp >= _questionStartTime!;
+
+        if (isFromCurrentQuestion) {
+          validBuzzerEntries.add(buzz);
+        } else {
+          // This buzz is from a PREVIOUS question - ignore it
+          rejectedOldBuzzesCount++;
+          final timeDiff = (_questionStartTime! - buzz.timestamp) / 1000.0;
+          AppLogger.i(
+            "BUZZER FLOW [HOST]: ✗ Rejecting OLD buzz from ${buzz.playerName} "
+            "(buzz time: ${buzz.timestamp}, question start: $_questionStartTime, "
+            "diff: ${timeDiff.toStringAsFixed(3)}s before question)",
+          );
+        }
+      }
+
+      if (rejectedOldBuzzesCount > 0) {
+        AppLogger.i(
+          "BUZZER FLOW [HOST]: ✓ RACE CONDITION PREVENTED! Filtered out $rejectedOldBuzzesCount old buzz(es) from previous question(s)",
+        );
+      }
+
+      // Sort valid buzzes by timestamp (fastest first)
+      validBuzzerEntries.sort((a, b) => a.timestamp.compareTo(b.timestamp));
 
       // Update positions based on sorted order
-      for (int i = 0; i < newBuzzerEntries.length; i++) {
-        newBuzzerEntries[i] = BuzzerEntry(
-          playerId: newBuzzerEntries[i].playerId,
-          playerName: newBuzzerEntries[i].playerName,
-          timestamp: newBuzzerEntries[i].timestamp,
-          questionNumber: newBuzzerEntries[i].questionNumber,
+      for (int i = 0; i < validBuzzerEntries.length; i++) {
+        validBuzzerEntries[i] = BuzzerEntry(
+          playerId: validBuzzerEntries[i].playerId,
+          playerName: validBuzzerEntries[i].playerName,
+          timestamp: validBuzzerEntries[i].timestamp,
+          questionNumber: validBuzzerEntries[i].questionNumber,
           position: i + 1,
         );
       }
 
-      // Track first hits: if we have new buzzer entries and the first one is new
-      if (newBuzzerEntries.isNotEmpty) {
-        final firstBuzzer = newBuzzerEntries.first;
+      // Track first hits: if we have valid buzzer entries and the first one is new
+      if (validBuzzerEntries.isNotEmpty) {
+        final firstBuzzer = validBuzzerEntries.first;
         final playerProvider = Provider.of<PlayerProvider>(
           context,
           listen: false,
@@ -543,16 +589,16 @@ class _QuestionPageState extends State<QuestionPage> {
       }
 
       setState(() {
-        _buzzerEntries = newBuzzerEntries;
+        _buzzerEntries = validBuzzerEntries;
       });
 
-      if (newBuzzerEntries.isNotEmpty) {
-        final topBuzzers = newBuzzerEntries
+      if (validBuzzerEntries.isNotEmpty) {
+        final topBuzzers = validBuzzerEntries
             .take(3)
             .map((e) => "${e.playerName} (#${e.position})")
             .join(", ");
         AppLogger.i(
-          "BUZZER FLOW [HOST]: Received ${newBuzzerEntries.length} buzzer entries. Top 3: $topBuzzers",
+          "BUZZER FLOW [HOST]: Received ${validBuzzerEntries.length} buzzer entries. Top 3: $topBuzzers",
         );
       } else {
         AppLogger.i("BUZZER FLOW [HOST]: No buzzer entries yet");
