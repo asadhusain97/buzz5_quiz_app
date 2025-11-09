@@ -4,7 +4,7 @@
       "$roomId": {
         ".read": true,
         "roomInfo": {
-          ".write": "!data.exists() || data.child('hostId').val() === auth.uid"
+          ".write": "!data.exists() || data.child('hostId').val() === auth.uid || data.child('hostId').val().beginsWith('guest_')"
         },
         "players": {
           "$playerId": {
@@ -14,23 +14,27 @@
         },
         "allowedPlayers": {
           ".read": true,
-          ".write": "root.child('rooms').child($roomId).child('roomInfo').child('hostId').val() === auth.uid"
+          ".write": "root.child('rooms').child($roomId).child('roomInfo').child('hostId').val() === auth.uid || root.child('rooms').child($roomId).child('roomInfo').child('hostId').val().beginsWith('guest_')"
         },
         "gameState": {
           ".read": true,
-          ".write": "root.child('rooms').child($roomId).child('roomInfo').child('hostId').val() === auth.uid"
+          ".write": "root.child('rooms').child($roomId).child('roomInfo').child('hostId').val() === auth.uid || root.child('rooms').child($roomId).child('roomInfo').child('hostId').val().beginsWith('guest_')"
         },
         "currentQuestion": {
           ".read": true,
-          ".write": "root.child('rooms').child($roomId).child('roomInfo').child('hostId').val() === auth.uid"
+          ".write": "root.child('rooms').child($roomId).child('roomInfo').child('hostId').val() === auth.uid || root.child('rooms').child($roomId).child('roomInfo').child('hostId').val().beginsWith('guest_')"
         },
         "currentQuestionBuzzes": {
           ".read": true,
-          ".write": "root.child('rooms').child($roomId).child('roomInfo').child('hostId').val() === auth.uid",
+          ".write": "root.child('rooms').child($roomId).child('roomInfo').child('hostId').val() === auth.uid || root.child('rooms').child($roomId).child('roomInfo').child('hostId').val().beginsWith('guest_')",
           "$playerId": {
             ".read": true,
             ".write": "!data.exists() || $playerId === auth.uid || $playerId.beginsWith('guest_')"
           }
+        },
+        "finalStandings": {
+          ".read": true,
+          ".write": "root.child('rooms').child($roomId).child('roomInfo').child('hostId').val() === auth.uid || root.child('rooms').child($roomId).child('roomInfo').child('hostId').val().beginsWith('guest_')"
         }
       }
     }

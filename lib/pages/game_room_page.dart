@@ -9,6 +9,7 @@ import 'package:buzz5_quiz_app/providers/room_provider.dart';
 import 'package:buzz5_quiz_app/providers/player_provider.dart';
 import 'package:buzz5_quiz_app/providers/auth_provider.dart';
 import 'package:buzz5_quiz_app/models/room.dart';
+import 'package:buzz5_quiz_app/models/player.dart';
 import 'package:buzz5_quiz_app/config/logger.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'dart:async';
@@ -57,7 +58,8 @@ class _GameRoomPageState extends State<GameRoomPage> {
       focusNode: _focusNode,
       autofocus: true,
       onKeyEvent: (KeyEvent event) {
-        if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.space) {
+        if (event is KeyDownEvent &&
+            event.logicalKey == LogicalKeyboardKey.space) {
           final bool canBuzz = _isQuestionActive && !_hasPlayerBuzzed;
           if (canBuzz) {
             _onBuzzerPressed();
@@ -67,43 +69,66 @@ class _GameRoomPageState extends State<GameRoomPage> {
       child: BasePage(
         appBar: CustomAppBar(title: "Game Room", showBackButton: false),
         child: Consumer3<RoomProvider, PlayerProvider, AuthProvider>(
-          builder: (context, roomProvider, playerProvider, authProvider, child) {
-          // Set up playerProvider synchronization with roomProvider if not already set
-          if (roomProvider.hasActiveRoom) {
-            roomProvider.setPlayerProvider(playerProvider);
-            // Start listening to buzzer entries if room is active
-            if (roomProvider.currentRoom != null) {
-              _startListeningToBuzzers(roomProvider.currentRoom!.roomId);
+          builder: (
+            context,
+            roomProvider,
+            playerProvider,
+            authProvider,
+            child,
+          ) {
+            // Set up playerProvider synchronization with roomProvider if not already set
+            if (roomProvider.hasActiveRoom) {
+              roomProvider.setPlayerProvider(playerProvider);
+              // Start listening to buzzer entries if room is active
+              if (roomProvider.currentRoom != null) {
+                _startListeningToBuzzers(roomProvider.currentRoom!.roomId);
+              }
             }
-          }
-          final room = roomProvider.currentRoom;
-          final roomPlayers = roomProvider.roomPlayers;
-          final hostPlayer = roomPlayers.firstWhere(
-            (player) => player.isHost,
-            orElse:
-                () =>
-                    RoomPlayer(playerId: '', name: 'Unknown Host', joinedAt: 0),
-          );
+            final room = roomProvider.currentRoom;
+            final roomPlayers = roomProvider.roomPlayers;
+            final hostPlayer = roomPlayers.firstWhere(
+              (player) => player.isHost,
+              orElse:
+                  () => RoomPlayer(
+                    playerId: '',
+                    name: 'Unknown Host',
+                    joinedAt: 0,
+                  ),
+            );
 
-          // Determine if current user is the host
-          final isHost = authProvider.user?.uid == room?.hostId;
+            // Determine if current user is the host
+            final isHost = authProvider.user?.uid == room?.hostId;
 
-          return SingleChildScrollView(
-            padding: EdgeInsets.symmetric(
-              horizontal: MediaQuery.of(context).size.width > 600 ? 80 : 16,
-              vertical: 16,
-            ),
-            child: Column(
-              children: [
-                // Conditional UI based on host status
-                if (isHost)
-                  ..._buildHostView(room, hostPlayer, roomPlayers)
-                else
-                  ..._buildPlayerView(room, hostPlayer, roomPlayers),
-              ],
-            ),
-          );
-        },
+            // Check if game has ended
+            final gameEnded = room?.status == RoomStatus.ended;
+
+            // If game has ended, show End Game Report
+            if (gameEnded) {
+              return _buildEndGameReport(
+                room,
+                roomProvider,
+                playerProvider,
+                authProvider,
+              );
+            }
+
+            // Otherwise, show normal game UI
+            return SingleChildScrollView(
+              padding: EdgeInsets.symmetric(
+                horizontal: MediaQuery.of(context).size.width > 600 ? 80 : 16,
+                vertical: 16,
+              ),
+              child: Column(
+                children: [
+                  // Conditional UI based on host status
+                  if (isHost)
+                    ..._buildHostView(room, hostPlayer, roomPlayers)
+                  else
+                    ..._buildPlayerView(room, hostPlayer, roomPlayers),
+                ],
+              ),
+            );
+          },
         ),
       ),
     );
@@ -1293,33 +1318,72 @@ class _GameRoomPageState extends State<GameRoomPage> {
         );
       }
 
-      // Sort by timestamp (fastest first)
-      newBuzzerEntries.sort((a, b) => a.timestamp.compareTo(b.timestamp));
+      // TIMESTAMP VALIDATION: Filter out buzzes from previous questions
+      // Only include buzzes that occurred AFTER the current question started
+      final validBuzzerEntries = <BuzzerEntry>[];
+      int rejectedOldBuzzesCount = 0;
+
+      for (final buzz in newBuzzerEntries) {
+        // Only include buzzes from the CURRENT question
+        // A buzz is valid if: buzz.timestamp >= currentQuestion.startTime
+        if (_questionStartTime == null) {
+          // No question active, reject all buzzes
+          rejectedOldBuzzesCount++;
+          AppLogger.w(
+            "BUZZER FLOW [PLAYER]: Rejecting buzz from ${buzz.playerName} - no active question",
+          );
+          continue;
+        }
+
+        final isFromCurrentQuestion = buzz.timestamp >= _questionStartTime!;
+
+        if (isFromCurrentQuestion) {
+          validBuzzerEntries.add(buzz);
+        } else {
+          // This buzz is from a PREVIOUS question - ignore it
+          rejectedOldBuzzesCount++;
+          final timeDiff = (_questionStartTime! - buzz.timestamp) / 1000.0;
+          AppLogger.i(
+            "BUZZER FLOW [PLAYER]: ✗ Rejecting OLD buzz from ${buzz.playerName} "
+            "(buzz time: ${buzz.timestamp}, question start: $_questionStartTime, "
+            "diff: ${timeDiff.toStringAsFixed(3)}s before question)",
+          );
+        }
+      }
+
+      if (rejectedOldBuzzesCount > 0) {
+        AppLogger.i(
+          "BUZZER FLOW [PLAYER]: ✓ RACE CONDITION PREVENTED! Filtered out $rejectedOldBuzzesCount old buzz(es) from previous question(s)",
+        );
+      }
+
+      // Sort valid buzzes by timestamp (fastest first)
+      validBuzzerEntries.sort((a, b) => a.timestamp.compareTo(b.timestamp));
 
       // Update positions based on sorted order
-      for (int i = 0; i < newBuzzerEntries.length; i++) {
-        newBuzzerEntries[i] = BuzzerEntry(
-          playerId: newBuzzerEntries[i].playerId,
-          playerName: newBuzzerEntries[i].playerName,
-          timestamp: newBuzzerEntries[i].timestamp,
-          questionNumber: newBuzzerEntries[i].questionNumber,
+      for (int i = 0; i < validBuzzerEntries.length; i++) {
+        validBuzzerEntries[i] = BuzzerEntry(
+          playerId: validBuzzerEntries[i].playerId,
+          playerName: validBuzzerEntries[i].playerName,
+          timestamp: validBuzzerEntries[i].timestamp,
+          questionNumber: validBuzzerEntries[i].questionNumber,
           position: i + 1,
         );
       }
 
-      // Check if current player has buzzed
+      // Check if current player has buzzed (using VALID buzzes only)
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final currentUser = authProvider.user;
       final hasPlayerBuzzed =
           currentUser != null &&
-          newBuzzerEntries.any((entry) => entry.playerId == currentUser.uid);
+          validBuzzerEntries.any((entry) => entry.playerId == currentUser.uid);
 
       // Detect if buzzer state was reset (went from having entries to empty)
       final oldEntriesCount = _buzzerEntries.length;
-      final wasReset = oldEntriesCount > 0 && newBuzzerEntries.isEmpty;
+      final wasReset = oldEntriesCount > 0 && validBuzzerEntries.isEmpty;
 
       setState(() {
-        _buzzerEntries = newBuzzerEntries;
+        _buzzerEntries = validBuzzerEntries;
         _hasPlayerBuzzed = hasPlayerBuzzed;
       });
 
@@ -1327,13 +1391,13 @@ class _GameRoomPageState extends State<GameRoomPage> {
         AppLogger.i(
           "BUZZER FLOW [PLAYER]: ✓ Buzzer state RESET! Cleared $oldEntriesCount previous entries. Ready for new question.",
         );
-      } else if (newBuzzerEntries.isNotEmpty) {
-        final topBuzzers = newBuzzerEntries
+      } else if (validBuzzerEntries.isNotEmpty) {
+        final topBuzzers = validBuzzerEntries
             .take(3)
             .map((e) => "${e.playerName} (#${e.position})")
             .join(", ");
         AppLogger.i(
-          "BUZZER FLOW [PLAYER]: Buzzer rankings updated. Total: ${newBuzzerEntries.length}. Top 3: $topBuzzers",
+          "BUZZER FLOW [PLAYER]: Buzzer rankings updated. Total: ${validBuzzerEntries.length}. Top 3: $topBuzzers",
         );
       }
     });
@@ -1364,7 +1428,8 @@ class _GameRoomPageState extends State<GameRoomPage> {
       }
 
       // Check if this is a NEW question (different startTime)
-      final isNewQuestion = startTime != null && startTime != _questionStartTime;
+      final isNewQuestion =
+          startTime != null && startTime != _questionStartTime;
 
       if (mounted) {
         setState(() {
@@ -1438,20 +1503,19 @@ class _GameRoomPageState extends State<GameRoomPage> {
       AppLogger.i(
         "BUZZER FLOW [PLAYER]: Attempting to record buzz for $playerName (position: $position, timestamp: $timestamp)",
       );
-      AppLogger.i(
-        "BUZZER FLOW [PLAYER]: Player auth.uid: ${currentUser.uid}",
-      );
+      AppLogger.i("BUZZER FLOW [PLAYER]: Player auth.uid: ${currentUser.uid}");
       AppLogger.i(
         "BUZZER FLOW [PLAYER]: Writing to path: rooms/${currentRoom.roomId}/currentQuestionBuzzes/${currentUser.uid}",
       );
 
       // Check if the player exists in Firebase
-      final playerSnapshot = await _database
-          .child('rooms')
-          .child(currentRoom.roomId)
-          .child('players')
-          .child(currentUser.uid)
-          .get();
+      final playerSnapshot =
+          await _database
+              .child('rooms')
+              .child(currentRoom.roomId)
+              .child('players')
+              .child(currentUser.uid)
+              .get();
 
       if (!playerSnapshot.exists) {
         AppLogger.w(
@@ -1459,7 +1523,9 @@ class _GameRoomPageState extends State<GameRoomPage> {
           "This might cause permission issues.",
         );
       } else {
-        AppLogger.i("BUZZER FLOW [PLAYER]: Player exists in Firebase players list");
+        AppLogger.i(
+          "BUZZER FLOW [PLAYER]: Player exists in Firebase players list",
+        );
       }
 
       // Save to Firebase under currentQuestionBuzzes
@@ -1502,7 +1568,8 @@ class _GameRoomPageState extends State<GameRoomPage> {
       AppLogger.e("BUZZER FLOW [PLAYER]: Stack trace: $stackTrace");
 
       // Check if it's a permission error
-      if (e.toString().contains('permission') || e.toString().contains('PERMISSION_DENIED')) {
+      if (e.toString().contains('permission') ||
+          e.toString().contains('PERMISSION_DENIED')) {
         AppLogger.e(
           "BUZZER FLOW [PLAYER]: This is a Firebase security rules issue. "
           "Make sure the host has deployed the updated database.rules.json with: "
@@ -1513,7 +1580,9 @@ class _GameRoomPageState extends State<GameRoomPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text("Error recording buzz: ${e.toString().split(':').last}"),
+            content: Text(
+              "Error recording buzz: ${e.toString().split(':').last}",
+            ),
             backgroundColor: Colors.red,
             duration: Duration(seconds: 5),
           ),
@@ -1744,5 +1813,534 @@ class _GameRoomPageState extends State<GameRoomPage> {
     if (mounted) {
       Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
     }
+  }
+
+  // Build End Game Report UI
+  Widget _buildEndGameReport(
+    Room? room,
+    RoomProvider roomProvider,
+    PlayerProvider playerProvider,
+    AuthProvider authProvider,
+  ) {
+    if (room == null) {
+      return Center(child: Text("Error: Room not found"));
+    }
+
+    return SingleChildScrollView(
+      padding: EdgeInsets.symmetric(
+        horizontal: MediaQuery.of(context).size.width > 600 ? 80 : 16,
+        vertical: 16,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          // Title
+          Container(
+            padding: EdgeInsets.all(20),
+            child: Column(
+              children: [
+                Icon(
+                  Icons.emoji_events,
+                  size: 64,
+                  color: ColorConstants.primaryContainerColor,
+                ),
+                SizedBox(height: 16),
+                Text(
+                  "Game Ended!",
+                  style: AppTextStyles.titleLarge.copyWith(
+                    color: ColorConstants.primaryContainerColor,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 32,
+                  ),
+                ),
+                SizedBox(height: 8),
+                Text(
+                  "Final Results",
+                  style: AppTextStyles.titleMedium.copyWith(
+                    color: ColorConstants.lightTextColor,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          SizedBox(height: 32),
+
+          // Component A: Final Standings List
+          _buildFinalStandingsList(room.roomId),
+
+          SizedBox(height: 32),
+
+          // Component B: My Game Report Card
+          _buildMyGameReportCard(
+            room.roomId,
+            authProvider.user,
+            playerProvider,
+          ),
+
+          SizedBox(height: 32),
+
+          // Leave Room Button
+          ElevatedButton(
+            onPressed: () => _leaveRoom(),
+            style: ElevatedButton.styleFrom(
+              minimumSize: Size(200, 50),
+              backgroundColor: ColorConstants.primaryColor,
+            ),
+            child: Text(
+              "Return Home",
+              style: AppTextStyles.titleSmall.copyWith(
+                color: ColorConstants.surfaceColor,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Component A: Final Standings List
+  Widget _buildFinalStandingsList(String roomId) {
+    return Container(
+      padding: EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: ColorConstants.darkCardColor.withValues(alpha: 0.7),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: ColorConstants.primaryContainerColor.withValues(alpha: 0.3),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.leaderboard,
+                color: ColorConstants.primaryContainerColor,
+                size: 24,
+              ),
+              SizedBox(width: 12),
+              Text(
+                "Final Standings",
+                style: AppTextStyles.titleLarge.copyWith(
+                  color: ColorConstants.primaryContainerColor,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 20),
+
+          // StreamBuilder listening to finalStandings
+          StreamBuilder(
+            stream:
+                _database
+                    .child('rooms')
+                    .child(roomId)
+                    .child('finalStandings')
+                    .onValue,
+            builder: (context, AsyncSnapshot<DatabaseEvent> snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return Center(
+                  child: CircularProgressIndicator(
+                    color: ColorConstants.primaryColor,
+                  ),
+                );
+              }
+
+              if (snapshot.hasError) {
+                return Center(
+                  child: Text(
+                    "Error loading standings",
+                    style: AppTextStyles.body.copyWith(
+                      color: ColorConstants.danger,
+                    ),
+                  ),
+                );
+              }
+
+              final data = snapshot.data?.snapshot.value;
+              if (data == null || data is! List) {
+                return Center(
+                  child: Text(
+                    "No standings available",
+                    style: AppTextStyles.body.copyWith(
+                      color: ColorConstants.hintGrey,
+                    ),
+                  ),
+                );
+              }
+
+              final List<Map<String, dynamic>> standings = [];
+              for (var item in data) {
+                if (item != null) {
+                  standings.add(Map<String, dynamic>.from(item as Map));
+                }
+              }
+
+              return ListView.builder(
+                shrinkWrap: true,
+                physics: NeverScrollableScrollPhysics(),
+                itemCount: standings.length,
+                itemBuilder: (context, index) {
+                  final standing = standings[index];
+                  final rank = index + 1;
+                  final name = standing['name'] ?? 'Unknown';
+                  final score = standing['score'] ?? 0;
+
+                  return Container(
+                    margin: EdgeInsets.only(bottom: 8),
+                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: ColorConstants.overlayLight,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: _getRankingColor(rank).withValues(alpha: 0.5),
+                        width: 2,
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        // Rank Badge
+                        Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: _getRankingColor(rank),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Center(
+                            child: Text(
+                              "#$rank",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ),
+                        ),
+
+                        SizedBox(width: 16),
+
+                        // Player Name
+                        Expanded(
+                          child: Text(
+                            name,
+                            style: AppTextStyles.titleSmall.copyWith(
+                              color: ColorConstants.lightTextColor,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+
+                        // Score
+                        Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: ColorConstants.secondaryContainerColor
+                                .withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            "$score pts",
+                            style: AppTextStyles.titleSmall.copyWith(
+                              color: ColorConstants.secondaryContainerColor,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Component B: My Game Report Card
+  Widget _buildMyGameReportCard(
+    String roomId,
+    dynamic currentUser,
+    PlayerProvider playerProvider,
+  ) {
+    if (currentUser == null) {
+      return SizedBox.shrink();
+    }
+
+    return Container(
+      padding: EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            ColorConstants.connected.withValues(alpha: 0.15),
+            ColorConstants.connected.withValues(alpha: 0.05),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: ColorConstants.connected.withValues(alpha: 0.4),
+          width: 2,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: ColorConstants.connected.withValues(alpha: 0.1),
+            offset: Offset(0, 4),
+            blurRadius: 12,
+            spreadRadius: 0,
+          ),
+        ],
+      ),
+      child: StreamBuilder(
+        stream:
+            _database
+                .child('rooms')
+                .child(roomId)
+                .child('finalStandings')
+                .onValue,
+        builder: (context, AsyncSnapshot<DatabaseEvent> snapshot) {
+          // Show loading state
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Center(
+              child: CircularProgressIndicator(color: ColorConstants.connected),
+            );
+          }
+
+          // Show error state
+          if (snapshot.hasError ||
+              !snapshot.hasData ||
+              snapshot.data?.snapshot.value == null) {
+            return Center(
+              child: Text(
+                "No game stats available",
+                style: AppTextStyles.body.copyWith(
+                  color: ColorConstants.hintGrey,
+                ),
+              ),
+            );
+          }
+
+          // Get finalStandings data from Firebase
+          final data = snapshot.data!.snapshot.value;
+          if (data is! List) {
+            return Center(
+              child: Text(
+                "Invalid game stats format",
+                style: AppTextStyles.body.copyWith(
+                  color: ColorConstants.hintGrey,
+                ),
+              ),
+            );
+          }
+
+          // Find my player data in the standings
+          Map<String, dynamic>? myStanding;
+          int? myRank;
+          int totalPlayers = data.where((item) => item != null).length;
+
+          // Get current player's name from playerProvider for matching
+          final myPlayer = playerProvider.playerList.firstWhere(
+            (p) => p.accountId == currentUser.uid,
+            orElse:
+                () =>
+                    playerProvider.playerList.isNotEmpty
+                        ? playerProvider.playerList.first
+                        : Player(name: 'Unknown', accountId: currentUser.uid),
+          );
+
+          // Find my standing by matching name
+          for (int i = 0; i < data.length; i++) {
+            if (data[i] != null) {
+              final standing = Map<String, dynamic>.from(data[i] as Map);
+              if (standing['name'] == myPlayer.name) {
+                myStanding = standing;
+                myRank = i + 1;
+                break;
+              }
+            }
+          }
+
+          // If we couldn't find the player in standings, show error
+          if (myStanding == null) {
+            return Center(
+              child: Text(
+                "Your stats not found in final standings",
+                style: AppTextStyles.body.copyWith(
+                  color: ColorConstants.hintGrey,
+                ),
+              ),
+            );
+          }
+
+          // Extract stats from the standing (from Firebase, not from provider!)
+          final score = myStanding['score'] ?? 0;
+          final firstHits = myStanding['firstHits'] ?? 0;
+          final correctAnsCount = myStanding['correctAnsCount'] ?? 0;
+          final wrongAnsCount = myStanding['wrongAnsCount'] ?? 0;
+
+          // Calculate accuracy
+          final totalAnswers = correctAnsCount + wrongAnsCount;
+          final accuracy =
+              totalAnswers > 0
+                  ? (correctAnsCount / totalAnswers * 100).toStringAsFixed(1)
+                  : "0.0";
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    Icons.analytics,
+                    color: ColorConstants.connected,
+                    size: 24,
+                  ),
+                  SizedBox(width: 12),
+                  Text(
+                    "My Game Report",
+                    style: AppTextStyles.titleLarge.copyWith(
+                      color: ColorConstants.connected,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+
+              SizedBox(height: 24),
+
+              // Stats Row 1
+              Row(
+                children: [
+                  // Final Score
+                  Expanded(
+                    child: _buildStatCard(
+                      icon: Icons.stars,
+                      label: "Final Score",
+                      value: "$score",
+                      color: ColorConstants.secondaryContainerColor,
+                    ),
+                  ),
+                  SizedBox(width: 12),
+
+                  // Final Rank
+                  Expanded(
+                    child: _buildStatCard(
+                      icon: Icons.military_tech,
+                      label: "Your Rank",
+                      value: myRank != null ? "$myRank / $totalPlayers" : "N/A",
+                      color: ColorConstants.primaryContainerColor,
+                    ),
+                  ),
+                  SizedBox(width: 12),
+
+                  // First Hits
+                  Expanded(
+                    child: _buildStatCard(
+                      icon: Icons.bolt,
+                      label: "First Hits",
+                      value: "$firstHits",
+                      color: ColorConstants.rank1Color,
+                    ),
+                  ),
+                ],
+              ),
+
+              SizedBox(height: 12),
+
+              // Stats Row 2
+              Row(
+                children: [
+                  // Correct Answers
+                  Expanded(
+                    child: _buildStatCard(
+                      icon: Icons.check_circle,
+                      label: "Correct Answers",
+                      value: "$correctAnsCount",
+                      color: ColorConstants.connected,
+                    ),
+                  ),
+                  SizedBox(width: 12),
+
+                  // Wrong Answers
+                  Expanded(
+                    child: _buildStatCard(
+                      icon: Icons.cancel,
+                      label: "Wrong Answers",
+                      value: "$wrongAnsCount",
+                      color: ColorConstants.danger,
+                    ),
+                  ),
+                  SizedBox(width: 12),
+
+                  // Answer Accuracy
+                  Expanded(
+                    child: _buildStatCard(
+                      icon: Icons.track_changes,
+                      label: "Accuracy",
+                      value: "$accuracy%",
+                      color: ColorConstants.connected,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  // Helper method to build individual stat cards
+  Widget _buildStatCard({
+    required IconData icon,
+    required String label,
+    required String value,
+    required Color color,
+  }) {
+    return Container(
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withValues(alpha: 0.3), width: 1),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Icon(icon, color: color, size: 32),
+          SizedBox(height: 10),
+          Text(
+            label,
+            style: AppTextStyles.body.copyWith(
+              color: ColorConstants.lightTextColor,
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          SizedBox(height: 6),
+          Text(
+            value,
+            style: AppTextStyles.titleMedium.copyWith(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 22,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
