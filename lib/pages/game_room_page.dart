@@ -28,6 +28,7 @@ class _GameRoomPageState extends State<GameRoomPage> {
   bool _hasPlayerBuzzed = false;
   StreamSubscription? _buzzerSubscription;
   StreamSubscription? _questionSubscription;
+  Timer? _heartbeatTimer;
   final DatabaseReference _database = FirebaseDatabase.instance.ref();
   final FocusNode _focusNode = FocusNode();
 
@@ -42,13 +43,22 @@ class _GameRoomPageState extends State<GameRoomPage> {
     _joinedTime = DateTime.now();
     _setupBuzzerListener();
     AppLogger.i("GameRoomPage initialized");
+
+    // Start the heartbeat timer after the first frame when providers are available
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _startHeartbeat();
+      }
+    });
   }
 
   @override
   void dispose() {
     _buzzerSubscription?.cancel();
     _questionSubscription?.cancel();
+    _heartbeatTimer?.cancel();
     _focusNode.dispose();
+    AppLogger.i("HEARTBEAT: Timer canceled on dispose");
     super.dispose();
   }
 
@@ -1452,6 +1462,58 @@ class _GameRoomPageState extends State<GameRoomPage> {
         );
       }
     });
+  }
+
+  void _startHeartbeat() {
+    // Don't start if already running
+    if (_heartbeatTimer != null && _heartbeatTimer!.isActive) {
+      AppLogger.i("HEARTBEAT: Timer already running, skipping start");
+      return;
+    }
+
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final roomProvider = Provider.of<RoomProvider>(context, listen: false);
+
+    final currentUser = authProvider.user;
+    final currentRoom = roomProvider.currentRoom;
+
+    if (currentUser == null || currentRoom == null) {
+      AppLogger.w("HEARTBEAT: Cannot start - no user or room available");
+      return;
+    }
+
+    final playerId = currentUser.uid;
+    final roomId = currentRoom.roomId;
+
+    AppLogger.i(
+      "HEARTBEAT: Starting connection pre-warming for player $playerId in room $roomId",
+    );
+
+    // Define a write-only path. No other client will read this.
+    final heartbeatRef = _database
+        .child('rooms')
+        .child(roomId)
+        .child('heartbeats')
+        .child(playerId);
+
+    // Start a periodic timer that fires every 15 seconds
+    _heartbeatTimer = Timer.periodic(Duration(seconds: 15), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        AppLogger.i("HEARTBEAT: Widget unmounted, canceling timer");
+        return;
+      }
+
+      // Write the server timestamp. This single, tiny write
+      // keeps the WebSocket connection "hot" and prevents cold-start latency.
+      heartbeatRef.set(ServerValue.timestamp).then((_) {
+        AppLogger.i("HEARTBEAT: Sent heartbeat for player $playerId");
+      }).catchError((error) {
+        AppLogger.w("HEARTBEAT: Failed to send heartbeat: $error");
+      });
+    });
+
+    AppLogger.i("HEARTBEAT: Timer started - will send heartbeat every 15 seconds");
   }
 
   Future<void> _onBuzzerPressed() async {
