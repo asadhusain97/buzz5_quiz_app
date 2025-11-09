@@ -27,6 +27,7 @@ class _GameRoomPageState extends State<GameRoomPage> {
   bool _hasPlayerBuzzed = false;
   StreamSubscription? _buzzerSubscription;
   StreamSubscription? _questionSubscription;
+  Timer? _heartbeatTimer;
   final DatabaseReference _database = FirebaseDatabase.instance.ref();
   final FocusNode _focusNode = FocusNode();
 
@@ -41,13 +42,22 @@ class _GameRoomPageState extends State<GameRoomPage> {
     _joinedTime = DateTime.now();
     _setupBuzzerListener();
     AppLogger.i("GameRoomPage initialized");
+
+    // Start the heartbeat timer after the first frame when providers are available
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _startHeartbeat();
+      }
+    });
   }
 
   @override
   void dispose() {
     _buzzerSubscription?.cancel();
     _questionSubscription?.cancel();
+    _heartbeatTimer?.cancel();
     _focusNode.dispose();
+    AppLogger.i("HEARTBEAT: Timer canceled on dispose");
     super.dispose();
   }
 
@@ -1275,17 +1285,14 @@ class _GameRoomPageState extends State<GameRoomPage> {
       if (data != null && data is Map) {
         final buzzersMap = Map<String, dynamic>.from(data);
         for (final entry in buzzersMap.entries) {
-          // OPTIMIZATION: Read playerId from the key (path), not from data value
           final playerId = entry.key;
           final buzzerData = Map<String, dynamic>.from(entry.value);
-
-          // OPTIMIZATION: Simplified data structure - only playerName and timestamp in value
           final buzzerEntry = BuzzerEntry(
-            playerId: playerId,
+            playerId: buzzerData['playerId'] ?? playerId,
             playerName: buzzerData['playerName'] ?? 'Unknown',
             timestamp: buzzerData['timestamp'] ?? 0,
             questionNumber: 1, // Default question number
-            position: 0, // Position will be calculated below after sorting
+            position: buzzerData['position'] ?? 0,
           );
           newBuzzerEntries.add(buzzerEntry);
         }
@@ -1403,6 +1410,58 @@ class _GameRoomPageState extends State<GameRoomPage> {
     });
   }
 
+  void _startHeartbeat() {
+    // Don't start if already running
+    if (_heartbeatTimer != null && _heartbeatTimer!.isActive) {
+      AppLogger.i("HEARTBEAT: Timer already running, skipping start");
+      return;
+    }
+
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final roomProvider = Provider.of<RoomProvider>(context, listen: false);
+
+    final currentUser = authProvider.user;
+    final currentRoom = roomProvider.currentRoom;
+
+    if (currentUser == null || currentRoom == null) {
+      AppLogger.w("HEARTBEAT: Cannot start - no user or room available");
+      return;
+    }
+
+    final playerId = currentUser.uid;
+    final roomId = currentRoom.roomId;
+
+    AppLogger.i(
+      "HEARTBEAT: Starting connection pre-warming for player $playerId in room $roomId",
+    );
+
+    // Define a write-only path. No other client will read this.
+    final heartbeatRef = _database
+        .child('rooms')
+        .child(roomId)
+        .child('heartbeats')
+        .child(playerId);
+
+    // Start a periodic timer that fires every 15 seconds
+    _heartbeatTimer = Timer.periodic(Duration(seconds: 15), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        AppLogger.i("HEARTBEAT: Widget unmounted, canceling timer");
+        return;
+      }
+
+      // Write the server timestamp. This single, tiny write
+      // keeps the WebSocket connection "hot" and prevents cold-start latency.
+      heartbeatRef.set(ServerValue.timestamp).then((_) {
+        AppLogger.i("HEARTBEAT: Sent heartbeat for player $playerId");
+      }).catchError((error) {
+        AppLogger.w("HEARTBEAT: Failed to send heartbeat: $error");
+      });
+    });
+
+    AppLogger.i("HEARTBEAT: Timer started - will send heartbeat every 15 seconds");
+  }
+
   Future<void> _onBuzzerPressed() async {
     if (!_isQuestionActive) {
       AppLogger.i("BUZZER FLOW [PLAYER]: Cannot buzz - no question active");
@@ -1424,12 +1483,9 @@ class _GameRoomPageState extends State<GameRoomPage> {
       return;
     }
 
-    // OPTIMIZATION 3: Optimistic UI update - set flag immediately for instant feedback
-    setState(() {
-      _hasPlayerBuzzed = true;
-    });
-
     try {
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final position = _buzzerEntries.length + 1;
       final roomPlayer = roomProvider.roomPlayers.firstWhere(
         (p) => p.playerId == currentUser.uid,
         orElse:
@@ -1442,7 +1498,7 @@ class _GameRoomPageState extends State<GameRoomPage> {
       final playerName = roomPlayer.name;
 
       AppLogger.i(
-        "BUZZER FLOW [PLAYER]: Attempting to record buzz for $playerName (using server timestamp)",
+        "BUZZER FLOW [PLAYER]: Attempting to record buzz for $playerName (position: $position, timestamp: $timestamp)",
       );
       AppLogger.i(
         "BUZZER FLOW [PLAYER]: Player auth.uid: ${currentUser.uid}",
@@ -1468,21 +1524,21 @@ class _GameRoomPageState extends State<GameRoomPage> {
         AppLogger.i("BUZZER FLOW [PLAYER]: Player exists in Firebase players list");
       }
 
-      // OPTIMIZATION 1 & 2: Save optimized payload with server-side timestamp
-      // Removed: playerId (redundant - already in key), position (calculated by host)
-      // Changed: timestamp now uses ServerValue.timestamp instead of client time
+      // Save to Firebase under currentQuestionBuzzes
       await _database
           .child('rooms')
           .child(currentRoom.roomId)
           .child('currentQuestionBuzzes')
           .child(currentUser.uid)
           .set({
+            'playerId': currentUser.uid,
             'playerName': playerName,
-            'timestamp': ServerValue.timestamp,
+            'timestamp': timestamp,
+            'position': position,
           });
 
       AppLogger.i(
-        "BUZZER FLOW [PLAYER]: SUCCESS! Buzzer press recorded for $playerName with server timestamp",
+        "BUZZER FLOW [PLAYER]: SUCCESS! Buzzer press recorded for $playerName at position #$position",
       );
 
       // Update player's buzz count
@@ -1504,11 +1560,6 @@ class _GameRoomPageState extends State<GameRoomPage> {
         );
       }
     } catch (e, stackTrace) {
-      // Revert optimistic update on error
-      setState(() {
-        _hasPlayerBuzzed = false;
-      });
-
       AppLogger.e("BUZZER FLOW [PLAYER]: ERROR recording buzzer press: $e");
       AppLogger.e("BUZZER FLOW [PLAYER]: Stack trace: $stackTrace");
 
