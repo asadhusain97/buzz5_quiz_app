@@ -1308,33 +1308,72 @@ class _GameRoomPageState extends State<GameRoomPage> {
         );
       }
 
-      // Sort by timestamp (fastest first)
-      newBuzzerEntries.sort((a, b) => a.timestamp.compareTo(b.timestamp));
+      // TIMESTAMP VALIDATION: Filter out buzzes from previous questions
+      // Only include buzzes that occurred AFTER the current question started
+      final validBuzzerEntries = <BuzzerEntry>[];
+      int rejectedOldBuzzesCount = 0;
+
+      for (final buzz in newBuzzerEntries) {
+        // Only include buzzes from the CURRENT question
+        // A buzz is valid if: buzz.timestamp >= currentQuestion.startTime
+        if (_questionStartTime == null) {
+          // No question active, reject all buzzes
+          rejectedOldBuzzesCount++;
+          AppLogger.w(
+            "BUZZER FLOW [PLAYER]: Rejecting buzz from ${buzz.playerName} - no active question",
+          );
+          continue;
+        }
+
+        final isFromCurrentQuestion = buzz.timestamp >= _questionStartTime!;
+
+        if (isFromCurrentQuestion) {
+          validBuzzerEntries.add(buzz);
+        } else {
+          // This buzz is from a PREVIOUS question - ignore it
+          rejectedOldBuzzesCount++;
+          final timeDiff = (_questionStartTime! - buzz.timestamp) / 1000.0;
+          AppLogger.i(
+            "BUZZER FLOW [PLAYER]: ✗ Rejecting OLD buzz from ${buzz.playerName} "
+            "(buzz time: ${buzz.timestamp}, question start: $_questionStartTime, "
+            "diff: ${timeDiff.toStringAsFixed(3)}s before question)",
+          );
+        }
+      }
+
+      if (rejectedOldBuzzesCount > 0) {
+        AppLogger.i(
+          "BUZZER FLOW [PLAYER]: ✓ RACE CONDITION PREVENTED! Filtered out $rejectedOldBuzzesCount old buzz(es) from previous question(s)",
+        );
+      }
+
+      // Sort valid buzzes by timestamp (fastest first)
+      validBuzzerEntries.sort((a, b) => a.timestamp.compareTo(b.timestamp));
 
       // Update positions based on sorted order
-      for (int i = 0; i < newBuzzerEntries.length; i++) {
-        newBuzzerEntries[i] = BuzzerEntry(
-          playerId: newBuzzerEntries[i].playerId,
-          playerName: newBuzzerEntries[i].playerName,
-          timestamp: newBuzzerEntries[i].timestamp,
-          questionNumber: newBuzzerEntries[i].questionNumber,
+      for (int i = 0; i < validBuzzerEntries.length; i++) {
+        validBuzzerEntries[i] = BuzzerEntry(
+          playerId: validBuzzerEntries[i].playerId,
+          playerName: validBuzzerEntries[i].playerName,
+          timestamp: validBuzzerEntries[i].timestamp,
+          questionNumber: validBuzzerEntries[i].questionNumber,
           position: i + 1,
         );
       }
 
-      // Check if current player has buzzed
+      // Check if current player has buzzed (using VALID buzzes only)
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final currentUser = authProvider.user;
       final hasPlayerBuzzed =
           currentUser != null &&
-          newBuzzerEntries.any((entry) => entry.playerId == currentUser.uid);
+          validBuzzerEntries.any((entry) => entry.playerId == currentUser.uid);
 
       // Detect if buzzer state was reset (went from having entries to empty)
       final oldEntriesCount = _buzzerEntries.length;
-      final wasReset = oldEntriesCount > 0 && newBuzzerEntries.isEmpty;
+      final wasReset = oldEntriesCount > 0 && validBuzzerEntries.isEmpty;
 
       setState(() {
-        _buzzerEntries = newBuzzerEntries;
+        _buzzerEntries = validBuzzerEntries;
         _hasPlayerBuzzed = hasPlayerBuzzed;
       });
 
@@ -1342,13 +1381,13 @@ class _GameRoomPageState extends State<GameRoomPage> {
         AppLogger.i(
           "BUZZER FLOW [PLAYER]: ✓ Buzzer state RESET! Cleared $oldEntriesCount previous entries. Ready for new question.",
         );
-      } else if (newBuzzerEntries.isNotEmpty) {
-        final topBuzzers = newBuzzerEntries
+      } else if (validBuzzerEntries.isNotEmpty) {
+        final topBuzzers = validBuzzerEntries
             .take(3)
             .map((e) => "${e.playerName} (#${e.position})")
             .join(", ");
         AppLogger.i(
-          "BUZZER FLOW [PLAYER]: Buzzer rankings updated. Total: ${newBuzzerEntries.length}. Top 3: $topBuzzers",
+          "BUZZER FLOW [PLAYER]: Buzzer rankings updated. Total: ${validBuzzerEntries.length}. Top 3: $topBuzzers",
         );
       }
     });
