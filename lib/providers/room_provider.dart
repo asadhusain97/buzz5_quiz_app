@@ -15,7 +15,6 @@ class RoomProvider with ChangeNotifier {
   String? _error;
   List<RoomPlayer> _roomPlayers = [];
   StreamSubscription? _playersSubscription;
-  StreamSubscription? _roomInfoSubscription;
   PlayerProvider? _playerProvider;
   app_auth.AuthProvider? _authProvider;
 
@@ -173,8 +172,7 @@ class RoomProvider with ChangeNotifier {
         AppLogger.i("Skipping presence tracking for guest user");
       }
 
-      // Start listening for room info and player changes
-      _startListeningToRoomInfo();
+      // Start listening for player changes
       _startListeningToPlayers();
 
       return true;
@@ -289,8 +287,7 @@ class RoomProvider with ChangeNotifier {
         AppLogger.i("Skipping presence tracking for guest user");
       }
 
-      // Start listening for room info and player changes
-      _startListeningToRoomInfo();
+      // Start listening for player changes
       _startListeningToPlayers();
 
       notifyListeners();
@@ -398,42 +395,6 @@ class RoomProvider with ChangeNotifier {
     }
   }
 
-  // Start listening to real-time room info changes (status, etc.)
-  void _startListeningToRoomInfo() {
-    if (_currentRoom == null) return;
-
-    // Cancel any existing subscription
-    _roomInfoSubscription?.cancel();
-
-    final roomInfoRef = _database
-        .child('rooms')
-        .child(_currentRoom!.roomId)
-        .child('roomInfo');
-
-    AppLogger.i(
-      "Starting to listen for room info changes in room: ${_currentRoom!.roomId}",
-    );
-
-    _roomInfoSubscription = roomInfoRef.onValue.listen((event) {
-      final data = event.snapshot.value;
-
-      if (data != null && data is Map) {
-        final roomInfoData = Map<String, dynamic>.from(data);
-        final updatedRoom = Room.fromMap(roomInfoData, _currentRoom!.roomId);
-
-        // Check if status has changed
-        if (_currentRoom!.status != updatedRoom.status) {
-          AppLogger.i(
-            "Room status changed: ${_currentRoom!.status.name} -> ${updatedRoom.status.name}",
-          );
-        }
-
-        _currentRoom = updatedRoom;
-        notifyListeners();
-      }
-    });
-  }
-
   // Start listening to real-time player changes
   void _startListeningToPlayers() {
     if (_currentRoom == null) return;
@@ -483,13 +444,6 @@ class RoomProvider with ChangeNotifier {
     });
   }
 
-  // Stop listening to room info changes
-  void _stopListeningToRoomInfo() {
-    _roomInfoSubscription?.cancel();
-    _roomInfoSubscription = null;
-    AppLogger.i("Stopped listening for room info changes");
-  }
-
   // Stop listening to player changes
   void _stopListeningToPlayers() {
     _playersSubscription?.cancel();
@@ -504,7 +458,6 @@ class RoomProvider with ChangeNotifier {
       await updateRoomStatus(RoomStatus.ended);
       AppLogger.i("Room ended: ${_currentRoom!.roomId}");
     }
-    _stopListeningToRoomInfo();
     _stopListeningToPlayers();
     _currentRoom = null;
     notifyListeners();
@@ -543,7 +496,6 @@ class RoomProvider with ChangeNotifier {
 
   // Clear current room (for internal use)
   void clearRoom() {
-    _stopListeningToRoomInfo();
     _stopListeningToPlayers();
     _currentRoom = null;
     AppLogger.i("Cleared current room");
@@ -552,7 +504,6 @@ class RoomProvider with ChangeNotifier {
 
   // Reset all room data
   void reset() {
-    _stopListeningToRoomInfo();
     _stopListeningToPlayers();
     _currentRoom = null;
     _hostRoom = true;
@@ -580,7 +531,6 @@ class RoomProvider with ChangeNotifier {
 
   @override
   void dispose() {
-    _stopListeningToRoomInfo();
     _stopListeningToPlayers();
     super.dispose();
   }
