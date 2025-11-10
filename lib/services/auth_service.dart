@@ -75,11 +75,19 @@ class AuthService {
         // Update display name if provided
         if (displayName != null && displayName.isNotEmpty) {
           await result.user!.updateDisplayName(displayName);
-        }
+          // Reload user to ensure display name is synced with Firebase Auth
+          await result.user!.reload();
+          // Get the refreshed user object
+          final refreshedUser = _auth.currentUser!;
 
-        // Create user document in Firestore
-        await _createUserDocument(result.user!, displayName);
-        AppLogger.i('User registered: ${result.user!.email}');
+          // Create user document in Firestore with refreshed user
+          await _createUserDocument(refreshedUser, displayName);
+          AppLogger.i('User registered: ${refreshedUser.email}');
+        } else {
+          // Create user document in Firestore without display name
+          await _createUserDocument(result.user!, displayName);
+          AppLogger.i('User registered: ${result.user!.email}');
+        }
       }
 
       return result;
