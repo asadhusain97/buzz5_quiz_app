@@ -1,8 +1,10 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:buzz5_quiz_app/models/app_user.dart';
 import 'package:buzz5_quiz_app/services/auth_service.dart';
+import 'package:buzz5_quiz_app/services/connectivity_service.dart';
 import 'package:buzz5_quiz_app/config/logger.dart';
 
 class AuthProvider extends ChangeNotifier {
@@ -43,7 +45,18 @@ class AuthProvider extends ChangeNotifier {
   // Load user data from Firestore
   Future<void> _loadUserFromFirestore(User firebaseUser) async {
     try {
-      final userDoc = await _authService.getUserDocument(firebaseUser.uid);
+      // ADDED: 8-second timeout to prevent hanging on Firestore read
+      final userDoc = await _authService
+          .getUserDocument(firebaseUser.uid)
+          .timeout(
+            const Duration(seconds: 8),
+            onTimeout: () {
+              AppLogger.w(
+                'getUserDocument timed out, using Firebase User fallback',
+              );
+              return null; // Return null to trigger fallback
+            },
+          );
 
       if (userDoc != null && userDoc.exists) {
         _user = AppUser.fromFirestore(userDoc);
@@ -63,9 +76,33 @@ class AuthProvider extends ChangeNotifier {
   }
 
   // Sign in with email and password
+  // With connectivity pre-check and watchdog timer
   Future<bool> signIn({required String email, required String password}) async {
+    // Pre-check network connectivity before attempting login
+    final isConnected = await ConnectivityService.isConnected();
+    if (!isConnected) {
+      _setError(
+        'No internet connection. Please check your network and try again.',
+      );
+      return false;
+    }
+
     _setLoading(true);
     _clearError();
+
+    // If login takes longer than 10 seconds, force recovery of UI
+    bool timedOut = false;
+    final watchdogTimer = Timer(const Duration(seconds: 10), () {
+      if (_isLoading) {
+        AppLogger.w('Login watchdog timer fired - forcing UI recovery');
+        timedOut = true;
+        _isLoading = false;
+        _setError(
+          'Login timed out. Please check your connection and try again.',
+        );
+        notifyListeners();
+      }
+    });
 
     try {
       final result = await _authService.signInWithEmailAndPassword(
@@ -73,21 +110,40 @@ class AuthProvider extends ChangeNotifier {
         password: password,
       );
 
-      if (result?.user != null) {
-        // User will be loaded automatically via auth state listener
-        return true;
-      }
+      // Only update UI if watchdog hasn't already fired
+      if (!timedOut) {
+        if (result?.user != null) {
+          // User will be loaded automatically via auth state listener
+          AppLogger.i('Sign in successful, waiting for auth state change');
+          return true;
+        }
 
-      _setError('Sign in failed');
+        _setError('Sign in failed');
+      } else {
+        // Watchdog fired but operation completed - log for debugging
+        AppLogger.i(
+          'Sign in completed after timeout - user may be logged in via auth listener',
+        );
+      }
       return false;
     } on FirebaseAuthException catch (e) {
-      _setError(_getAuthErrorMessage(e));
+      // Only set error if watchdog hasn't already set one
+      if (!timedOut) {
+        _setError(_getAuthErrorMessage(e));
+      }
       return false;
     } catch (e) {
-      _setError('An unexpected error occurred during sign in');
+      if (!timedOut) {
+        _setError('An unexpected error occurred during sign in');
+      }
+      AppLogger.e('Sign in error: $e');
       return false;
     } finally {
-      _setLoading(false);
+      // Cancel watchdog timer and clear loading if not already cleared
+      watchdogTimer.cancel();
+      if (!timedOut) {
+        _setLoading(false);
+      }
     }
   }
 
