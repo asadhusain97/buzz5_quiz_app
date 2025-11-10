@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:buzz5_quiz_app/providers/auth_provider.dart';
 import 'package:buzz5_quiz_app/widgets/base_page.dart';
 import 'package:buzz5_quiz_app/widgets/custom_app_bar.dart';
+import 'package:buzz5_quiz_app/config/colors.dart';
 import 'package:buzz5_quiz_app/config/logger.dart';
 
 class ForgotPasswordPage extends StatefulWidget {
@@ -12,14 +13,37 @@ class ForgotPasswordPage extends StatefulWidget {
   State<ForgotPasswordPage> createState() => _ForgotPasswordPageState();
 }
 
-class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
+class _ForgotPasswordPageState extends State<ForgotPasswordPage>
+    with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   bool _emailSent = false;
 
+  late AnimationController _animationController;
+  late Animation<double> _scaleAnimation;
+  late Animation<double> _fadeAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+
+    _scaleAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.elasticOut),
+    );
+
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeIn),
+    );
+  }
+
   @override
   void dispose() {
     _emailController.dispose();
+    _animationController.dispose();
     super.dispose();
   }
 
@@ -36,7 +60,11 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
       setState(() {
         _emailSent = true;
       });
-      AppLogger.i('Password reset email sent to: ${_emailController.text.trim()}');
+      _animationController.reset();
+      _animationController.forward();
+      AppLogger.i(
+        'Password reset email sent to: ${_emailController.text.trim()}',
+      );
     }
   }
 
@@ -67,13 +95,50 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   // Header
-                  Icon(
-                    _emailSent ? Icons.check_circle : Icons.lock_reset,
-                    size: 64,
-                    color: _emailSent 
-                        ? Theme.of(context).colorScheme.primary
-                        : Theme.of(context).colorScheme.secondary,
-                  ),
+                  _emailSent
+                      ? ScaleTransition(
+                        scale: _scaleAnimation,
+                        child: FadeTransition(
+                          opacity: _fadeAnimation,
+                          child: Container(
+                            padding: const EdgeInsets.all(20),
+                            decoration: BoxDecoration(
+                              color: ColorConstants.successColor.withValues(
+                                alpha: 0.1,
+                              ),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              Icons.mark_email_read_rounded,
+                              size: 64,
+                              color: ColorConstants.successColor,
+                            ),
+                          ),
+                        ),
+                      )
+                      : Container(
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              ColorConstants.primaryColor.withValues(
+                                alpha: 0.1,
+                              ),
+                              ColorConstants.secondaryColor.withValues(
+                                alpha: 0.1,
+                              ),
+                            ],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.lock_reset_rounded,
+                          size: 64,
+                          color: ColorConstants.primaryColor,
+                        ),
+                      ),
                   const SizedBox(height: 24),
 
                   Text(
@@ -85,15 +150,65 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                   ),
                   const SizedBox(height: 16),
 
-                  Text(
-                    _emailSent 
-                        ? 'We\'ve sent a password reset link to your email address. Check your inbox and follow the instructions to reset your password.'
-                        : 'Enter your email address and we\'ll send you a link to reset your password.',
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                  ),
+                  _emailSent
+                      ? Column(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 10,
+                            ),
+                            decoration: BoxDecoration(
+                              color: ColorConstants.primaryColor.withValues(
+                                alpha: 0.1,
+                              ),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.email_outlined,
+                                  size: 16,
+                                  color: ColorConstants.primaryColor,
+                                ),
+                                const SizedBox(width: 8),
+                                Flexible(
+                                  child: Text(
+                                    _emailController.text.trim(),
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                      color: ColorConstants.primaryColor,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Check your inbox (or spam folder) and click the link to reset your password. The link will expire in 1 hour.',
+                            textAlign: TextAlign.center,
+                            style: Theme.of(
+                              context,
+                            ).textTheme.bodyMedium?.copyWith(
+                              color:
+                                  Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      )
+                      : Text(
+                        'Enter your email address and we\'ll send you a link to reset your password.',
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
                   const SizedBox(height: 32),
 
                   if (!_emailSent) ...[
@@ -115,8 +230,9 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                               if (value == null || value.trim().isEmpty) {
                                 return 'Please enter your email address';
                               }
-                              if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
-                                  .hasMatch(value.trim())) {
+                              if (!RegExp(
+                                r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                              ).hasMatch(value.trim())) {
                                 return 'Please enter a valid email address';
                               }
                               return null;
@@ -133,14 +249,20 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                                   margin: const EdgeInsets.only(bottom: 16),
                                   padding: const EdgeInsets.all(12),
                                   decoration: BoxDecoration(
-                                    color: Theme.of(context).colorScheme.errorContainer,
+                                    color:
+                                        Theme.of(
+                                          context,
+                                        ).colorScheme.errorContainer,
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                   child: Row(
                                     children: [
                                       Icon(
                                         Icons.error_outline,
-                                        color: Theme.of(context).colorScheme.onErrorContainer,
+                                        color:
+                                            Theme.of(
+                                              context,
+                                            ).colorScheme.onErrorContainer,
                                         size: 20,
                                       ),
                                       const SizedBox(width: 8),
@@ -148,7 +270,10 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                                         child: Text(
                                           authProvider.errorMessage!,
                                           style: TextStyle(
-                                            color: Theme.of(context).colorScheme.onErrorContainer,
+                                            color:
+                                                Theme.of(
+                                                  context,
+                                                ).colorScheme.onErrorContainer,
                                             fontSize: 14,
                                           ),
                                         ),
@@ -165,28 +290,34 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                           Consumer<AuthProvider>(
                             builder: (context, authProvider, child) {
                               return ElevatedButton(
-                                onPressed: authProvider.isLoading ? null : _handleSubmit,
+                                onPressed:
+                                    authProvider.isLoading
+                                        ? null
+                                        : _handleSubmit,
                                 style: ElevatedButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(vertical: 16),
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 16,
+                                  ),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                 ),
-                                child: authProvider.isLoading
-                                    ? const SizedBox(
-                                        height: 20,
-                                        width: 20,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
+                                child:
+                                    authProvider.isLoading
+                                        ? const SizedBox(
+                                          height: 20,
+                                          width: 20,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                          ),
+                                        )
+                                        : const Text(
+                                          'Send Reset Email',
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                          ),
                                         ),
-                                      )
-                                    : const Text(
-                                        'Send Reset Email',
-                                        style: TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
                               );
                             },
                           ),
@@ -195,35 +326,46 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                     ),
                   ] else ...[
                     // Success state buttons
-                    ElevatedButton(
+                    ElevatedButton.icon(
                       onPressed: () => Navigator.of(context).pop(),
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      child: const Text(
+                      icon: const Icon(Icons.arrow_back_rounded),
+                      label: const Text(
                         'Back to Login',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
                     ),
                     const SizedBox(height: 16),
-                    TextButton(
+                    OutlinedButton.icon(
                       onPressed: () {
                         setState(() {
                           _emailSent = false;
                           _emailController.clear();
                         });
                         // Clear any error messages
-                        Provider.of<AuthProvider>(context, listen: false).clearError();
+                        Provider.of<AuthProvider>(
+                          context,
+                          listen: false,
+                        ).clearError();
                       },
-                      child: const Text(
+                      icon: const Icon(Icons.refresh_rounded, size: 18),
+                      label: const Text(
                         'Send to different email',
                         style: TextStyle(fontSize: 14),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
                     ),
                   ],
