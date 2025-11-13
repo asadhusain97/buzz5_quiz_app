@@ -89,7 +89,7 @@ class _DevGameRoomWrapper extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // TODO: Update with actual required parameters for GameRoomPage
+    // Update with actual required parameters for GameRoomPage when needed
     // For now, fall back to home page
     if (DevConfig.verboseLogging) {
       AppLogger.w(
@@ -108,7 +108,7 @@ class _DevQuestionBoardWrapper extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // TODO: Update with actual required parameters for QuestionBoardPage
+    // Update with actual required parameters for QuestionBoardPage when needed
     if (DevConfig.verboseLogging) {
       AppLogger.w(
         '⚠️  QuestionBoardPage may require parameters. Showing HomePage instead.',
@@ -126,7 +126,7 @@ class _DevQuestionPageWrapper extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // TODO: Update with actual required parameters for QuestionPage
+    // Update with actual required parameters for QuestionPage when needed
     if (DevConfig.verboseLogging) {
       AppLogger.w(
         '⚠️  QuestionPage requires parameters. Showing HomePage instead.',

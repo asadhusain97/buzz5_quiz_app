@@ -5,7 +5,7 @@ enum SetStatus { draft, complete }
 
 enum DifficultyLevel { easy, medium, hard }
 
-enum QuestionStatus { draft, published }
+enum QuestionStatus { draft, complete }
 
 enum PredefinedTags {
   architecture,
@@ -93,7 +93,8 @@ class SetModel {
 
     // Additionally, every question within the set must be 'published'.
     for (final question in questions) {
-      if (question.status != QuestionStatus.published) {
+      // ignore: unrelated_type_equality_checks
+      if (question.status != QuestionStatus.complete) {
         return SetStatus.draft;
       }
     }
