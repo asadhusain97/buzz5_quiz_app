@@ -1,6 +1,5 @@
+import 'package:buzz5_quiz_app/models/all_enums.dart';
 import 'package:buzz5_quiz_app/models/set_model.dart';
-
-enum BoardStatus { draft, complete }
 
 /// A class representing a Board, which is a collection of Sets.
 class BoardModel {

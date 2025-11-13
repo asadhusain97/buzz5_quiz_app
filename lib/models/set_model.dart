@@ -1,45 +1,5 @@
-import 'package:buzz5_quiz_app/models/question_model.dart';
-
-/// Enums for consistent data
-enum SetStatus { draft, complete }
-
-enum DifficultyLevel { easy, medium, hard }
-
-enum QuestionStatus { draft, complete }
-
-enum PredefinedTags {
-  architecture,
-  arts,
-  astronomy,
-  biology,
-  business,
-  civics,
-  words,
-  entertainment,
-  fashion,
-  foodAndDrinks,
-  general,
-  geography,
-  history,
-  india,
-  literature,
-  logos,
-  maths,
-  movies,
-  mythology,
-  other,
-  personal,
-  politics,
-  popCulture,
-  science,
-  songs,
-  sports,
-  technology,
-  us,
-  videoGames,
-  wordplay,
-  world,
-}
+import 'package:buzz5_quiz_app/models/all_enums.dart';
+import 'package:buzz5_quiz_app/models/question_model.dart' hide QuestionStatus;
 
 /// A class representing a Set of questions.
 class SetModel {

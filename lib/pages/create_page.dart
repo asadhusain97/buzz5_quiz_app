@@ -1,8 +1,8 @@
+import 'package:buzz5_quiz_app/models/all_enums.dart';
 import 'package:flutter/material.dart';
 import 'package:buzz5_quiz_app/config/colors.dart';
 import 'package:buzz5_quiz_app/config/text_styles.dart';
 import 'package:buzz5_quiz_app/config/logger.dart';
-import 'package:buzz5_quiz_app/models/set_model.dart' as model;
 import 'package:buzz5_quiz_app/models/board_model.dart';
 import 'package:buzz5_quiz_app/widgets/app_background.dart';
 
@@ -13,7 +13,7 @@ class QuizSet {
   final String description;
   final String category;
   final List<String> attachedBoardNames;
-  final model.SetStatus status;
+  final SetStatus status;
   final String authorName;
   final bool hasMedia;
   final List<String> tags;
@@ -50,7 +50,7 @@ class _CreatePageState extends State<CreatePage>
   final Map<String, dynamic> _activeFilters = {};
 
   // Filter dropdown states
-  model.SetStatus? _statusFilter;
+  SetStatus? _statusFilter;
   final List<String> _selectedTags = [];
   String _nameSearch = '';
   String _creatorSearch = '';
@@ -86,7 +86,7 @@ class _CreatePageState extends State<CreatePage>
           'A comprehensive collection of questions covering major historical events from ancient civilizations to modern times.',
       category: 'History',
       attachedBoardNames: ['General Knowledge', 'Education'],
-      status: model.SetStatus.complete,
+      status: SetStatus.complete,
       authorName: 'John Doe',
       hasMedia: true,
       tags: ['history', 'trivia', 'education'],
@@ -99,7 +99,7 @@ class _CreatePageState extends State<CreatePage>
           'Questions about scientific discoveries, inventions, and technological advancements.',
       category: 'Science',
       attachedBoardNames: ['STEM', 'Tech Quiz', 'Innovation'],
-      status: model.SetStatus.complete,
+      status: SetStatus.complete,
       authorName: 'Jane Smith',
       hasMedia: false,
       tags: ['science', 'tech'],
@@ -111,7 +111,7 @@ class _CreatePageState extends State<CreatePage>
       description: 'Latest trends, movies, music, and entertainment from 2024.',
       category: 'Entertainment',
       attachedBoardNames: ['Fun', 'Entertainment'],
-      status: model.SetStatus.complete,
+      status: SetStatus.complete,
       authorName: 'Mike Johnson',
       hasMedia: true,
       tags: ['pop culture', 'entertainment'],
@@ -123,7 +123,7 @@ class _CreatePageState extends State<CreatePage>
       description: 'Basic algebra and geometry questions for students.',
       category: 'Mathematics',
       attachedBoardNames: ['Education'],
-      status: model.SetStatus.draft,
+      status: SetStatus.draft,
       authorName: 'Sarah Williams',
       hasMedia: false,
       tags: ['math', 'education'],
@@ -136,7 +136,7 @@ class _CreatePageState extends State<CreatePage>
           'Test your knowledge of countries, capitals, and landmarks around the world.',
       category: 'Geography',
       attachedBoardNames: [],
-      status: model.SetStatus.draft,
+      status: SetStatus.draft,
       authorName: 'Tom Brown',
       hasMedia: true,
       tags: ['geography', 'travel'],
@@ -257,7 +257,7 @@ class _CreatePageState extends State<CreatePage>
     // Apply filters based on _activeFilters
     if (_statusFilter != null) {
       BoardStatus boardStatus =
-          _statusFilter == model.SetStatus.complete
+          _statusFilter == SetStatus.complete
               ? BoardStatus.complete
               : BoardStatus.draft;
       filtered =
@@ -303,11 +303,11 @@ class _CreatePageState extends State<CreatePage>
     showDialog(
       context: context,
       builder: (context) {
-        model.SetStatus? selectedStatus = _statusFilter;
+        SetStatus? selectedStatus = _statusFilter;
 
         return StatefulBuilder(
           builder: (context, setDialogState) {
-            Widget buildRadioOption(String label, model.SetStatus? value) {
+            Widget buildRadioOption(String label, SetStatus? value) {
               final isSelected = selectedStatus == value;
               return InkWell(
                 onTap: () {
@@ -370,8 +370,8 @@ class _CreatePageState extends State<CreatePage>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   buildRadioOption('All', null),
-                  buildRadioOption('Complete', model.SetStatus.complete),
-                  buildRadioOption('Draft', model.SetStatus.draft),
+                  buildRadioOption('Complete', SetStatus.complete),
+                  buildRadioOption('Draft', SetStatus.draft),
                 ],
               ),
               actions: [
@@ -387,7 +387,7 @@ class _CreatePageState extends State<CreatePage>
                         _activeFilters.remove('Status');
                       } else {
                         _activeFilters['Status'] =
-                            selectedStatus == model.SetStatus.complete
+                            selectedStatus == SetStatus.complete
                                 ? 'Complete'
                                 : 'Draft';
                       }
@@ -1578,24 +1578,24 @@ class BoardListItemTile extends StatelessWidget {
     required this.onSelectionChanged,
   });
 
-  String _getDifficultyLabel(model.DifficultyLevel difficulty) {
+  String _getDifficultyLabel(DifficultyLevel difficulty) {
     switch (difficulty) {
-      case model.DifficultyLevel.easy:
+      case DifficultyLevel.easy:
         return 'Easy';
-      case model.DifficultyLevel.medium:
+      case DifficultyLevel.medium:
         return 'Medium';
-      case model.DifficultyLevel.hard:
+      case DifficultyLevel.hard:
         return 'Hard';
     }
   }
 
-  Color _getDifficultyColor(model.DifficultyLevel difficulty) {
+  Color _getDifficultyColor(DifficultyLevel difficulty) {
     switch (difficulty) {
-      case model.DifficultyLevel.easy:
+      case DifficultyLevel.easy:
         return Colors.green;
-      case model.DifficultyLevel.medium:
+      case DifficultyLevel.medium:
         return Colors.orange;
-      case model.DifficultyLevel.hard:
+      case DifficultyLevel.hard:
         return Colors.red;
     }
   }
