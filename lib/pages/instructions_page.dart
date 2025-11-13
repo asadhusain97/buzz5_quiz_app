@@ -1,3 +1,5 @@
+// ignore_for_file: deprecated_member_use
+
 import 'package:buzz5_quiz_app/config/colors.dart';
 import 'package:buzz5_quiz_app/pages/question_board_page.dart';
 import 'package:buzz5_quiz_app/widgets/custom_app_bar.dart';
