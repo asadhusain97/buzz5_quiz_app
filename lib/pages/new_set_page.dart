@@ -352,31 +352,29 @@ class _NewSetPageState extends State<NewSetPage>
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           // Header Row with Title and Action Buttons
-                          SingleChildScrollView(
-                            scrollDirection: Axis.horizontal,
-                            child: Row(
-                              children: [
-                                Text(
-                                  'Create a Set',
-                                  style: AppTextStyles.titleBig.copyWith(
-                                    color: ColorConstants.lightTextColor,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 24,
-                                  ),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'Create a Set',
+                                style: AppTextStyles.titleBig.copyWith(
+                                  color: ColorConstants.lightTextColor,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 24,
                                 ),
-                                SizedBox(width: 16),
-                                // OPTIMIZED: Buttons only rebuild when name/description change
-                                _ActionButtons(
-                                  nameNotifier: _nameNotifier,
-                                  descriptionNotifier: _descriptionNotifier,
-                                  questionControllers: _questionControllers,
-                                  questionMedia: _questionMedia,
-                                  questionMediaUrls: _questionMediaUrls,
-                                  onSaveDraft: _saveAsDraft,
-                                  onSave: _save,
-                                ),
-                              ],
-                            ),
+                              ),
+                              SizedBox(width: 16),
+                              // OPTIMIZED: Buttons only rebuild when name/description change
+                              _ActionButtons(
+                                nameNotifier: _nameNotifier,
+                                descriptionNotifier: _descriptionNotifier,
+                                questionControllers: _questionControllers,
+                                questionMedia: _questionMedia,
+                                questionMediaUrls: _questionMediaUrls,
+                                onSaveDraft: _saveAsDraft,
+                                onSave: _save,
+                              ),
+                            ],
                           ),
                           SizedBox(height: 24),
 
@@ -605,7 +603,7 @@ class _NewSetPageState extends State<NewSetPage>
                                     ],
                                   ),
 
-                                  SizedBox(width: 24),
+                                  SizedBox(width: 18),
 
                                   // Difficulty on right (smaller)
                                   Column(
@@ -628,6 +626,8 @@ class _NewSetPageState extends State<NewSetPage>
                                         child: Row(
                                           mainAxisAlignment:
                                               MainAxisAlignment.start,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.center,
                                           children: [
                                             _buildDifficultyChip(
                                               'Easy',
@@ -842,7 +842,8 @@ class _NewSetPageState extends State<NewSetPage>
       },
       borderRadius: BorderRadius.circular(6),
       child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        alignment: Alignment.center,
+        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 5),
         decoration: BoxDecoration(
           color:
               isSelected ? color.withValues(alpha: 0.15) : Colors.transparent,
