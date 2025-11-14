@@ -13,6 +13,7 @@ import 'package:buzz5_quiz_app/pages/joingame_page.dart';
 import 'package:buzz5_quiz_app/pages/instructions_page.dart';
 import 'package:buzz5_quiz_app/pages/final_page.dart';
 import 'package:buzz5_quiz_app/pages/gsheet_check.dart';
+import 'package:buzz5_quiz_app/pages/new_set_page.dart';
 
 /// Development-aware AuthGate
 ///
@@ -74,6 +75,8 @@ class DevAuthGate extends StatelessWidget {
         return const FinalPage();
       case 'gsheet':
         return const GSheetCheckPage();
+      case 'new_set':
+        return const NewSetPage();
       default:
         // Fallback to home page if invalid page name
         return const HomePage();

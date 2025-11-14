@@ -23,7 +23,7 @@ class DevConfig {
   /// Which page to navigate to on startup (when bypassAuth is true)
   /// Options: 'home', 'profile', 'create', 'marketplace', 'joingame',
   ///          'gameroom', 'instructions', 'questionboard', 'question',
-  ///          'final', 'gsheet'
+  ///          'final', 'gsheet', 'new_set'
   /// - null: Go to home page
   static const String? testPage = null; // Change to 'profile', 'create', etc.
 

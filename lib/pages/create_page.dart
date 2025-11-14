@@ -5,6 +5,7 @@ import 'package:buzz5_quiz_app/config/text_styles.dart';
 import 'package:buzz5_quiz_app/config/logger.dart';
 import 'package:buzz5_quiz_app/models/board_model.dart';
 import 'package:buzz5_quiz_app/widgets/app_background.dart';
+import 'package:buzz5_quiz_app/pages/new_set_page.dart';
 
 // Simple Set class for UI mock data
 class QuizSet {
@@ -620,7 +621,7 @@ class _CreatePageState extends State<CreatePage>
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Question sets',
+                                'Your Sets and Boards',
                                 style: Theme.of(
                                   context,
                                 ).textTheme.headlineMedium?.copyWith(
@@ -634,7 +635,7 @@ class _CreatePageState extends State<CreatePage>
                               ),
                               SizedBox(height: 8),
                               Text(
-                                'Create, manage and organize your quiz question sets',
+                                'Create, edit and organize your quiz questions in sets and boards.',
                                 style: Theme.of(context).textTheme.bodyMedium
                                     ?.copyWith(color: ColorConstants.hintGrey),
                               ),
@@ -691,7 +692,7 @@ class _CreatePageState extends State<CreatePage>
                                     builder:
                                         (context) =>
                                             _isSetView
-                                                ? CreateNewSetPage()
+                                                ? NewSetPage()
                                                 : CreateNewBoardPage(),
                                   ),
                                 );
@@ -1489,29 +1490,6 @@ class SetListItemTile extends StatelessWidget {
                 },
               ),
             ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// Placeholder page for Create New Set
-class CreateNewSetPage extends StatelessWidget {
-  const CreateNewSetPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Create New Set', style: AppTextStyles.titleBig),
-        backgroundColor: ColorConstants.primaryContainerColor,
-      ),
-      body: Center(
-        child: Text(
-          'Create New Set Page - Coming Soon',
-          style: AppTextStyles.titleMedium.copyWith(
-            color: ColorConstants.hintGrey,
           ),
         ),
       ),
