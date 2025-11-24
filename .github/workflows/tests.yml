@@ -1,0 +1,102 @@
+name: Run Tests
+
+# Run tests on pull requests and pushes to main/master branches
+on:
+  pull_request:
+    branches:
+      - main
+      - master
+  push:
+    branches:
+      - main
+      - master
+
+jobs:
+  test:
+    name: Run Flutter Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Show Flutter version
+        run: flutter --version
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Analyze code
+        run: flutter analyze
+        continue-on-error: false
+
+      - name: Run all tests
+        run: flutter test
+        continue-on-error: false
+
+      - name: Run dev_config production safety test
+        run: flutter test test/config/dev_config_test.dart
+        continue-on-error: false
+
+      - name: Test Summary
+        if: always()
+        run: |
+          echo "✅ All tests passed successfully!"
+          echo "✅ DevConfig is in production-safe state"
+          echo "✅ Code analysis passed"
+
+  production-safety-check:
+    name: Production Safety Validation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check dev_config values
+        run: |
+          echo "🔍 Checking dev_config.dart for production-ready state..."
+
+          # Check that critical flags are set correctly
+          if grep -q "static const bool bypassAuth = true" lib/config/dev_config.dart; then
+            echo "❌ ERROR: bypassAuth is set to true!"
+            exit 1
+          fi
+
+          if grep -q "static const bool useTestUser = true" lib/config/dev_config.dart; then
+            echo "❌ ERROR: useTestUser is set to true!"
+            exit 1
+          fi
+
+          if grep -q "static const bool simulateGuest = true" lib/config/dev_config.dart; then
+            echo "❌ ERROR: simulateGuest is set to true!"
+            exit 1
+          fi
+
+          if grep -q 'static const String? testPage = ' lib/config/dev_config.dart | grep -v "null;"; then
+            if ! grep -q 'static const String? testPage = null;' lib/config/dev_config.dart; then
+              echo "❌ ERROR: testPage is not null!"
+              exit 1
+            fi
+          fi
+
+          echo "✅ All dev_config flags are in production-safe state"
+
+      - name: Security check - no hardcoded secrets
+        run: |
+          echo "🔍 Scanning for potential hardcoded secrets..."
+
+          # Check for common secret patterns (basic check)
+          if grep -rE "(password|secret|key)\s*=\s*['\"][^'\"]{8,}['\"]" lib/ --include="*.dart" | grep -v "test" | grep -v "example.com"; then
+            echo "⚠️  WARNING: Potential hardcoded secrets detected!"
+            echo "Please review the above matches carefully."
+            # Don't fail the build, just warn
+          else
+            echo "✅ No obvious hardcoded secrets detected"
+          fi

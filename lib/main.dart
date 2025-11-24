@@ -1,9 +1,10 @@
 import 'package:buzz5_quiz_app/config/logger.dart';
 import 'package:buzz5_quiz_app/config/app_config.dart';
+import 'package:buzz5_quiz_app/config/dev_config.dart';
 import 'package:buzz5_quiz_app/config/theme.dart';
 import 'package:buzz5_quiz_app/providers/question_done.dart';
 import 'package:flutter/material.dart';
-import 'package:buzz5_quiz_app/widgets/auth_gate.dart';
+import 'package:buzz5_quiz_app/widgets/dev_auth_gate.dart';
 import 'package:buzz5_quiz_app/pages/forgot_password_page.dart';
 import 'package:provider/provider.dart';
 import 'package:buzz5_quiz_app/providers/player_provider.dart';
@@ -69,6 +70,9 @@ void main() async {
     // Still run the app to show error message to user
   }
 
+  // Log development configuration if enabled
+  DevConfig.logConfig();
+
   // debugPaintSizeEnabled = true;
   runApp(const MyApp());
 }
@@ -103,7 +107,7 @@ class MyApp extends StatelessWidget {
         debugShowCheckedModeBanner: false,
         theme: AppTheme.buildDarkTheme(), // App uses only dark theme
         themeMode: ThemeMode.dark, // Force dark theme always
-        home: const AuthGate(),
+        home: const DevAuthGate(), // Uses DevAuthGate for dev features
         routes: {'/forgot-password': (context) => const ForgotPasswordPage()},
       ),
     );
