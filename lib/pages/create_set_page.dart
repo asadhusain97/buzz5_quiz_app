@@ -25,8 +25,6 @@ class _NewSetPageState extends State<NewSetPage>
   // ValueNotifiers for efficient button updates (avoids full page rebuilds)
   final _nameNotifier = ValueNotifier<String>('');
   final _descriptionNotifier = ValueNotifier<String>('');
-  final _exQuestionController = TextEditingController();
-  final _exAnswerController = TextEditingController();
 
   // Question controllers - 5 questions with incremental points
   final List<Map<String, TextEditingController>> _questionControllers = [];
@@ -89,8 +87,6 @@ class _NewSetPageState extends State<NewSetPage>
     _descriptionController.dispose();
     _nameNotifier.dispose();
     _descriptionNotifier.dispose();
-    _exQuestionController.dispose();
-    _exAnswerController.dispose();
 
     // Dispose question controllers
     for (var controllers in _questionControllers) {
@@ -177,15 +173,18 @@ class _NewSetPageState extends State<NewSetPage>
       items: [
         PopupMenuItem<void>(
           enabled: false,
+          padding: EdgeInsets.zero,
           child: StatefulBuilder(
             builder: (context, setMenuState) {
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-                    child: Row(
+              return SizedBox(
+                width: button.size.width,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
@@ -314,6 +313,7 @@ class _NewSetPageState extends State<NewSetPage>
                     ),
                   ),
                 ],
+                ),
               );
             },
           ),
@@ -386,7 +386,7 @@ class _NewSetPageState extends State<NewSetPage>
                                 child: _buildMinimalTextField(
                                   controller: _nameController,
                                   label: 'Name *',
-                                  hint: 'Enter a name',
+                                  hint: 'Enter set name',
                                   maxLength: 30,
                                 ),
                               ),
@@ -397,7 +397,7 @@ class _NewSetPageState extends State<NewSetPage>
                                   controller: _descriptionController,
                                   label: 'Description *',
                                   hint:
-                                      'Enter description or theme that joins all questions in this set',
+                                      'Explain how this set works and its theme',
                                   maxLength: 150,
                                 ),
                               ),
@@ -406,150 +406,63 @@ class _NewSetPageState extends State<NewSetPage>
 
                           SizedBox(height: 12),
 
-                          // Row 2: Example Q&A (left) and Downloads/Rating (right)
+                          // Row with Tags, Difficulty, Downloads, and Rating
                           SingleChildScrollView(
                             scrollDirection: Axis.horizontal,
-                            child: IntrinsicHeight(
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  // Example Q&A on left - same width as Name box
-                                  Row(
-                                    crossAxisAlignment: CrossAxisAlignment.end,
-                                    children: [
-                                      SizedBox(
-                                        width: 250,
-                                        child: _buildMinimalTextField(
-                                          controller: _exQuestionController,
-                                          label: 'Example Question',
-                                          hint: 'Mock question',
-                                          maxLines: 2,
-                                          isSmall: true,
-                                        ),
-                                      ),
-                                      SizedBox(width: 16),
-                                      SizedBox(
-                                        width: 250,
-                                        child: _buildMinimalTextField(
-                                          controller: _exAnswerController,
-                                          label: 'Example Answer',
-                                          hint: 'Mock answer',
-                                          maxLines: 2,
-                                          isSmall: true,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-
-                                  SizedBox(width: 24),
-
-                                  // Downloads and Rating on right
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.end,
-                                    children: [
-                                      // Downloads
-                                      Icon(
-                                        Icons.download,
-                                        size: 22,
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                // Tags
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Tags',
+                                      style: AppTextStyles.labelSmall.copyWith(
                                         color: ColorConstants.lightTextColor
                                             .withValues(alpha: 0.7),
+                                        fontSize: 14,
                                       ),
-                                      SizedBox(width: 6),
-                                      Text(
-                                        '$downloads',
-                                        style: AppTextStyles.bodySmall.copyWith(
-                                          color: ColorConstants.lightTextColor
-                                              .withValues(alpha: 0.7),
-                                          fontSize: 15,
-                                        ),
-                                      ),
-                                      SizedBox(width: 20),
-                                      // Rating
-                                      Icon(
-                                        Icons.star,
-                                        size: 22,
-                                        color: Colors.amber,
-                                      ),
-                                      SizedBox(width: 6),
-                                      Text(
-                                        '${rating.toStringAsFixed(1)}/5',
-                                        style: AppTextStyles.bodySmall.copyWith(
-                                          color: ColorConstants.lightTextColor
-                                              .withValues(alpha: 0.7),
-                                          fontSize: 15,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-
-                          SizedBox(height: 12),
-
-                          // Row 3: Tags (left) and Difficulty (right)
-                          SingleChildScrollView(
-                            scrollDirection: Axis.horizontal,
-                            child: IntrinsicHeight(
-                              child: Row(
-                                children: [
-                                  // Tags on left
-                                  Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        'Tags',
-                                        style: AppTextStyles.labelSmall
-                                            .copyWith(
-                                              color: ColorConstants
-                                                  .lightTextColor
-                                                  .withValues(alpha: 0.7),
-                                              fontSize: 14,
-                                            ),
-                                      ),
-                                      SizedBox(height: 8),
-                                      Builder(
-                                        builder: (context) {
-                                          return SizedBox(
-                                            width: 250,
-                                            child: OutlinedButton(
-                                              onPressed:
-                                                  () => _showTagsDropdown(
-                                                    context,
-                                                  ),
-                                              style: OutlinedButton.styleFrom(
-                                                foregroundColor:
-                                                    ColorConstants
-                                                        .lightTextColor,
-                                                side: BorderSide(
-                                                  color: ColorConstants
-                                                      .lightTextColor
-                                                      .withValues(alpha: 0.3),
-                                                  width: 1,
-                                                ),
-                                                padding: EdgeInsets.symmetric(
-                                                  horizontal: 14,
-                                                  vertical: 10,
-                                                ),
-                                                minimumSize: Size(0, 44),
-                                                shape: RoundedRectangleBorder(
-                                                  borderRadius:
-                                                      BorderRadius.circular(4),
-                                                ),
+                                    ),
+                                    SizedBox(height: 8),
+                                    Builder(
+                                      builder: (context) {
+                                        return SizedBox(
+                                          width: 180, // Adjusted width
+                                          child: OutlinedButton(
+                                            onPressed:
+                                                () =>
+                                                    _showTagsDropdown(context),
+                                            style: OutlinedButton.styleFrom(
+                                              foregroundColor:
+                                                  ColorConstants.lightTextColor,
+                                              side: BorderSide(
+                                                color: ColorConstants
+                                                    .lightTextColor
+                                                    .withValues(alpha: 0.3),
+                                                width: 1,
                                               ),
-                                              child: Row(
-                                                mainAxisSize: MainAxisSize.min,
-                                                children: [
-                                                  Icon(
-                                                    Icons.label_outline,
-                                                    size: 18,
-                                                    color:
-                                                        ColorConstants.hintGrey,
-                                                  ),
-                                                  SizedBox(width: 8),
-                                                  Text(
+                                              padding: EdgeInsets.symmetric(
+                                                horizontal: 14,
+                                                vertical: 10,
+                                              ),
+                                              minimumSize: Size(0, 44),
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(4),
+                                              ),
+                                            ),
+                                            child: Row(
+                                              children: [
+                                                Icon(
+                                                  Icons.label_outline,
+                                                  size: 18,
+                                                  color:
+                                                      ColorConstants.hintGrey,
+                                                ),
+                                                SizedBox(width: 8),
+                                                Flexible(
+                                                  child: Text(
                                                     'Select Tags',
                                                     style: TextStyle(
                                                       fontSize: 15,
@@ -557,102 +470,153 @@ class _NewSetPageState extends State<NewSetPage>
                                                           ColorConstants
                                                               .lightTextColor,
                                                     ),
+                                                    overflow: TextOverflow.ellipsis,
                                                   ),
-                                                  if (_selectedTags
-                                                      .isNotEmpty) ...[
-                                                    SizedBox(width: 6),
-                                                    Container(
-                                                      padding:
-                                                          EdgeInsets.symmetric(
-                                                            horizontal: 7,
-                                                            vertical: 3,
-                                                          ),
-                                                      decoration: BoxDecoration(
-                                                        color:
-                                                            ColorConstants
-                                                                .primaryColor,
-                                                        borderRadius:
-                                                            BorderRadius.circular(
-                                                              10,
-                                                            ),
-                                                      ),
-                                                      child: Text(
-                                                        '${_selectedTags.length}',
-                                                        style: TextStyle(
-                                                          color: Colors.white,
-                                                          fontSize: 13,
-                                                          fontWeight:
-                                                              FontWeight.bold,
+                                                ),
+                                                if (_selectedTags
+                                                    .isNotEmpty) ...[
+                                                  SizedBox(width: 6),
+                                                  Container(
+                                                    padding:
+                                                        EdgeInsets.symmetric(
+                                                          horizontal: 7,
+                                                          vertical: 3,
                                                         ),
+                                                    decoration: BoxDecoration(
+                                                      color:
+                                                          ColorConstants
+                                                              .primaryColor,
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            10,
+                                                          ),
+                                                    ),
+                                                    child: Text(
+                                                      '${_selectedTags.length}',
+                                                      style: TextStyle(
+                                                        color: Colors.white,
+                                                        fontSize: 13,
+                                                        fontWeight:
+                                                            FontWeight.bold,
                                                       ),
                                                     ),
-                                                  ],
-                                                  Spacer(),
-                                                  Icon(
-                                                    Icons.arrow_drop_down,
-                                                    size: 24,
-                                                    color:
-                                                        ColorConstants.hintGrey,
                                                   ),
                                                 ],
-                                              ),
+                                                SizedBox(width: 4),
+                                                Icon(
+                                                  Icons.arrow_drop_down,
+                                                  size: 24,
+                                                  color:
+                                                      ColorConstants.hintGrey,
+                                                ),
+                                              ],
                                             ),
-                                          );
-                                        },
-                                      ),
-                                    ],
-                                  ),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  ],
+                                ),
 
-                                  SizedBox(width: 18),
+                                SizedBox(width: 18),
 
-                                  // Difficulty on right (smaller)
-                                  Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        'Difficulty',
-                                        style: AppTextStyles.labelSmall
-                                            .copyWith(
-                                              color: ColorConstants
-                                                  .lightTextColor
-                                                  .withValues(alpha: 0.7),
-                                              fontSize: 14,
-                                            ),
+                                // Difficulty
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Difficulty',
+                                      style: AppTextStyles.labelSmall.copyWith(
+                                        color: ColorConstants.lightTextColor
+                                            .withValues(alpha: 0.7),
+                                        fontSize: 14,
                                       ),
-                                      SizedBox(height: 8),
-                                      SizedBox(
-                                        height: 38,
-                                        child: Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.start,
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.center,
-                                          children: [
-                                            _buildDifficultyChip(
-                                              'Easy',
-                                              DifficultyLevel.easy,
-                                              Colors.green,
-                                            ),
-                                            SizedBox(width: 4),
-                                            _buildDifficultyChip(
-                                              'Med',
-                                              DifficultyLevel.medium,
-                                              Colors.orange,
-                                            ),
-                                            SizedBox(width: 4),
-                                            _buildDifficultyChip(
-                                              'Hard',
-                                              DifficultyLevel.hard,
-                                              Colors.red,
-                                            ),
-                                          ],
+                                    ),
+                                    SizedBox(height: 8),
+                                    SizedBox(
+                                      height: 38,
+                                      child: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.start,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.center,
+                                        children: [
+                                          _buildDifficultyChip(
+                                            'Easy',
+                                            DifficultyLevel.easy,
+                                            Colors.green,
+                                          ),
+                                          SizedBox(width: 4),
+                                          _buildDifficultyChip(
+                                            'Med',
+                                            DifficultyLevel.medium,
+                                            Colors.orange,
+                                          ),
+                                          SizedBox(width: 4),
+                                          _buildDifficultyChip(
+                                            'Hard',
+                                            DifficultyLevel.hard,
+                                            Colors.red,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+
+                                SizedBox(width: 24),
+
+                                // Downloads and Rating - Aligned with difficulty buttons
+                                Padding(
+                                  padding: EdgeInsets.only(bottom: 0),
+                                  child: SizedBox(
+                                    height: 38,
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.end,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.center,
+                                      children: [
+                                        // Downloads
+                                        Icon(
+                                          Icons.download,
+                                          size: 22,
+                                          color: ColorConstants.lightTextColor
+                                              .withValues(alpha: 0.7),
                                         ),
-                                      ),
-                                    ],
+                                        SizedBox(width: 6),
+                                        Text(
+                                          '$downloads',
+                                          style: AppTextStyles.bodySmall
+                                              .copyWith(
+                                                color: ColorConstants
+                                                    .lightTextColor
+                                                    .withValues(alpha: 0.7),
+                                                fontSize: 15,
+                                              ),
+                                        ),
+                                        SizedBox(width: 20),
+                                        // Rating
+                                        Icon(
+                                          Icons.star,
+                                          size: 22,
+                                          color: Colors.amber,
+                                        ),
+                                        SizedBox(width: 6),
+                                        Text(
+                                          '${rating.toStringAsFixed(1)}/5',
+                                          style: AppTextStyles.bodySmall
+                                              .copyWith(
+                                                color: ColorConstants
+                                                    .lightTextColor
+                                                    .withValues(alpha: 0.7),
+                                                fontSize: 15,
+                                              ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
-                                ],
-                              ),
+                                ),
+                              ],
                             ),
                           ),
                         ],
@@ -689,7 +653,7 @@ class _NewSetPageState extends State<NewSetPage>
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     Text(
-                                      'Q${index + 1} (${_questionPoints[index]})',
+                                      'Q${index + 1} (${_questionPoints[index]} points)',
                                     ),
                                     if (isComplete) ...[
                                       SizedBox(width: 4),

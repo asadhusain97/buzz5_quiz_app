@@ -6,8 +6,7 @@ class SetModel {
   final String id;
   final String name;
   final String description;
-  final String? exQuestion;
-  final String? exAnswer;
+
   final String authorId;
   final String authorName;
   final List<PredefinedTags> tags;
@@ -18,6 +17,7 @@ class SetModel {
   final int downloads;
   final double rating;
   final DifficultyLevel? difficulty;
+  final bool isPrivate;
 
   // The list of questions
   final List<Question> questions;
@@ -28,14 +28,13 @@ class SetModel {
     required this.description,
     required this.authorId,
     required this.authorName,
-    this.exQuestion,
-    this.exAnswer,
     this.tags = const [],
     DateTime? creationDate,
     this.price,
     this.downloads = 0,
     this.rating = 0.0,
     this.difficulty,
+    this.isPrivate = true,
     this.questions = const [],
   }) : creationDate = creationDate ?? DateTime.now(),
        assert(
@@ -66,6 +65,21 @@ class SetModel {
   // Get number of questions
   int get questionCount => questions.length;
 
+  /// Validates if the current privacy setting is valid.
+  /// A set cannot be public (isPrivate = false) if it's in draft status.
+  bool get isValidPrivacySetting {
+    if (!isPrivate && status == SetStatus.draft) {
+      return false;
+    }
+    return true;
+  }
+
+  /// Returns true if the set can be listed in the marketplace.
+  /// A set can only be listed if it's not private and has complete status.
+  bool get canBeListedInMarketplace {
+    return !isPrivate && status == SetStatus.complete;
+  }
+
   // Factory constructor to create a SetModel from a JSON object
   factory SetModel.fromJson(Map<String, dynamic> json) {
     return SetModel(
@@ -83,6 +97,7 @@ class SetModel {
         (e) => e.toString() == json['difficulty'],
         orElse: () => DifficultyLevel.medium,
       ),
+      isPrivate: json['isPrivate'] as bool? ?? true,
       questions:
           (json['questions'] as List<dynamic>? ?? [])
               .map((q) => Question.fromJson(q as Map<String, dynamic>))
@@ -104,6 +119,7 @@ class SetModel {
       'downloads': downloads,
       'rating': rating,
       'difficulty': difficulty.toString(),
+      'isPrivate': isPrivate,
       'questions': questions.map((q) => q.toJson()).toList(),
     };
   }

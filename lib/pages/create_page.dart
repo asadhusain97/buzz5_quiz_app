@@ -5,7 +5,7 @@ import 'package:buzz5_quiz_app/config/text_styles.dart';
 import 'package:buzz5_quiz_app/config/logger.dart';
 import 'package:buzz5_quiz_app/models/board_model.dart';
 import 'package:buzz5_quiz_app/widgets/app_background.dart';
-import 'package:buzz5_quiz_app/pages/new_set_page.dart';
+import 'package:buzz5_quiz_app/pages/create_set_page.dart';
 
 // Simple Set class for UI mock data
 class QuizSet {
@@ -154,11 +154,9 @@ class _CreatePageState extends State<CreatePage>
           'A comprehensive board covering history, science, and pop culture',
       authorName: 'John Doe',
       authorId: 'user1',
-      rating: 4.5,
-      downloads: 1200,
       creationDate: DateTime.now().subtract(Duration(days: 10)),
       modifiedDate: DateTime.now().subtract(Duration(days: 2)),
-      sets: [],
+      setIds: ['1', '2', '3'],
     ),
     BoardModel(
       id: 'b2',
@@ -167,11 +165,9 @@ class _CreatePageState extends State<CreatePage>
           'Deep dive into scientific concepts and technological innovations',
       authorName: 'Jane Smith',
       authorId: 'user2',
-      rating: 4.8,
-      downloads: 2500,
       creationDate: DateTime.now().subtract(Duration(days: 20)),
       modifiedDate: DateTime.now().subtract(Duration(days: 5)),
-      sets: [],
+      setIds: ['2', '4'],
     ),
     BoardModel(
       id: 'b3',
@@ -179,11 +175,9 @@ class _CreatePageState extends State<CreatePage>
       description: 'Movies, music, TV shows, and celebrity trivia',
       authorName: 'Mike Johnson',
       authorId: 'user3',
-      rating: 4.2,
-      downloads: 800,
       creationDate: DateTime.now().subtract(Duration(days: 3)),
       modifiedDate: DateTime.now().subtract(Duration(hours: 10)),
-      sets: [],
+      setIds: ['3'],
     ),
     BoardModel(
       id: 'b4',
@@ -191,11 +185,9 @@ class _CreatePageState extends State<CreatePage>
       description: 'Countries, capitals, landmarks, and geographical features',
       authorName: 'Sarah Williams',
       authorId: 'user4',
-      rating: 4.6,
-      downloads: 1500,
       creationDate: DateTime.now().subtract(Duration(days: 15)),
       modifiedDate: DateTime.now().subtract(Duration(days: 1)),
-      sets: [],
+      setIds: ['5', '1', '2', '3', '4'],
     ),
     BoardModel(
       id: 'b5',
@@ -203,11 +195,9 @@ class _CreatePageState extends State<CreatePage>
       description: 'From ancient civilizations to modern world events',
       authorName: 'Tom Brown',
       authorId: 'user5',
-      rating: 4.7,
-      downloads: 1800,
       creationDate: DateTime.now().subtract(Duration(days: 30)),
       modifiedDate: DateTime.now().subtract(Duration(hours: 5)),
-      sets: [],
+      setIds: ['1'],
     ),
   ];
 
@@ -645,43 +635,45 @@ class _CreatePageState extends State<CreatePage>
                         SizedBox(width: 24),
                         Row(
                           children: [
-                            OutlinedButton.icon(
-                              icon: Icon(Icons.upload_file, size: 18),
-                              label: Text('Import'),
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => ImportSetPage(),
-                                  ),
-                                );
-                              },
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor:
-                                    Theme.of(context).brightness ==
-                                            Brightness.dark
-                                        ? ColorConstants.lightTextColor
-                                        : ColorConstants.darkTextColor,
-                                side: BorderSide(
-                                  color:
+                            if (_isSetView) ...[
+                              OutlinedButton.icon(
+                                icon: Icon(Icons.upload_file, size: 18),
+                                label: Text('Import'),
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => ImportSetPage(),
+                                    ),
+                                  );
+                                },
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor:
                                       Theme.of(context).brightness ==
                                               Brightness.dark
                                           ? ColorConstants.lightTextColor
-                                              .withValues(alpha: 0.3)
-                                          : ColorConstants.darkTextColor
-                                              .withValues(alpha: 0.3),
-                                ),
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: 20,
-                                  vertical: 12,
-                                ),
-                                minimumSize: Size(110, 40),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
+                                          : ColorConstants.darkTextColor,
+                                  side: BorderSide(
+                                    color:
+                                        Theme.of(context).brightness ==
+                                                Brightness.dark
+                                            ? ColorConstants.lightTextColor
+                                                .withValues(alpha: 0.3)
+                                            : ColorConstants.darkTextColor
+                                                .withValues(alpha: 0.3),
+                                  ),
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: 20,
+                                    vertical: 12,
+                                  ),
+                                  minimumSize: Size(110, 40),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
                                 ),
                               ),
-                            ),
-                            SizedBox(width: 12),
+                              SizedBox(width: 12),
+                            ],
                             ElevatedButton.icon(
                               icon: Icon(Icons.add, size: 18),
                               label: Text(_isSetView ? 'New Set' : 'New Board'),
@@ -1556,25 +1548,20 @@ class BoardListItemTile extends StatelessWidget {
     required this.onSelectionChanged,
   });
 
-  String _getDifficultyLabel(DifficultyLevel difficulty) {
-    switch (difficulty) {
-      case DifficultyLevel.easy:
-        return 'Easy';
-      case DifficultyLevel.medium:
-        return 'Medium';
-      case DifficultyLevel.hard:
-        return 'Hard';
-    }
-  }
+  String _getRelativeTime(DateTime dateTime) {
+    final now = DateTime.now();
+    final difference = now.difference(dateTime);
 
-  Color _getDifficultyColor(DifficultyLevel difficulty) {
-    switch (difficulty) {
-      case DifficultyLevel.easy:
-        return Colors.green;
-      case DifficultyLevel.medium:
-        return Colors.orange;
-      case DifficultyLevel.hard:
-        return Colors.red;
+    if (difference.inDays > 30) {
+      return '${(difference.inDays / 30).floor()}mo ago';
+    } else if (difference.inDays > 0) {
+      return '${difference.inDays}d ago';
+    } else if (difference.inHours > 0) {
+      return '${difference.inHours}h ago';
+    } else if (difference.inMinutes > 0) {
+      return '${difference.inMinutes}m ago';
+    } else {
+      return 'just now';
     }
   }
 
@@ -1679,6 +1666,7 @@ class BoardListItemTile extends StatelessWidget {
 
                     // Metadata Row
                     Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         // Sets count
                         Icon(
@@ -1688,55 +1676,22 @@ class BoardListItemTile extends StatelessWidget {
                         ),
                         SizedBox(width: 4),
                         Text(
-                          '${board.sets.length}/5 sets',
+                          '${board.setCount}/5 sets',
                           style: AppTextStyles.bodySmall.copyWith(
                             color: ColorConstants.hintGrey,
                             fontSize: 12,
                           ),
                         ),
-                        SizedBox(width: 12),
-                        // Difficulty
-                        Container(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: _getDifficultyColor(
-                              board.difficulty,
-                            ).withValues(alpha: 0.15),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            _getDifficultyLabel(board.difficulty),
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              color: _getDifficultyColor(board.difficulty),
-                            ),
-                          ),
-                        ),
-                        SizedBox(width: 12),
-                        // Rating
-                        Icon(Icons.star, size: 14, color: Colors.amber),
-                        SizedBox(width: 2),
-                        Text(
-                          board.rating.toStringAsFixed(1),
-                          style: AppTextStyles.bodySmall.copyWith(
-                            color: ColorConstants.hintGrey,
-                            fontSize: 12,
-                          ),
-                        ),
-                        SizedBox(width: 12),
-                        // Downloads
+                        Spacer(),
+                        // Last modified
                         Icon(
-                          Icons.download,
+                          Icons.edit_calendar,
                           size: 14,
                           color: ColorConstants.hintGrey,
                         ),
-                        SizedBox(width: 2),
+                        SizedBox(width: 4),
                         Text(
-                          '${board.downloads}',
+                          'Modified ${_getRelativeTime(board.modifiedDate)}',
                           style: AppTextStyles.bodySmall.copyWith(
                             color: ColorConstants.hintGrey,
                             fontSize: 12,
