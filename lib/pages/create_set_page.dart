@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:buzz5_quiz_app/config/colors.dart';
 import 'package:buzz5_quiz_app/config/text_styles.dart';
+import 'package:buzz5_quiz_app/config/logger.dart';
 import 'package:buzz5_quiz_app/models/all_enums.dart';
 import 'package:buzz5_quiz_app/widgets/app_background.dart';
 import 'package:buzz5_quiz_app/widgets/media_upload_widget.dart';
+import 'package:buzz5_quiz_app/services/set_service.dart';
 
 class NewSetPage extends StatefulWidget {
   const NewSetPage({super.key});
@@ -17,6 +19,10 @@ class _NewSetPageState extends State<NewSetPage>
     with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   late TabController _questionTabController;
+  final SetService _setService = SetService();
+
+  // Loading state
+  bool _isSaving = false;
 
   // Set info controllers
   final _nameController = TextEditingController();
@@ -35,10 +41,6 @@ class _NewSetPageState extends State<NewSetPage>
   // Selection state
   DifficultyLevel? _selectedDifficulty;
   final Set<PredefinedTags> _selectedTags = {};
-
-  // Display properties
-  final int downloads = 0;
-  final double rating = 0.0;
 
   @override
   void initState() {
@@ -115,21 +117,103 @@ class _NewSetPageState extends State<NewSetPage>
     return hasQuestion && hasAnswer;
   }
 
-  void _saveAsDraft() {
-    // TODO: Implement save as draft functionality
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Saving as draft...'),
-        backgroundColor: ColorConstants.primaryColor,
-      ),
-    );
+  Future<void> _saveAsDraft() async {
+    await _saveSet(isDraft: true);
   }
 
-  void _save() {
-    // TODO: Implement save functionality
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Saving set...'), backgroundColor: Colors.green),
-    );
+  Future<void> _save() async {
+    await _saveSet(isDraft: false);
+  }
+
+  Future<void> _saveSet({required bool isDraft}) async {
+    if (_isSaving) return;
+
+    try {
+      setState(() {
+        _isSaving = true;
+      });
+
+      AppLogger.i('Starting to save set (isDraft: $isDraft)');
+
+      // Prepare question data
+      final List<Map<String, dynamic>> questionData = [];
+
+      for (int i = 0; i < 5; i++) {
+        final controllers = _questionControllers[i];
+        final media = _questionMedia[i];
+        final mediaUrls = _questionMediaUrls[i];
+
+        questionData.add({
+          'questionText': controllers['questionText']!.text.trim().isNotEmpty
+              ? controllers['questionText']!.text.trim()
+              : null,
+          'questionMediaFile': media['questionMedia'],
+          'questionMediaUrl': mediaUrls['questionMedia'],
+          'answerText': controllers['answerText']!.text.trim().isNotEmpty
+              ? controllers['answerText']!.text.trim()
+              : null,
+          'answerMediaFile': media['answerMedia'],
+          'answerMediaUrl': mediaUrls['answerMedia'],
+          'points': _questionPoints[i],
+          'hint': controllers['hint']!.text.trim().isNotEmpty
+              ? controllers['hint']!.text.trim()
+              : null,
+          'funda': controllers['funda']!.text.trim().isNotEmpty
+              ? controllers['funda']!.text.trim()
+              : null,
+        });
+      }
+
+      // Create the set
+      final String setId = await _setService.createSet(
+        name: _nameController.text.trim(),
+        description: _descriptionController.text.trim(),
+        tags: _selectedTags.toList(),
+        difficulty: _selectedDifficulty,
+        questionData: questionData,
+        isDraft: isDraft,
+      );
+
+      AppLogger.i('Set created successfully with ID: $setId');
+
+      if (!mounted) return;
+
+      // Show success message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            isDraft
+                ? 'Set saved as draft successfully!'
+                : 'Set saved successfully!',
+          ),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 2),
+        ),
+      );
+
+      // Navigate back after a short delay
+      await Future.delayed(Duration(milliseconds: 500));
+      if (!mounted) return;
+      Navigator.of(context).pop();
+    } catch (e, stackTrace) {
+      AppLogger.e('Error saving set: $e', error: e, stackTrace: stackTrace);
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error saving set: ${e.toString()}'),
+          backgroundColor: ColorConstants.errorColor,
+          duration: Duration(seconds: 4),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSaving = false;
+        });
+      }
+    }
   }
 
   String _formatTagName(PredefinedTags tag) {
@@ -373,6 +457,7 @@ class _NewSetPageState extends State<NewSetPage>
                                 questionMediaUrls: _questionMediaUrls,
                                 onSaveDraft: _saveAsDraft,
                                 onSave: _save,
+                                isSaving: _isSaving,
                               ),
                             ],
                           ),
@@ -566,7 +651,7 @@ class _NewSetPageState extends State<NewSetPage>
 
                                 SizedBox(width: 24),
 
-                                // Downloads and Rating - Aligned with difficulty buttons
+                                // Downloads and Rating - Display only (read-only)
                                 Padding(
                                   padding: EdgeInsets.only(bottom: 0),
                                   child: SizedBox(
@@ -585,7 +670,7 @@ class _NewSetPageState extends State<NewSetPage>
                                         ),
                                         SizedBox(width: 6),
                                         Text(
-                                          '$downloads',
+                                          '0',
                                           style: AppTextStyles.bodySmall
                                               .copyWith(
                                                 color: ColorConstants
@@ -603,7 +688,7 @@ class _NewSetPageState extends State<NewSetPage>
                                         ),
                                         SizedBox(width: 6),
                                         Text(
-                                          '${rating.toStringAsFixed(1)}/5',
+                                          '0.0/5',
                                           style: AppTextStyles.bodySmall
                                               .copyWith(
                                                 color: ColorConstants
@@ -843,6 +928,7 @@ class _ActionButtons extends StatelessWidget {
   final List<Map<String, String?>> questionMediaUrls;
   final VoidCallback onSaveDraft;
   final VoidCallback onSave;
+  final bool isSaving;
 
   const _ActionButtons({
     required this.nameNotifier,
@@ -852,6 +938,7 @@ class _ActionButtons extends StatelessWidget {
     required this.questionMediaUrls,
     required this.onSaveDraft,
     required this.onSave,
+    this.isSaving = false,
   });
 
   bool _isQuestionComplete(int index) {
@@ -903,14 +990,14 @@ class _ActionButtons extends StatelessWidget {
                   width: 110,
                   height: 45,
                   child: OutlinedButton(
-                    onPressed: canDraft ? onSaveDraft : null,
+                    onPressed: (canDraft && !isSaving) ? onSaveDraft : null,
                     style: OutlinedButton.styleFrom(
                       foregroundColor: ColorConstants.primaryColor,
                       disabledForegroundColor: ColorConstants.hintGrey
                           .withValues(alpha: 0.5),
                       side: BorderSide(
                         color:
-                            canDraft
+                            (canDraft && !isSaving)
                                 ? ColorConstants.primaryColor
                                 : ColorConstants.hintGrey.withValues(
                                   alpha: 0.3,
@@ -925,13 +1012,24 @@ class _ActionButtons extends StatelessWidget {
                         borderRadius: BorderRadius.circular(6),
                       ),
                     ),
-                    child: Text(
-                      'Save As Draft',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+                    child: isSaving
+                        ? SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              ColorConstants.primaryColor,
+                            ),
+                          ),
+                        )
+                        : Text(
+                          'Save As Draft',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                   ),
                 ),
                 SizedBox(width: 12),
@@ -940,7 +1038,7 @@ class _ActionButtons extends StatelessWidget {
                   width: 110,
                   height: 45,
                   child: ElevatedButton(
-                    onPressed: canSave ? onSave : null,
+                    onPressed: (canSave && !isSaving) ? onSave : null,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: ColorConstants.primaryColor,
                       foregroundColor: ColorConstants.lightTextColor,
@@ -957,13 +1055,24 @@ class _ActionButtons extends StatelessWidget {
                       ),
                       elevation: canSave ? 2 : 0,
                     ),
-                    child: Text(
-                      'Save',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+                    child: isSaving
+                        ? SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              ColorConstants.lightTextColor,
+                            ),
+                          ),
+                        )
+                        : Text(
+                          'Save',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                   ),
                 ),
               ],

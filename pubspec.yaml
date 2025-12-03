@@ -40,12 +40,15 @@ dependencies:
   firebase_auth: ^5.1.1
   cloud_firestore: ^5.0.2
   firebase_database: ^11.1.4
+  firebase_storage: ^12.3.5
   image_picker: ^1.1.2
   file_picker: ^8.1.6
   firebase_app_check: ^0.3.2+9
   flutter_dotenv: ^5.0.2
   cupertino_icons: ^1.0.8
   connectivity_plus: ^6.1.2
+  path: ^1.9.0
+  uuid: ^4.5.1
 
 dev_dependencies:
   flutter_test:

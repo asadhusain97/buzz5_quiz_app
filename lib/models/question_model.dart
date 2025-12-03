@@ -1,12 +1,16 @@
+import 'package:buzz5_quiz_app/models/media_model.dart';
+
 /// Enum to track the status of a Question.
-enum QuestionStatus { draft, published }
+/// - complete: Question has both question and answer (text or media)
+/// - draft: Question is incomplete
+enum QuestionStatus { draft, complete }
 
 class Question {
   final String id;
   final String? questionText;
-  final String? questionMedia; // URL to media in Firebase Storage
+  final Media? questionMedia; // Media object with metadata
   final String? answerText;
-  final String? answerMedia; // URL to media in Firebase Storage
+  final Media? answerMedia; // Media object with metadata
   final int points;
   final String? hint;
   final String? funda; // Explanation of the concept
@@ -24,15 +28,19 @@ class Question {
     QuestionStatus? status,
   }) {
     // Validate that question has either text or media
-    final hasValidQuestion = questionText != null || questionMedia != null;
+    final hasValidQuestion =
+        (questionText != null && questionText!.trim().isNotEmpty) ||
+        questionMedia != null;
     // Validate that answer has either text or media
-    final hasValidAnswer = answerText != null || answerMedia != null;
+    final hasValidAnswer =
+        (answerText != null && answerText!.trim().isNotEmpty) ||
+        answerMedia != null;
 
-    // Set status to draft if validation fails, otherwise use provided status or draft
-    if (!hasValidQuestion || !hasValidAnswer) {
-      this.status = QuestionStatus.draft;
+    // Set status to complete if validation passes, otherwise draft
+    if (hasValidQuestion && hasValidAnswer) {
+      this.status = status ?? QuestionStatus.complete;
     } else {
-      this.status = status ?? QuestionStatus.draft;
+      this.status = QuestionStatus.draft;
     }
   }
 
@@ -41,9 +49,13 @@ class Question {
     return Question(
       id: json['id'] as String,
       questionText: json['questionText'] as String?,
-      questionMedia: json['questionMedia'] as String?,
+      questionMedia: json['questionMedia'] != null
+          ? Media.fromJson(json['questionMedia'] as Map<String, dynamic>)
+          : null,
       answerText: json['answerText'] as String?,
-      answerMedia: json['answerMedia'] as String?,
+      answerMedia: json['answerMedia'] != null
+          ? Media.fromJson(json['answerMedia'] as Map<String, dynamic>)
+          : null,
       points: json['points'] as int? ?? 10,
       hint: json['hint'] as String?,
       funda: json['funda'] as String?,
@@ -59,9 +71,9 @@ class Question {
     return {
       'id': id,
       'questionText': questionText,
-      'questionMedia': questionMedia,
+      'questionMedia': questionMedia?.toJson(),
       'answerText': answerText,
-      'answerMedia': answerMedia,
+      'answerMedia': answerMedia?.toJson(),
       'points': points,
       'hint': hint,
       'funda': funda,
