@@ -82,13 +82,45 @@ class SetModel {
 
   // Factory constructor to create a SetModel from a JSON object
   factory SetModel.fromJson(Map<String, dynamic> json) {
+    // Parse tags from either enum strings (e.g., "PredefinedTags.world") or plain strings (e.g., "world")
+    List<PredefinedTags> parseTags(List<dynamic>? tagsList) {
+      if (tagsList == null) return [];
+
+      return tagsList
+          .map<PredefinedTags?>((tag) {
+            if (tag is PredefinedTags) {
+              return tag;
+            }
+
+            final String tagString = tag.toString();
+
+            // Try to find the enum value by matching the string
+            // This handles both "PredefinedTags.world" and "world"
+            return PredefinedTags.values.firstWhere(
+              (e) {
+                final enumString = e.toString(); // e.g., "PredefinedTags.world"
+                final enumName = enumString.split('.').last; // e.g., "world"
+
+                // Match either the full string or just the enum name
+                return enumString == tagString || enumName == tagString;
+              },
+              orElse:
+                  () =>
+                      PredefinedTags
+                          .general, // Default to 'general' if not found
+            );
+          })
+          .whereType<PredefinedTags>()
+          .toList(); // Filter out any nulls
+    }
+
     return SetModel(
       id: json['id'] as String,
       name: json['name'] as String,
       description: json['description'] as String,
       authorId: json['authorId'] as String,
       authorName: json['authorName'] as String,
-      tags: List<PredefinedTags>.from(json['tags'] ?? []),
+      tags: parseTags(json['tags'] as List<dynamic>?),
       creationDate: DateTime.parse(json['creationDate'] as String),
       price: json['price'] as double?,
       downloads: json['downloads'] as int? ?? 0,

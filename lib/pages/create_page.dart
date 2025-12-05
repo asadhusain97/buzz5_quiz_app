@@ -4,35 +4,12 @@ import 'package:buzz5_quiz_app/config/colors.dart';
 import 'package:buzz5_quiz_app/config/text_styles.dart';
 import 'package:buzz5_quiz_app/config/logger.dart';
 import 'package:buzz5_quiz_app/models/board_model.dart';
+import 'package:buzz5_quiz_app/models/set_model.dart';
 import 'package:buzz5_quiz_app/widgets/app_background.dart';
+import 'package:buzz5_quiz_app/widgets/stat_displays.dart';
+import 'package:buzz5_quiz_app/widgets/standard_menu_item.dart';
 import 'package:buzz5_quiz_app/pages/create_set_page.dart';
-
-// Simple Set class for UI mock data
-class QuizSet {
-  final String id;
-  final String name;
-  final String description;
-  final String category;
-  final List<String> attachedBoardNames;
-  final SetStatus status;
-  final String authorName;
-  final bool hasMedia;
-  final List<String> tags;
-  final DateTime lastModified;
-
-  QuizSet({
-    required this.id,
-    required this.name,
-    required this.description,
-    required this.category,
-    required this.attachedBoardNames,
-    required this.status,
-    required this.authorName,
-    required this.hasMedia,
-    required this.tags,
-    required this.lastModified,
-  });
-}
+import 'package:buzz5_quiz_app/services/set_service.dart';
 
 class CreatePage extends StatefulWidget {
   const CreatePage({super.key});
@@ -45,6 +22,14 @@ class _CreatePageState extends State<CreatePage>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   int _currentTabIndex = 0;
+
+  // Firebase service
+  final SetService _setService = SetService();
+
+  // Data state
+  List<SetModel> _sets = [];
+  bool _isLoading = true;
+  String? _errorMessage;
 
   // Filter and sort state
   String _sortBy = 'Creation Date: Newest first';
@@ -68,6 +53,56 @@ class _CreatePageState extends State<CreatePage>
         _currentTabIndex = _tabController.index;
       });
     });
+    _loadSets();
+  }
+
+  Future<void> _loadSets() async {
+    try {
+      setState(() {
+        _isLoading = true;
+        _errorMessage = null;
+      });
+      final sets = await _setService.getUserSets();
+      if (mounted) {
+        setState(() {
+          _sets = sets;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      AppLogger.e('Error loading sets: $e');
+      if (mounted) {
+        setState(() {
+          _errorMessage = 'Failed to load sets: $e';
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _deleteSet(SetModel set) async {
+    try {
+      await _setService.deleteSet(set.id);
+      await _loadSets();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('"${set.name}" deleted successfully'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      AppLogger.e('Error deleting set: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to delete set: $e'),
+            backgroundColor: ColorConstants.errorColor,
+          ),
+        );
+      }
+    }
   }
 
   bool get _isSetView => _currentTabIndex == 0;
@@ -77,73 +112,6 @@ class _CreatePageState extends State<CreatePage>
     _tabController.dispose();
     super.dispose();
   }
-
-  // Mock data
-  final List<QuizSet> _sets = [
-    QuizSet(
-      id: '1',
-      name: 'World History Trivia',
-      description:
-          'A comprehensive collection of questions covering major historical events from ancient civilizations to modern times.',
-      category: 'History',
-      attachedBoardNames: ['General Knowledge', 'Education'],
-      status: SetStatus.complete,
-      authorName: 'John Doe',
-      hasMedia: true,
-      tags: ['history', 'trivia', 'education'],
-      lastModified: DateTime.now().subtract(Duration(days: 2)),
-    ),
-    QuizSet(
-      id: '2',
-      name: 'Science & Technology',
-      description:
-          'Questions about scientific discoveries, inventions, and technological advancements.',
-      category: 'Science',
-      attachedBoardNames: ['STEM', 'Tech Quiz', 'Innovation'],
-      status: SetStatus.complete,
-      authorName: 'Jane Smith',
-      hasMedia: false,
-      tags: ['science', 'tech'],
-      lastModified: DateTime.now().subtract(Duration(days: 5)),
-    ),
-    QuizSet(
-      id: '3',
-      name: 'Pop Culture 2024',
-      description: 'Latest trends, movies, music, and entertainment from 2024.',
-      category: 'Entertainment',
-      attachedBoardNames: ['Fun', 'Entertainment'],
-      status: SetStatus.complete,
-      authorName: 'Mike Johnson',
-      hasMedia: true,
-      tags: ['pop culture', 'entertainment'],
-      lastModified: DateTime.now().subtract(Duration(hours: 12)),
-    ),
-    QuizSet(
-      id: '4',
-      name: 'Math Fundamentals',
-      description: 'Basic algebra and geometry questions for students.',
-      category: 'Mathematics',
-      attachedBoardNames: ['Education'],
-      status: SetStatus.draft,
-      authorName: 'Sarah Williams',
-      hasMedia: false,
-      tags: ['math', 'education'],
-      lastModified: DateTime.now().subtract(Duration(days: 1)),
-    ),
-    QuizSet(
-      id: '5',
-      name: 'Geography Quiz',
-      description:
-          'Test your knowledge of countries, capitals, and landmarks around the world.',
-      category: 'Geography',
-      attachedBoardNames: [],
-      status: SetStatus.draft,
-      authorName: 'Tom Brown',
-      hasMedia: true,
-      tags: ['geography', 'travel'],
-      lastModified: DateTime.now().subtract(Duration(hours: 3)),
-    ),
-  ];
 
   // Mock boards data
   final List<BoardModel> _boards = [
@@ -201,8 +169,8 @@ class _CreatePageState extends State<CreatePage>
     ),
   ];
 
-  List<QuizSet> get _filteredSets {
-    List<QuizSet> filtered = _sets;
+  List<SetModel> get _filteredSets {
+    List<SetModel> filtered = _sets;
 
     // Apply filters based on _activeFilters
     if (_statusFilter != null) {
@@ -234,7 +202,10 @@ class _CreatePageState extends State<CreatePage>
       filtered =
           filtered
               .where(
-                (set) => set.tags.any((tag) => _selectedTags.contains(tag)),
+                (set) => set.tags.any(
+                  (tag) =>
+                      _selectedTags.contains(tag.toString().split('.').last),
+                ),
               )
               .toList();
     }
@@ -1152,7 +1123,46 @@ class _CreatePageState extends State<CreatePage>
                 Expanded(
                   child:
                       _isSetView
-                          ? (_filteredSets.isEmpty
+                          ? (_isLoading
+                              ? Center(
+                                child: CircularProgressIndicator(
+                                  color: ColorConstants.primaryColor,
+                                ),
+                              )
+                              : _errorMessage != null
+                              ? Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.error_outline,
+                                      size: 64,
+                                      color: ColorConstants.errorColor,
+                                    ),
+                                    SizedBox(height: 16),
+                                    Text(
+                                      'Error loading sets',
+                                      style: AppTextStyles.titleMedium.copyWith(
+                                        color: ColorConstants.errorColor,
+                                      ),
+                                    ),
+                                    SizedBox(height: 8),
+                                    Text(
+                                      _errorMessage!,
+                                      style: AppTextStyles.bodySmall.copyWith(
+                                        color: ColorConstants.hintGrey,
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                    SizedBox(height: 16),
+                                    ElevatedButton(
+                                      onPressed: _loadSets,
+                                      child: Text('Retry'),
+                                    ),
+                                  ],
+                                ),
+                              )
+                              : _filteredSets.isEmpty
                               ? Center(
                                 child: Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
@@ -1196,6 +1206,66 @@ class _CreatePageState extends State<CreatePage>
                                           _selectedSetIds.remove(set.id);
                                         }
                                       });
+                                    },
+                                    onEdit: () {
+                                      Navigator.of(context)
+                                          .push(
+                                            MaterialPageRoute(
+                                              builder:
+                                                  (context) => NewSetPage(
+                                                    existingSet: set,
+                                                  ),
+                                            ),
+                                          )
+                                          .then((_) => _loadSets());
+                                    },
+                                    onDuplicate: () {
+                                      // TODO: Implement duplicate functionality
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        SnackBar(
+                                          content: Text(
+                                            'Duplicate: ${set.name}',
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                    onDelete: () async {
+                                      final confirmed = await showDialog<bool>(
+                                        context: context,
+                                        builder:
+                                            (context) => AlertDialog(
+                                              title: Text('Delete Set'),
+                                              content: Text(
+                                                'Are you sure you want to delete "${set.name}"?',
+                                              ),
+                                              actions: [
+                                                TextButton(
+                                                  onPressed:
+                                                      () => Navigator.of(
+                                                        context,
+                                                      ).pop(false),
+                                                  child: Text('Cancel'),
+                                                ),
+                                                TextButton(
+                                                  onPressed:
+                                                      () => Navigator.of(
+                                                        context,
+                                                      ).pop(true),
+                                                  style: TextButton.styleFrom(
+                                                    foregroundColor:
+                                                        ColorConstants
+                                                            .errorColor,
+                                                  ),
+                                                  child: Text('Delete'),
+                                                ),
+                                              ],
+                                            ),
+                                      );
+                                      if (confirmed == true) {
+                                        await _deleteSet(set);
+                                      }
                                     },
                                   );
                                 },
@@ -1259,19 +1329,54 @@ class _CreatePageState extends State<CreatePage>
 }
 
 class SetListItemTile extends StatelessWidget {
-  final QuizSet set;
+  final SetModel set;
   final bool isSelected;
   final Function(bool) onSelectionChanged;
+  final VoidCallback? onEdit;
+  final VoidCallback? onDuplicate;
+  final VoidCallback? onDelete;
 
   const SetListItemTile({
     super.key,
     required this.set,
     required this.isSelected,
     required this.onSelectionChanged,
+    this.onEdit,
+    this.onDuplicate,
+    this.onDelete,
   });
+
+  String _formatTagName(PredefinedTags tag) {
+    final name = tag.toString().split('.').last;
+    final specialCases = {
+      'foodAndDrinks': 'Food & Drinks',
+      'popCulture': 'Pop Culture',
+      'videoGames': 'Video Games',
+      'us': 'US',
+    };
+    if (specialCases.containsKey(name)) {
+      return specialCases[name]!;
+    }
+    return name[0].toUpperCase() + name.substring(1);
+  }
+
+  String _getDifficultyLabel(DifficultyLevel? difficulty) {
+    switch (difficulty) {
+      case DifficultyLevel.easy:
+        return 'Easy';
+      case DifficultyLevel.medium:
+        return 'Medium';
+      case DifficultyLevel.hard:
+        return 'Hard';
+      default:
+        return 'N/A';
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final isDraft = set.status == SetStatus.draft;
+
     return Card(
       margin: EdgeInsets.symmetric(vertical: 8.0),
       color:
@@ -1280,210 +1385,261 @@ class SetListItemTile extends StatelessWidget {
               : ColorConstants.surfaceColor,
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: InkWell(
-        onTap: () {
-          // TODO: Navigate to set detail/edit page
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text('Opening ${set.name}...')));
-        },
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Checkbox
-              Checkbox(
-                value: isSelected,
-                onChanged: (value) => onSelectionChanged(value ?? false),
-                activeColor: ColorConstants.primaryColor,
-              ),
-
-              SizedBox(width: 12),
-
-              // Main Content
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Set Name
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            set.name,
-                            style: Theme.of(
-                              context,
-                            ).textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color:
-                                  Theme.of(context).brightness ==
-                                          Brightness.dark
-                                      ? ColorConstants.lightTextColor
-                                      : ColorConstants.darkTextColor,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        if (set.hasMedia) ...[
-                          SizedBox(width: 8),
-                          Icon(
-                            Icons.image,
-                            size: 16,
-                            color: ColorConstants.primaryColor,
-                          ),
-                        ],
-                      ],
-                    ),
-
-                    SizedBox(height: 4),
-
-                    // Description
-                    Text(
-                      set.description,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: ColorConstants.hintGrey,
+      child: Stack(
+        children: [
+          // Vertical draft indicator on the left edge (40% thinner: 28 * 0.6 = 17px)
+          if (isDraft)
+            Positioned(
+              left: 0,
+              top: 0,
+              bottom: 0,
+              child: Container(
+                width: 17,
+                decoration: BoxDecoration(
+                  color: Colors.orange,
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(12),
+                    bottomLeft: Radius.circular(12),
+                  ),
+                ),
+                child: Center(
+                  child: RotatedBox(
+                    quarterTurns: 3,
+                    child: Text(
+                      'DRAFT',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.2,
                       ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
                     ),
+                  ),
+                ),
+              ),
+            ),
 
-                    SizedBox(height: 8),
+          // Main content
+          Padding(
+            padding: EdgeInsets.only(
+              left: isDraft ? 29.0 : 16.0,
+              right: 16.0,
+              top: 16.0,
+              bottom: 16.0,
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // Checkbox aligned with content
+                Checkbox(
+                  value: isSelected,
+                  onChanged: (value) => onSelectionChanged(value ?? false),
+                  activeColor: ColorConstants.primaryColor,
+                ),
 
-                    // Board Chips
-                    if (set.attachedBoardNames.isNotEmpty)
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 4,
+                SizedBox(width: 12),
+
+                // Main Content
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Set Name with Rating and Downloads in the same row
+                      Row(
                         children: [
-                          // Show first 2-3 chips
-                          ...set.attachedBoardNames
-                              .take(3)
-                              .map(
-                                (boardName) => Chip(
-                                  label: Text(
-                                    boardName,
-                                    style: AppTextStyles.labelSmall.copyWith(
-                                      fontSize: 11,
-                                    ),
-                                  ),
-                                  backgroundColor: ColorConstants.primaryColor
-                                      .withValues(alpha: 0.2),
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: 4,
-                                    vertical: 0,
-                                  ),
-                                  materialTapTargetSize:
-                                      MaterialTapTargetSize.shrinkWrap,
-                                  visualDensity: VisualDensity.compact,
-                                ),
+                          // Set Name
+                          Expanded(
+                            child: Text(
+                              set.name,
+                              style: Theme.of(
+                                context,
+                              ).textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color:
+                                    Theme.of(context).brightness ==
+                                            Brightness.dark
+                                        ? ColorConstants.lightTextColor
+                                        : ColorConstants.darkTextColor,
                               ),
-                          // Show "+N more" chip if there are more boards
-                          if (set.attachedBoardNames.length > 3)
-                            Chip(
-                              label: Text(
-                                '+${set.attachedBoardNames.length - 3} more',
-                                style: AppTextStyles.labelSmall.copyWith(
-                                  fontSize: 11,
-                                  color: ColorConstants.primaryColor,
-                                ),
-                              ),
-                              backgroundColor: ColorConstants.primaryColor
-                                  .withValues(alpha: 0.1),
-                              padding: EdgeInsets.symmetric(
-                                horizontal: 4,
-                                vertical: 0,
-                              ),
-                              materialTapTargetSize:
-                                  MaterialTapTargetSize.shrinkWrap,
-                              visualDensity: VisualDensity.compact,
+                              overflow: TextOverflow.ellipsis,
                             ),
+                          ),
+
+                          SizedBox(width: 12),
+
+                          // Rating
+                          RatingDisplay(rating: set.rating),
+
+                          SizedBox(width: 12),
+
+                          // Downloads
+                          DownloadDisplay(downloads: set.downloads),
                         ],
                       ),
 
-                    if (set.attachedBoardNames.isEmpty)
-                      Text(
-                        'Not attached to any boards',
-                        style: AppTextStyles.bodySmall.copyWith(
-                          color: ColorConstants.hintGrey,
-                          fontSize: 12,
-                          fontStyle: FontStyle.italic,
-                        ),
-                      ),
-                  ],
-                ),
-              ),
+                      SizedBox(height: 4),
 
-              // Actions
-              PopupMenuButton<String>(
-                icon: Icon(
-                  Icons.more_vert,
-                  color:
-                      Theme.of(context).brightness == Brightness.dark
-                          ? ColorConstants.lightTextColor
-                          : ColorConstants.darkTextColor,
-                ),
-                itemBuilder:
-                    (BuildContext context) => [
-                      PopupMenuItem<String>(
-                        value: 'edit',
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.edit,
-                              size: 20,
-                              color: ColorConstants.primaryColor,
-                            ),
-                            SizedBox(width: 12),
-                            Text('Edit'),
-                          ],
+                      // Description
+                      Text(
+                        set.description,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: ColorConstants.hintGrey,
                         ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      PopupMenuItem<String>(
-                        value: 'duplicate',
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.copy,
-                              size: 20,
-                              color: ColorConstants.secondaryColor,
-                            ),
-                            SizedBox(width: 12),
-                            Text('Duplicate'),
-                          ],
-                        ),
-                      ),
-                      PopupMenuItem<String>(
-                        value: 'delete',
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.delete,
-                              size: 20,
-                              color: ColorConstants.errorColor,
-                            ),
-                            SizedBox(width: 12),
-                            Text(
-                              'Delete',
-                              style: TextStyle(
-                                color: ColorConstants.errorColor,
+
+                      SizedBox(height: 12),
+
+                      // Difficulty and Tags Row with spacing
+                      Row(
+                        children: [
+                          // Difficulty chip (no color)
+                          if (set.difficulty != null) ...[
+                            Container(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: ColorConstants.hintGrey.withValues(
+                                  alpha: 0.2,
+                                ),
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(
+                                  color: ColorConstants.hintGrey.withValues(
+                                    alpha: 0.3,
+                                  ),
+                                  width: 1,
+                                ),
+                              ),
+                              child: Text(
+                                _getDifficultyLabel(set.difficulty),
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                  color:
+                                      Theme.of(context).brightness ==
+                                              Brightness.dark
+                                          ? ColorConstants.lightTextColor
+                                          : ColorConstants.darkTextColor,
+                                ),
                               ),
                             ),
+                            SizedBox(
+                              width: 16,
+                            ), // Space between difficulty and tags
                           ],
-                        ),
+
+                          // Tag chips
+                          Expanded(
+                            child: Wrap(
+                              spacing: 8,
+                              runSpacing: 4,
+                              children: [
+                                ...set.tags
+                                    .take(3)
+                                    .map(
+                                      (tag) => Chip(
+                                        label: Text(
+                                          _formatTagName(tag),
+                                          style: AppTextStyles.labelSmall
+                                              .copyWith(fontSize: 11),
+                                        ),
+                                        backgroundColor: ColorConstants
+                                            .primaryColor
+                                            .withValues(alpha: 0.2),
+                                        padding: EdgeInsets.symmetric(
+                                          horizontal: 4,
+                                          vertical: 0,
+                                        ),
+                                        materialTapTargetSize:
+                                            MaterialTapTargetSize.shrinkWrap,
+                                        visualDensity: VisualDensity.compact,
+                                      ),
+                                    ),
+                                // Show "+N" chip if there are more tags
+                                if (set.tags.length > 3)
+                                  Chip(
+                                    label: Text(
+                                      '+${set.tags.length - 3}',
+                                      style: AppTextStyles.labelSmall.copyWith(
+                                        fontSize: 11,
+                                        color: ColorConstants.primaryColor,
+                                      ),
+                                    ),
+                                    backgroundColor: ColorConstants.primaryColor
+                                        .withValues(alpha: 0.1),
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: 4,
+                                      vertical: 0,
+                                    ),
+                                    materialTapTargetSize:
+                                        MaterialTapTargetSize.shrinkWrap,
+                                    visualDensity: VisualDensity.compact,
+                                  ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
                     ],
-                onSelected: (String value) {
-                  AppLogger.i('Selected: $value for set: ${set.name}');
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('$value: ${set.name}')),
-                  );
-                },
-              ),
-            ],
+                  ),
+                ),
+
+                SizedBox(width: 8),
+
+                // Actions menu, aligned
+                PopupMenuButton<String>(
+                  icon: Icon(
+                    Icons.more_vert,
+                    color:
+                        Theme.of(context).brightness == Brightness.dark
+                            ? ColorConstants.lightTextColor
+                            : ColorConstants.darkTextColor,
+                  ),
+                  itemBuilder:
+                      (BuildContext context) => [
+                        PopupMenuItem<String>(
+                          value: 'edit',
+                          child: StandardMenuItem(
+                            icon: Icons.edit,
+                            label: 'Edit',
+                          ),
+                        ),
+                        PopupMenuItem<String>(
+                          value: 'duplicate',
+                          child: StandardMenuItem(
+                            icon: Icons.copy,
+                            label: 'Duplicate',
+                          ),
+                        ),
+                        PopupMenuItem<String>(
+                          value: 'delete',
+                          child: StandardMenuItem(
+                            icon: Icons.delete,
+                            label: 'Delete',
+                          ),
+                        ),
+                      ],
+                  onSelected: (String value) {
+                    switch (value) {
+                      case 'edit':
+                        onEdit?.call();
+                        break;
+                      case 'duplicate':
+                        onDuplicate?.call();
+                        break;
+                      case 'delete':
+                        onDelete?.call();
+                        break;
+                    }
+                  },
+                ),
+              ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }

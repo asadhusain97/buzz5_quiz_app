@@ -4,12 +4,16 @@ import 'package:buzz5_quiz_app/config/colors.dart';
 import 'package:buzz5_quiz_app/config/text_styles.dart';
 import 'package:buzz5_quiz_app/config/logger.dart';
 import 'package:buzz5_quiz_app/models/all_enums.dart';
+import 'package:buzz5_quiz_app/models/set_model.dart';
 import 'package:buzz5_quiz_app/widgets/app_background.dart';
 import 'package:buzz5_quiz_app/widgets/media_upload_widget.dart';
+import 'package:buzz5_quiz_app/widgets/stat_displays.dart';
 import 'package:buzz5_quiz_app/services/set_service.dart';
 
 class NewSetPage extends StatefulWidget {
-  const NewSetPage({super.key});
+  final SetModel? existingSet;
+
+  const NewSetPage({super.key, this.existingSet});
 
   @override
   State<NewSetPage> createState() => _NewSetPageState();
@@ -20,6 +24,9 @@ class _NewSetPageState extends State<NewSetPage>
   final _formKey = GlobalKey<FormState>();
   late TabController _questionTabController;
   final SetService _setService = SetService();
+
+  // Edit mode check
+  bool get isEditing => widget.existingSet != null;
 
   // Loading state
   bool _isSaving = false;
@@ -76,6 +83,29 @@ class _NewSetPageState extends State<NewSetPage>
     _descriptionController.addListener(() {
       _descriptionNotifier.value = _descriptionController.text;
     });
+
+    // Pre-populate if editing an existing set
+    if (isEditing) {
+      final existingSet = widget.existingSet!;
+      _nameController.text = existingSet.name;
+      _descriptionController.text = existingSet.description;
+      _selectedDifficulty = existingSet.difficulty;
+      _selectedTags.addAll(existingSet.tags);
+
+      // Pre-populate question controllers
+      for (int i = 0; i < existingSet.questions.length && i < 5; i++) {
+        final question = existingSet.questions[i];
+        _questionControllers[i]['questionText']!.text =
+            question.questionText ?? '';
+        _questionControllers[i]['answerText']!.text = question.answerText ?? '';
+        _questionControllers[i]['hint']!.text = question.hint ?? '';
+        _questionControllers[i]['funda']!.text = question.funda ?? '';
+        _questionMediaUrls[i]['questionMedia'] =
+            question.questionMedia?.downloadURL;
+        _questionMediaUrls[i]['answerMedia'] =
+            question.answerMedia?.downloadURL;
+      }
+    }
 
     // OPTIMIZATION: Question controllers only trigger rebuild for tab indicators
     // We don't need real-time updates while typing in questions
@@ -144,37 +174,54 @@ class _NewSetPageState extends State<NewSetPage>
         final mediaUrls = _questionMediaUrls[i];
 
         questionData.add({
-          'questionText': controllers['questionText']!.text.trim().isNotEmpty
-              ? controllers['questionText']!.text.trim()
-              : null,
+          'questionText':
+              controllers['questionText']!.text.trim().isNotEmpty
+                  ? controllers['questionText']!.text.trim()
+                  : null,
           'questionMediaFile': media['questionMedia'],
           'questionMediaUrl': mediaUrls['questionMedia'],
-          'answerText': controllers['answerText']!.text.trim().isNotEmpty
-              ? controllers['answerText']!.text.trim()
-              : null,
+          'answerText':
+              controllers['answerText']!.text.trim().isNotEmpty
+                  ? controllers['answerText']!.text.trim()
+                  : null,
           'answerMediaFile': media['answerMedia'],
           'answerMediaUrl': mediaUrls['answerMedia'],
           'points': _questionPoints[i],
-          'hint': controllers['hint']!.text.trim().isNotEmpty
-              ? controllers['hint']!.text.trim()
-              : null,
-          'funda': controllers['funda']!.text.trim().isNotEmpty
-              ? controllers['funda']!.text.trim()
-              : null,
+          'hint':
+              controllers['hint']!.text.trim().isNotEmpty
+                  ? controllers['hint']!.text.trim()
+                  : null,
+          'funda':
+              controllers['funda']!.text.trim().isNotEmpty
+                  ? controllers['funda']!.text.trim()
+                  : null,
         });
       }
 
-      // Create the set
-      final String setId = await _setService.createSet(
-        name: _nameController.text.trim(),
-        description: _descriptionController.text.trim(),
-        tags: _selectedTags.toList(),
-        difficulty: _selectedDifficulty,
-        questionData: questionData,
-        isDraft: isDraft,
-      );
-
-      AppLogger.i('Set created successfully with ID: $setId');
+      // Create or update the set
+      String setId;
+      if (isEditing) {
+        setId = widget.existingSet!.id;
+        await _setService.updateSet(
+          setId: setId,
+          name: _nameController.text.trim(),
+          description: _descriptionController.text.trim(),
+          tags: _selectedTags.toList(),
+          difficulty: _selectedDifficulty,
+          questionData: questionData,
+        );
+        AppLogger.i('Set updated successfully with ID: $setId');
+      } else {
+        setId = await _setService.createSet(
+          name: _nameController.text.trim(),
+          description: _descriptionController.text.trim(),
+          tags: _selectedTags.toList(),
+          difficulty: _selectedDifficulty,
+          questionData: questionData,
+          isDraft: isDraft,
+        );
+        AppLogger.i('Set created successfully with ID: $setId');
+      }
 
       if (!mounted) return;
 
@@ -182,7 +229,9 @@ class _NewSetPageState extends State<NewSetPage>
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            isDraft
+            isEditing
+                ? 'Set updated successfully!'
+                : isDraft
                 ? 'Set saved as draft successfully!'
                 : 'Set saved successfully!',
           ),
@@ -267,136 +316,141 @@ class _NewSetPageState extends State<NewSetPage>
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
                       child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Select Tags',
-                          style: AppTextStyles.titleSmall.copyWith(
-                            fontWeight: FontWeight.bold,
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Select Tags',
+                            style: AppTextStyles.titleSmall.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                        ),
-                        Text(
-                          '${_selectedTags.length}/5',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color:
-                                _selectedTags.length >= 5
-                                    ? ColorConstants.errorColor
-                                    : ColorConstants.primaryColor,
-                            fontWeight: FontWeight.bold,
+                          Text(
+                            '${_selectedTags.length}/5',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color:
+                                  _selectedTags.length >= 5
+                                      ? ColorConstants.errorColor
+                                      : ColorConstants.primaryColor,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Divider(height: 1),
-                  Container(
-                    constraints: BoxConstraints(maxHeight: 300),
-                    child: SingleChildScrollView(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children:
-                            PredefinedTags.values.map((tag) {
-                              final isSelected = _selectedTags.contains(tag);
-                              final isDisabled =
-                                  !isSelected && _selectedTags.length >= 5;
-
-                              return InkWell(
-                                onTap:
-                                    isDisabled
-                                        ? null
-                                        : () {
-                                          setMenuState(() {
-                                            setState(() {
-                                              if (isSelected) {
-                                                _selectedTags.remove(tag);
-                                              } else {
-                                                if (_selectedTags.length < 5) {
-                                                  _selectedTags.add(tag);
-                                                }
-                                              }
-                                            });
-                                          });
-                                        },
-                                child: Container(
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 8,
-                                  ),
-                                  color:
-                                      isDisabled
-                                          ? ColorConstants.hintGrey.withValues(
-                                            alpha: 0.05,
-                                          )
-                                          : null,
-                                  child: Row(
-                                    children: [
-                                      SizedBox(
-                                        width: 24,
-                                        height: 24,
-                                        child: Checkbox(
-                                          value: isSelected,
-                                          onChanged:
-                                              isDisabled
-                                                  ? null
-                                                  : (value) {
-                                                    setMenuState(() {
-                                                      setState(() {
-                                                        if (value == true) {
-                                                          if (_selectedTags
-                                                                  .length <
-                                                              5) {
-                                                            _selectedTags.add(
-                                                              tag,
-                                                            );
-                                                          }
-                                                        } else {
-                                                          _selectedTags.remove(
-                                                            tag,
-                                                          );
-                                                        }
-                                                      });
-                                                    });
-                                                  },
-                                          activeColor:
-                                              ColorConstants.primaryColor,
-                                          materialTapTargetSize:
-                                              MaterialTapTargetSize.shrinkWrap,
-                                        ),
-                                      ),
-                                      SizedBox(width: 12),
-                                      Expanded(
-                                        child: Text(
-                                          _formatTagName(tag),
-                                          style: TextStyle(
-                                            fontSize: 14,
-                                            color:
-                                                isDisabled
-                                                    ? ColorConstants.hintGrey
-                                                        .withValues(alpha: 0.4)
-                                                    : isSelected
-                                                    ? ColorConstants
-                                                        .primaryColor
-                                                    : ColorConstants
-                                                        .lightTextColor,
-                                            fontWeight:
-                                                isSelected
-                                                    ? FontWeight.w600
-                                                    : FontWeight.normal,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              );
-                            }).toList(),
+                        ],
                       ),
                     ),
-                  ),
-                ],
+                    Divider(height: 1),
+                    Container(
+                      constraints: BoxConstraints(maxHeight: 300),
+                      child: SingleChildScrollView(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children:
+                              PredefinedTags.values.map((tag) {
+                                final isSelected = _selectedTags.contains(tag);
+                                final isDisabled =
+                                    !isSelected && _selectedTags.length >= 5;
+
+                                return InkWell(
+                                  onTap:
+                                      isDisabled
+                                          ? null
+                                          : () {
+                                            setMenuState(() {
+                                              setState(() {
+                                                if (isSelected) {
+                                                  _selectedTags.remove(tag);
+                                                } else {
+                                                  if (_selectedTags.length <
+                                                      5) {
+                                                    _selectedTags.add(tag);
+                                                  }
+                                                }
+                                              });
+                                            });
+                                          },
+                                  child: Container(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 8,
+                                    ),
+                                    color:
+                                        isDisabled
+                                            ? ColorConstants.hintGrey
+                                                .withValues(alpha: 0.05)
+                                            : null,
+                                    child: Row(
+                                      children: [
+                                        SizedBox(
+                                          width: 24,
+                                          height: 24,
+                                          child: Checkbox(
+                                            value: isSelected,
+                                            onChanged:
+                                                isDisabled
+                                                    ? null
+                                                    : (value) {
+                                                      setMenuState(() {
+                                                        setState(() {
+                                                          if (value == true) {
+                                                            if (_selectedTags
+                                                                    .length <
+                                                                5) {
+                                                              _selectedTags.add(
+                                                                tag,
+                                                              );
+                                                            }
+                                                          } else {
+                                                            _selectedTags
+                                                                .remove(tag);
+                                                          }
+                                                        });
+                                                      });
+                                                    },
+                                            activeColor:
+                                                ColorConstants.primaryColor,
+                                            materialTapTargetSize:
+                                                MaterialTapTargetSize
+                                                    .shrinkWrap,
+                                          ),
+                                        ),
+                                        SizedBox(width: 12),
+                                        Expanded(
+                                          child: Text(
+                                            _formatTagName(tag),
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              color:
+                                                  isDisabled
+                                                      ? ColorConstants.hintGrey
+                                                          .withValues(
+                                                            alpha: 0.4,
+                                                          )
+                                                      : isSelected
+                                                      ? ColorConstants
+                                                          .primaryColor
+                                                      : ColorConstants
+                                                          .lightTextColor,
+                                              fontWeight:
+                                                  isSelected
+                                                      ? FontWeight.w600
+                                                      : FontWeight.normal,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              }).toList(),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               );
             },
@@ -410,7 +464,10 @@ class _NewSetPageState extends State<NewSetPage>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Create New Set', style: AppTextStyles.titleBig),
+        title: Text(
+          isEditing ? 'Edit Set' : 'Create New Set',
+          style: AppTextStyles.titleBig,
+        ),
         backgroundColor: ColorConstants.primaryContainerColor,
         leading: IconButton(
           icon: Icon(Icons.arrow_back),
@@ -555,7 +612,8 @@ class _NewSetPageState extends State<NewSetPage>
                                                           ColorConstants
                                                               .lightTextColor,
                                                     ),
-                                                    overflow: TextOverflow.ellipsis,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
                                                   ),
                                                 ),
                                                 if (_selectedTags
@@ -662,40 +720,17 @@ class _NewSetPageState extends State<NewSetPage>
                                           CrossAxisAlignment.center,
                                       children: [
                                         // Downloads
-                                        Icon(
-                                          Icons.download,
-                                          size: 22,
-                                          color: ColorConstants.lightTextColor
-                                              .withValues(alpha: 0.7),
-                                        ),
-                                        SizedBox(width: 6),
-                                        Text(
-                                          '0',
-                                          style: AppTextStyles.bodySmall
-                                              .copyWith(
-                                                color: ColorConstants
-                                                    .lightTextColor
-                                                    .withValues(alpha: 0.7),
-                                                fontSize: 15,
-                                              ),
+                                        DownloadDisplay(
+                                          downloads: 0,
+                                          iconSize: 18,
+                                          fontSize: 13,
                                         ),
                                         SizedBox(width: 20),
                                         // Rating
-                                        Icon(
-                                          Icons.star,
-                                          size: 22,
-                                          color: Colors.amber,
-                                        ),
-                                        SizedBox(width: 6),
-                                        Text(
-                                          '0.0/5',
-                                          style: AppTextStyles.bodySmall
-                                              .copyWith(
-                                                color: ColorConstants
-                                                    .lightTextColor
-                                                    .withValues(alpha: 0.7),
-                                                fontSize: 15,
-                                              ),
+                                        RatingDisplay(
+                                          rating: 0.0,
+                                          iconSize: 18,
+                                          fontSize: 13,
                                         ),
                                       ],
                                     ),
@@ -1012,24 +1047,25 @@ class _ActionButtons extends StatelessWidget {
                         borderRadius: BorderRadius.circular(6),
                       ),
                     ),
-                    child: isSaving
-                        ? SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              ColorConstants.primaryColor,
+                    child:
+                        isSaving
+                            ? SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  ColorConstants.primaryColor,
+                                ),
+                              ),
+                            )
+                            : Text(
+                              'Save As Draft',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
-                          ),
-                        )
-                        : Text(
-                          'Save As Draft',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
                   ),
                 ),
                 SizedBox(width: 12),
@@ -1055,24 +1091,25 @@ class _ActionButtons extends StatelessWidget {
                       ),
                       elevation: canSave ? 2 : 0,
                     ),
-                    child: isSaving
-                        ? SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              ColorConstants.lightTextColor,
+                    child:
+                        isSaving
+                            ? SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  ColorConstants.lightTextColor,
+                                ),
+                              ),
+                            )
+                            : Text(
+                              'Save',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
-                          ),
-                        )
-                        : Text(
-                          'Save',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
                   ),
                 ),
               ],
