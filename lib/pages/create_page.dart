@@ -105,6 +105,68 @@ class _CreatePageState extends State<CreatePage>
     }
   }
 
+  Future<void> _duplicateSet(SetModel set) async {
+    try {
+      // Show loading indicator
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                ),
+                SizedBox(width: 16),
+                Text('Duplicating "${set.name}"...'),
+              ],
+            ),
+            duration: Duration(
+              seconds: 10,
+            ), // Long duration, will dismiss on completion
+          ),
+        );
+      }
+
+      // Duplicate the set
+      await _setService.duplicateSet(set.id);
+
+      // Reload sets to show the new duplicate
+      await _loadSets();
+
+      if (mounted) {
+        // Dismiss loading snackbar
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('"${set.name}" duplicated successfully'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      AppLogger.e('Error duplicating set: $e');
+      if (mounted) {
+        // Dismiss loading snackbar
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+
+        // Show error message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to duplicate set: $e'),
+            backgroundColor: ColorConstants.errorColor,
+          ),
+        );
+      }
+    }
+  }
+
   bool get _isSetView => _currentTabIndex == 0;
 
   @override
@@ -1220,16 +1282,7 @@ class _CreatePageState extends State<CreatePage>
                                           .then((_) => _loadSets());
                                     },
                                     onDuplicate: () {
-                                      // TODO: Implement duplicate functionality
-                                      ScaffoldMessenger.of(
-                                        context,
-                                      ).showSnackBar(
-                                        SnackBar(
-                                          content: Text(
-                                            'Duplicate: ${set.name}',
-                                          ),
-                                        ),
-                                      );
+                                      _duplicateSet(set);
                                     },
                                     onDelete: () async {
                                       final confirmed = await showDialog<bool>(

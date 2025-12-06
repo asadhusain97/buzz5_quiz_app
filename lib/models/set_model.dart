@@ -1,5 +1,5 @@
-import 'package:buzz5_quiz_app/models/all_enums.dart';
-import 'package:buzz5_quiz_app/models/question_model.dart' hide QuestionStatus;
+import 'package:buzz5_quiz_app/models/all_enums.dart' hide QuestionStatus;
+import 'package:buzz5_quiz_app/models/question_model.dart';
 
 /// A class representing a Set of questions.
 class SetModel {
@@ -52,7 +52,6 @@ class SetModel {
 
     // Additionally, every question within the set must be 'published'.
     for (final question in questions) {
-      // ignore: unrelated_type_equality_checks
       if (question.status != QuestionStatus.complete) {
         return SetStatus.draft;
       }

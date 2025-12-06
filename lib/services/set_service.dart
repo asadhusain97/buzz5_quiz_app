@@ -21,9 +21,9 @@ class SetService {
     FirebaseFirestore? firestore,
     FirebaseAuth? auth,
     StorageService? storageService,
-  })  : _firestore = firestore ?? FirebaseFirestore.instance,
-        _auth = auth ?? FirebaseAuth.instance,
-        _storageService = storageService ?? StorageService();
+  }) : _firestore = firestore ?? FirebaseFirestore.instance,
+       _auth = auth ?? FirebaseAuth.instance,
+       _storageService = storageService ?? StorageService();
 
   /// Create a new set in Firestore
   ///
@@ -55,7 +55,9 @@ class SetService {
       AppLogger.i('Creating new set: $name for user ${currentUser.uid}');
       AppLogger.d('User email: ${currentUser.email}');
       AppLogger.d('User displayName: ${currentUser.displayName}');
-      AppLogger.d('Auth token available: ${await currentUser.getIdToken() != null}');
+      AppLogger.d(
+        'Auth token available: ${await currentUser.getIdToken() != null}',
+      );
 
       // Generate set ID
       final String setId = _uuid.v4();
@@ -131,7 +133,6 @@ class SetService {
         );
 
         questions.add(question);
-        AppLogger.d('Question ${i + 1} processed successfully');
       }
 
       // Create SetModel
@@ -143,11 +144,13 @@ class SetService {
         authorName: currentUser.displayName ?? currentUser.email ?? 'Anonymous',
         tags: tags,
         difficulty: difficulty,
-        isPrivate: true, // Always private as per requirement (drafts are private)
+        isPrivate:
+            true, // Always private as per requirement (drafts are private)
         questions: questions,
       );
 
       AppLogger.d('SetModel created with status: ${setModel.status}');
+      AppLogger.d('Set has ${setModel.questions.length} questions');
 
       // Save to Firestore
       AppLogger.d('Attempting to save to Firestore collection: sets/$setId');
@@ -159,7 +162,9 @@ class SetService {
           'FIRESTORE WRITE ERROR: $firestoreError',
           error: firestoreError,
         );
-        AppLogger.e('This is likely a permissions issue. Check Firestore rules.');
+        AppLogger.e(
+          'This is likely a permissions issue. Check Firestore rules.',
+        );
         rethrow;
       }
 
@@ -169,11 +174,7 @@ class SetService {
 
       return setId;
     } catch (e, stackTrace) {
-      AppLogger.e(
-        'Error creating set: $e',
-        error: e,
-        stackTrace: stackTrace,
-      );
+      AppLogger.e('Error creating set: $e', error: e, stackTrace: stackTrace);
 
       // Provide helpful error messages
       if (e.toString().contains('permission-denied')) {
@@ -357,15 +358,19 @@ class SetService {
 
       AppLogger.i('Fetching sets for user: ${currentUser.uid}');
 
-      final QuerySnapshot snapshot = await _firestore
-          .collection('sets')
-          .where('authorId', isEqualTo: currentUser.uid)
-          .orderBy('creationDate', descending: true)
-          .get();
+      final QuerySnapshot snapshot =
+          await _firestore
+              .collection('sets')
+              .where('authorId', isEqualTo: currentUser.uid)
+              .orderBy('creationDate', descending: true)
+              .get();
 
-      final List<SetModel> sets = snapshot.docs
-          .map((doc) => SetModel.fromJson(doc.data() as Map<String, dynamic>))
-          .toList();
+      final List<SetModel> sets =
+          snapshot.docs
+              .map(
+                (doc) => SetModel.fromJson(doc.data() as Map<String, dynamic>),
+              )
+              .toList();
 
       AppLogger.i('Fetched ${sets.length} sets for user');
 
@@ -373,6 +378,193 @@ class SetService {
     } catch (e, stackTrace) {
       AppLogger.e(
         'Error fetching user sets: $e',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      rethrow;
+    }
+  }
+
+  /// Check if a set with the given name already exists for the current user
+  ///
+  /// Parameters:
+  /// - name: The name to check
+  /// - excludeSetId: Optional set ID to exclude from the check (for edit scenarios)
+  ///
+  /// Returns: true if a set with this name exists, false otherwise
+  Future<bool> checkSetNameExists(String name, {String? excludeSetId}) async {
+    try {
+      final User? currentUser = _auth.currentUser;
+      if (currentUser == null) {
+        throw Exception('No user is currently signed in');
+      }
+
+      AppLogger.i('Checking if set name exists: $name');
+
+      final QuerySnapshot snapshot =
+          await _firestore
+              .collection('sets')
+              .where('authorId', isEqualTo: currentUser.uid)
+              .where('name', isEqualTo: name)
+              .get();
+
+      // Filter out the excluded set if provided
+      final matchingSets =
+          snapshot.docs.where((doc) {
+            return excludeSetId == null || doc.id != excludeSetId;
+          }).toList();
+
+      final exists = matchingSets.isNotEmpty;
+      AppLogger.i('Set name "$name" exists: $exists');
+
+      return exists;
+    } catch (e, stackTrace) {
+      AppLogger.e(
+        'Error checking set name: $e',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      rethrow;
+    }
+  }
+
+  /// Generate a unique name by appending a suffix like " (Copy)", " (Copy 2)", etc.
+  ///
+  /// Parameters:
+  /// - baseName: The base name to use
+  ///
+  /// Returns: A unique name that doesn't conflict with existing sets
+  Future<String> generateUniqueName(String baseName) async {
+    try {
+      AppLogger.i('Generating unique name for: $baseName');
+
+      // First, try the base name
+      if (!await checkSetNameExists(baseName)) {
+        return baseName;
+      }
+
+      // Try with " (Copy)" suffix
+      String candidateName = '$baseName (Copy)';
+      if (!await checkSetNameExists(candidateName)) {
+        return candidateName;
+      }
+
+      // Try with " (Copy N)" suffix, incrementing N
+      int copyNumber = 2;
+      while (copyNumber < 100) {
+        // Safety limit
+        candidateName = '$baseName (Copy $copyNumber)';
+        if (!await checkSetNameExists(candidateName)) {
+          AppLogger.i('Generated unique name: $candidateName');
+          return candidateName;
+        }
+        copyNumber++;
+      }
+
+      // Fallback: append timestamp if we somehow hit the limit
+      candidateName =
+          '$baseName (Copy ${DateTime.now().millisecondsSinceEpoch})';
+      AppLogger.w('Using timestamp-based name: $candidateName');
+      return candidateName;
+    } catch (e, stackTrace) {
+      AppLogger.e(
+        'Error generating unique name: $e',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      rethrow;
+    }
+  }
+
+  /// Duplicate an existing set
+  ///
+  /// Creates a copy of the specified set with a unique name.
+  /// The duplicate will have:
+  /// - A new ID
+  /// - A unique name (original name with " (Copy)" suffix)
+  /// - New creation date
+  /// - Reset downloads (0) and rating (0.0)
+  /// - Same questions, tags, difficulty, and other metadata
+  /// - References to the same media files (not copied)
+  ///
+  /// Parameters:
+  /// - setId: The ID of the set to duplicate
+  ///
+  /// Returns: The ID of the newly created duplicate set
+  Future<String> duplicateSet(String setId) async {
+    try {
+      final User? currentUser = _auth.currentUser;
+      if (currentUser == null) {
+        throw Exception('No user is currently signed in');
+      }
+
+      AppLogger.i('Duplicating set: $setId');
+
+      // Get the original set
+      final SetModel? originalSet = await getSet(setId);
+      if (originalSet == null) {
+        throw Exception('Set not found: $setId');
+      }
+
+      // Verify ownership
+      if (originalSet.authorId != currentUser.uid) {
+        throw Exception('You do not have permission to duplicate this set');
+      }
+
+      // Generate a unique name
+      final String uniqueName = await generateUniqueName(originalSet.name);
+      AppLogger.i('Using unique name: $uniqueName');
+
+      // Generate new IDs for the set and questions
+      final String newSetId = _uuid.v4();
+      final List<Question> newQuestions = [];
+
+      for (final question in originalSet.questions) {
+        // Create new question with new ID but same content
+        // Media references are kept the same (not copied)
+        final newQuestion = Question(
+          id: _uuid.v4(),
+          questionText: question.questionText,
+          questionMedia: question.questionMedia,
+          answerText: question.answerText,
+          answerMedia: question.answerMedia,
+          points: question.points,
+          hint: question.hint,
+          funda: question.funda,
+        );
+        newQuestions.add(newQuestion);
+      }
+
+      // Create the duplicated set
+      final duplicatedSet = SetModel(
+        id: newSetId,
+        name: uniqueName,
+        description: originalSet.description,
+        authorId: currentUser.uid,
+        authorName: currentUser.displayName ?? currentUser.email ?? 'Anonymous',
+        tags: originalSet.tags,
+        difficulty: originalSet.difficulty,
+        isPrivate: originalSet.isPrivate,
+        questions: newQuestions,
+        downloads: 0, // Reset downloads
+        rating: 0.0, // Reset rating
+        price: originalSet.price,
+      );
+
+      // Save to Firestore
+      await _firestore
+          .collection('sets')
+          .doc(newSetId)
+          .set(duplicatedSet.toJson());
+
+      AppLogger.i(
+        'Set duplicated successfully. Original: $setId, New: $newSetId',
+      );
+
+      return newSetId;
+    } catch (e, stackTrace) {
+      AppLogger.e(
+        'Error duplicating set: $e',
         error: e,
         stackTrace: stackTrace,
       );

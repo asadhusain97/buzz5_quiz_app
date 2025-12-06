@@ -165,6 +165,56 @@ class _NewSetPageState extends State<NewSetPage>
 
       AppLogger.i('Starting to save set (isDraft: $isDraft)');
 
+      // Validate that the name doesn't already exist
+      final String setName = _nameController.text.trim();
+      final bool nameExists = await _setService.checkSetNameExists(
+        setName,
+        excludeSetId: isEditing ? widget.existingSet!.id : null,
+      );
+
+      if (nameExists) {
+        // Name already exists, show error and return
+        if (!mounted) return;
+
+        // Reset saving state
+        setState(() {
+          _isSaving = false;
+        });
+
+        // Show error dialog
+        await showDialog(
+          context: context,
+          builder:
+              (context) => AlertDialog(
+                title: Row(
+                  children: [
+                    Icon(
+                      Icons.error_outline,
+                      color: ColorConstants.errorColor,
+                      size: 28,
+                    ),
+                    SizedBox(width: 12),
+                    Text('Duplicate Name'),
+                  ],
+                ),
+                content: Text(
+                  'A set with the name "$setName" already exists. Please choose a different name.',
+                  style: AppTextStyles.bodyMedium,
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: Text(
+                      'OK',
+                      style: TextStyle(color: ColorConstants.primaryColor),
+                    ),
+                  ),
+                ],
+              ),
+        );
+        return;
+      }
+
       // Prepare question data
       final List<Map<String, dynamic>> questionData = [];
 
