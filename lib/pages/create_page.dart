@@ -1,3 +1,23 @@
+// Create Page - Set and Board Management
+//
+// This page serves as the main hub for creating and managing quiz content.
+// It provides a tabbed interface to view and manage:
+// - Sets: Individual question sets with 5 questions each
+// - Boards: Collections of up to 5 sets for complete quiz games
+//
+// Key Features:
+// - Tab switching between Sets and Boards views
+// - Filtering by status, tags, name, and creator
+// - Sorting by name, difficulty, or creation date
+// - CRUD operations: Create, Edit, Duplicate, Delete sets/boards
+// - Bulk selection for future batch operations
+// - Import set functionality (from external sources)
+//
+// Data Flow:
+// - Sets are fetched from Firebase via SetService
+// - Boards currently use mock data (Firebase integration pending)
+// - Filters and sorts are applied client-side for performance
+
 import 'package:buzz5_quiz_app/models/all_enums.dart';
 import 'package:flutter/material.dart';
 import 'package:buzz5_quiz_app/config/colors.dart';
@@ -6,9 +26,11 @@ import 'package:buzz5_quiz_app/config/logger.dart';
 import 'package:buzz5_quiz_app/models/board_model.dart';
 import 'package:buzz5_quiz_app/models/set_model.dart';
 import 'package:buzz5_quiz_app/widgets/app_background.dart';
-import 'package:buzz5_quiz_app/widgets/stat_displays.dart';
-import 'package:buzz5_quiz_app/widgets/standard_menu_item.dart';
 import 'package:buzz5_quiz_app/pages/create_set_page.dart';
+import 'package:buzz5_quiz_app/pages/import_set_page.dart';
+import 'package:buzz5_quiz_app/pages/create_new_board_page.dart';
+import 'package:buzz5_quiz_app/presentation/components/set_list_item_tile.dart';
+import 'package:buzz5_quiz_app/presentation/components/board_list_item_tile.dart';
 import 'package:buzz5_quiz_app/services/set_service.dart';
 
 class CreatePage extends StatefulWidget {
@@ -20,42 +42,61 @@ class CreatePage extends StatefulWidget {
 
 class _CreatePageState extends State<CreatePage>
     with SingleTickerProviderStateMixin {
+  // ============================================================
+  // TAB CONTROLLER AND VIEW STATE
+  // ============================================================
   late TabController _tabController;
   int _currentTabIndex = 0;
 
-  // Firebase service
+  // ============================================================
+  // FIREBASE SERVICE
+  // ============================================================
   final SetService _setService = SetService();
 
-  // Data state
+  // ============================================================
+  // DATA STATE
+  // ============================================================
   List<SetModel> _sets = [];
   bool _isLoading = true;
   String? _errorMessage;
 
-  // Filter and sort state
+  // ============================================================
+  // FILTER AND SORT STATE
+  // ============================================================
   String _sortBy = 'Creation Date: Newest first';
   final Map<String, dynamic> _activeFilters = {};
 
-  // Filter dropdown states
+  // Individual filter values
   SetStatus? _statusFilter;
   final List<String> _selectedTags = [];
   String _nameSearch = '';
   String _creatorSearch = '';
 
-  // Selection state
+  // ============================================================
+  // SELECTION STATE (for bulk operations)
+  // ============================================================
   final Set<String> _selectedSetIds = {};
 
   @override
   void initState() {
     super.initState();
+    // Initialize tab controller for Sets/Boards tabs
     _tabController = TabController(length: 2, vsync: this);
     _tabController.addListener(() {
       setState(() {
         _currentTabIndex = _tabController.index;
       });
     });
+    // Load sets from Firebase on page load
     _loadSets();
   }
 
+  // ============================================================
+  // DATA LOADING AND CRUD OPERATIONS
+  // ============================================================
+
+  /// Fetches user's sets from Firebase and updates the UI state.
+  /// Shows loading indicator while fetching and handles errors gracefully.
   Future<void> _loadSets() async {
     try {
       setState(() {
@@ -80,6 +121,8 @@ class _CreatePageState extends State<CreatePage>
     }
   }
 
+  /// Deletes a set from Firebase and refreshes the list.
+  /// Shows success/error feedback via snackbar.
   Future<void> _deleteSet(SetModel set) async {
     try {
       await _setService.deleteSet(set.id);
@@ -105,6 +148,8 @@ class _CreatePageState extends State<CreatePage>
     }
   }
 
+  /// Creates a duplicate of an existing set with "(Copy)" suffix.
+  /// Shows loading indicator during operation and refreshes list on success.
   Future<void> _duplicateSet(SetModel set) async {
     try {
       // Show loading indicator
@@ -125,24 +170,19 @@ class _CreatePageState extends State<CreatePage>
                 Text('Duplicating "${set.name}"...'),
               ],
             ),
-            duration: Duration(
-              seconds: 10,
-            ), // Long duration, will dismiss on completion
+            duration: Duration(seconds: 10),
           ),
         );
       }
 
-      // Duplicate the set
+      // Perform duplication via service
       await _setService.duplicateSet(set.id);
 
       // Reload sets to show the new duplicate
       await _loadSets();
 
       if (mounted) {
-        // Dismiss loading snackbar
         ScaffoldMessenger.of(context).hideCurrentSnackBar();
-
-        // Show success message
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('"${set.name}" duplicated successfully'),
@@ -153,10 +193,7 @@ class _CreatePageState extends State<CreatePage>
     } catch (e) {
       AppLogger.e('Error duplicating set: $e');
       if (mounted) {
-        // Dismiss loading snackbar
         ScaffoldMessenger.of(context).hideCurrentSnackBar();
-
-        // Show error message
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Failed to duplicate set: $e'),
@@ -167,6 +204,7 @@ class _CreatePageState extends State<CreatePage>
     }
   }
 
+  /// Returns true if currently viewing the Sets tab, false for Boards tab.
   bool get _isSetView => _currentTabIndex == 0;
 
   @override
@@ -175,7 +213,9 @@ class _CreatePageState extends State<CreatePage>
     super.dispose();
   }
 
-  // Mock boards data
+  // ============================================================
+  // MOCK BOARDS DATA (TODO: Replace with Firebase integration)
+  // ============================================================
   final List<BoardModel> _boards = [
     BoardModel(
       id: 'b1',
@@ -231,14 +271,21 @@ class _CreatePageState extends State<CreatePage>
     ),
   ];
 
+  // ============================================================
+  // FILTERING LOGIC
+  // ============================================================
+
+  /// Returns the list of sets filtered by current filter criteria.
+  /// Applies status, name, creator, and tag filters in sequence.
   List<SetModel> get _filteredSets {
     List<SetModel> filtered = _sets;
 
-    // Apply filters based on _activeFilters
+    // Filter by status (Complete/Draft)
     if (_statusFilter != null) {
       filtered = filtered.where((set) => set.status == _statusFilter).toList();
     }
 
+    // Filter by name search
     if (_nameSearch.isNotEmpty) {
       filtered =
           filtered
@@ -249,6 +296,7 @@ class _CreatePageState extends State<CreatePage>
               .toList();
     }
 
+    // Filter by creator search
     if (_creatorSearch.isNotEmpty) {
       filtered =
           filtered
@@ -260,6 +308,7 @@ class _CreatePageState extends State<CreatePage>
               .toList();
     }
 
+    // Filter by selected tags (any match)
     if (_selectedTags.isNotEmpty) {
       filtered =
           filtered
@@ -275,10 +324,12 @@ class _CreatePageState extends State<CreatePage>
     return filtered;
   }
 
+  /// Returns the list of boards filtered by current filter criteria.
+  /// Maps SetStatus filter to BoardStatus for consistency.
   List<BoardModel> get _filteredBoards {
     List<BoardModel> filtered = _boards;
 
-    // Apply filters based on _activeFilters
+    // Filter by status (convert SetStatus to BoardStatus)
     if (_statusFilter != null) {
       BoardStatus boardStatus =
           _statusFilter == SetStatus.complete
@@ -288,6 +339,7 @@ class _CreatePageState extends State<CreatePage>
           filtered.where((board) => board.status == boardStatus).toList();
     }
 
+    // Filter by name search
     if (_nameSearch.isNotEmpty) {
       filtered =
           filtered
@@ -299,6 +351,7 @@ class _CreatePageState extends State<CreatePage>
               .toList();
     }
 
+    // Filter by creator search
     if (_creatorSearch.isNotEmpty) {
       filtered =
           filtered
@@ -313,6 +366,7 @@ class _CreatePageState extends State<CreatePage>
     return filtered;
   }
 
+  /// Resets all active filters to their default state.
   void _clearFilters() {
     setState(() {
       _activeFilters.clear();
@@ -323,6 +377,11 @@ class _CreatePageState extends State<CreatePage>
     });
   }
 
+  // ============================================================
+  // FILTER DIALOG BUILDERS
+  // ============================================================
+
+  /// Shows a dialog to filter sets/boards by status (Complete/Draft).
   void _showStatusFilterDropdown(BuildContext context, RenderBox renderBox) {
     showDialog(
       context: context,
@@ -331,6 +390,7 @@ class _CreatePageState extends State<CreatePage>
 
         return StatefulBuilder(
           builder: (context, setDialogState) {
+            // Helper to build radio button options
             Widget buildRadioOption(String label, SetStatus? value) {
               final isSelected = selectedStatus == value;
               return InkWell(
@@ -432,6 +492,7 @@ class _CreatePageState extends State<CreatePage>
     );
   }
 
+  /// Shows a dialog to filter sets by tags (multi-select).
   void _showTagsFilterDropdown(BuildContext context, RenderBox renderBox) {
     final availableTags = [
       'history',
@@ -504,6 +565,7 @@ class _CreatePageState extends State<CreatePage>
     );
   }
 
+  /// Shows a dialog to search sets/boards by name.
   void _showNameSearchDialog(BuildContext context) {
     final controller = TextEditingController(text: _nameSearch);
 
@@ -555,6 +617,7 @@ class _CreatePageState extends State<CreatePage>
     );
   }
 
+  /// Shows a dialog to search sets/boards by creator name.
   void _showCreatorSearchDialog(BuildContext context) {
     final controller = TextEditingController(text: _creatorSearch);
 
@@ -606,6 +669,10 @@ class _CreatePageState extends State<CreatePage>
     );
   }
 
+  // ============================================================
+  // UI BUILD METHODS
+  // ============================================================
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -624,754 +691,30 @@ class _CreatePageState extends State<CreatePage>
       body: AppBackground(
         child: Center(
           child: Container(
-            constraints: BoxConstraints(maxWidth: 800),
+            constraints: const BoxConstraints(maxWidth: 800),
             padding: const EdgeInsets.symmetric(horizontal: 24.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                SizedBox(height: 24),
+                const SizedBox(height: 24),
 
-                // Header with title, description and action buttons
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Your Sets and Boards',
-                                style: Theme.of(
-                                  context,
-                                ).textTheme.headlineMedium?.copyWith(
-                                  color:
-                                      Theme.of(context).brightness ==
-                                              Brightness.dark
-                                          ? ColorConstants.lightTextColor
-                                          : ColorConstants.darkTextColor,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              SizedBox(height: 8),
-                              Text(
-                                'Create, edit and organize your quiz questions in sets and boards.',
-                                style: Theme.of(context).textTheme.bodyMedium
-                                    ?.copyWith(color: ColorConstants.hintGrey),
-                              ),
-                            ],
-                          ),
-                        ),
-                        SizedBox(width: 24),
-                        Row(
-                          children: [
-                            if (_isSetView) ...[
-                              OutlinedButton.icon(
-                                icon: Icon(Icons.upload_file, size: 18),
-                                label: Text('Import'),
-                                onPressed: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => ImportSetPage(),
-                                    ),
-                                  );
-                                },
-                                style: OutlinedButton.styleFrom(
-                                  foregroundColor:
-                                      Theme.of(context).brightness ==
-                                              Brightness.dark
-                                          ? ColorConstants.lightTextColor
-                                          : ColorConstants.darkTextColor,
-                                  side: BorderSide(
-                                    color:
-                                        Theme.of(context).brightness ==
-                                                Brightness.dark
-                                            ? ColorConstants.lightTextColor
-                                                .withValues(alpha: 0.3)
-                                            : ColorConstants.darkTextColor
-                                                .withValues(alpha: 0.3),
-                                  ),
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: 20,
-                                    vertical: 12,
-                                  ),
-                                  minimumSize: Size(110, 40),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                ),
-                              ),
-                              SizedBox(width: 12),
-                            ],
-                            ElevatedButton.icon(
-                              icon: Icon(Icons.add, size: 18),
-                              label: Text(_isSetView ? 'New Set' : 'New Board'),
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder:
-                                        (context) =>
-                                            _isSetView
-                                                ? NewSetPage()
-                                                : CreateNewBoardPage(),
-                                  ),
-                                );
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: ColorConstants.primaryColor,
-                                foregroundColor: ColorConstants.lightTextColor,
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: 20,
-                                  vertical: 12,
-                                ),
-                                minimumSize: Size(120, 40),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+                // Page header with title, description, and action buttons
+                _buildHeader(),
 
-                SizedBox(height: 24),
+                const SizedBox(height: 24),
 
-                // Tabs
-                TabBar(
-                  controller: _tabController,
-                  isScrollable: true,
-                  tabAlignment: TabAlignment.start,
-                  labelColor:
-                      Theme.of(context).brightness == Brightness.dark
-                          ? ColorConstants.lightTextColor
-                          : ColorConstants.darkTextColor,
-                  unselectedLabelColor: ColorConstants.hintGrey,
-                  indicatorColor: ColorConstants.primaryColor,
-                  indicatorWeight: 3,
-                  indicatorSize: TabBarIndicatorSize.label,
-                  labelPadding: EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                  labelStyle: AppTextStyles.labelMedium.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                  tabs: [Tab(text: 'Sets'), Tab(text: 'Boards')],
-                ),
+                // Tab bar for Sets/Boards toggle
+                _buildTabBar(),
 
-                SizedBox(height: 16),
+                const SizedBox(height: 16),
 
-                // Filter and Sort Bar
-                Row(
-                  children: [
-                    // Filter chips
-                    Expanded(
-                      child: SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: Row(
-                          children: [
-                            // Filter Icon
-                            Icon(
-                              Icons.filter_list,
-                              size: 18,
-                              color: ColorConstants.hintGrey,
-                            ),
-                            SizedBox(width: 8),
+                // Filter and sort controls
+                _buildFilterSortBar(),
 
-                            // Status Filter Chip
-                            Builder(
-                              builder:
-                                  (context) => InkWell(
-                                    onTap: () {
-                                      final renderBox =
-                                          context.findRenderObject()
-                                              as RenderBox;
-                                      _showStatusFilterDropdown(
-                                        context,
-                                        renderBox,
-                                      );
-                                    },
-                                    child: Container(
-                                      padding: EdgeInsets.symmetric(
-                                        horizontal: 12,
-                                        vertical: 8,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color:
-                                            _statusFilter != null
-                                                ? ColorConstants.primaryColor
-                                                    .withValues(alpha: 0.15)
-                                                : Colors.transparent,
-                                        border: Border.all(
-                                          color:
-                                              _statusFilter != null
-                                                  ? ColorConstants.primaryColor
-                                                  : ColorConstants.hintGrey
-                                                      .withValues(alpha: 0.3),
-                                        ),
-                                        borderRadius: BorderRadius.circular(20),
-                                      ),
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Text(
-                                            'Status',
-                                            style: TextStyle(
-                                              fontSize: 13,
-                                              color:
-                                                  _statusFilter != null
-                                                      ? ColorConstants
-                                                          .primaryColor
-                                                      : ColorConstants.hintGrey,
-                                              fontWeight:
-                                                  _statusFilter != null
-                                                      ? FontWeight.w600
-                                                      : FontWeight.normal,
-                                            ),
-                                          ),
-                                          if (_statusFilter != null) ...[
-                                            Text(
-                                              ': ${_activeFilters['Status']}',
-                                              style: TextStyle(
-                                                fontSize: 13,
-                                                color:
-                                                    ColorConstants.primaryColor,
-                                                fontWeight: FontWeight.w600,
-                                              ),
-                                            ),
-                                          ],
-                                          SizedBox(width: 4),
-                                          Icon(
-                                            Icons.arrow_drop_down,
-                                            size: 18,
-                                            color:
-                                                _statusFilter != null
-                                                    ? ColorConstants
-                                                        .primaryColor
-                                                    : ColorConstants.hintGrey,
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                            ),
+                const SizedBox(height: 16),
 
-                            SizedBox(width: 8),
-
-                            // Tags Filter Chip (only for Sets)
-                            if (_isSetView) ...[
-                              Builder(
-                                builder:
-                                    (context) => InkWell(
-                                      onTap: () {
-                                        final renderBox =
-                                            context.findRenderObject()
-                                                as RenderBox;
-                                        _showTagsFilterDropdown(
-                                          context,
-                                          renderBox,
-                                        );
-                                      },
-                                      child: Container(
-                                        padding: EdgeInsets.symmetric(
-                                          horizontal: 12,
-                                          vertical: 8,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color:
-                                              _selectedTags.isNotEmpty
-                                                  ? ColorConstants.primaryColor
-                                                      .withValues(alpha: 0.15)
-                                                  : Colors.transparent,
-                                          border: Border.all(
-                                            color:
-                                                _selectedTags.isNotEmpty
-                                                    ? ColorConstants
-                                                        .primaryColor
-                                                    : ColorConstants.hintGrey
-                                                        .withValues(alpha: 0.3),
-                                          ),
-                                          borderRadius: BorderRadius.circular(
-                                            20,
-                                          ),
-                                        ),
-                                        child: Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Text(
-                                              'Tags',
-                                              style: TextStyle(
-                                                fontSize: 13,
-                                                color:
-                                                    _selectedTags.isNotEmpty
-                                                        ? ColorConstants
-                                                            .primaryColor
-                                                        : ColorConstants
-                                                            .hintGrey,
-                                                fontWeight:
-                                                    _selectedTags.isNotEmpty
-                                                        ? FontWeight.w600
-                                                        : FontWeight.normal,
-                                              ),
-                                            ),
-                                            if (_selectedTags.isNotEmpty) ...[
-                                              Text(
-                                                ': ${_selectedTags.length} selected',
-                                                style: TextStyle(
-                                                  fontSize: 13,
-                                                  color:
-                                                      ColorConstants
-                                                          .primaryColor,
-                                                  fontWeight: FontWeight.w600,
-                                                ),
-                                              ),
-                                            ],
-                                            SizedBox(width: 4),
-                                            Icon(
-                                              Icons.arrow_drop_down,
-                                              size: 18,
-                                              color:
-                                                  _selectedTags.isNotEmpty
-                                                      ? ColorConstants
-                                                          .primaryColor
-                                                      : ColorConstants.hintGrey,
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                              ),
-                              SizedBox(width: 8),
-                            ],
-
-                            // Name Search Chip
-                            InkWell(
-                              onTap: () => _showNameSearchDialog(context),
-                              child: Container(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 8,
-                                ),
-                                decoration: BoxDecoration(
-                                  color:
-                                      _nameSearch.isNotEmpty
-                                          ? ColorConstants.primaryColor
-                                              .withValues(alpha: 0.15)
-                                          : Colors.transparent,
-                                  border: Border.all(
-                                    color:
-                                        _nameSearch.isNotEmpty
-                                            ? ColorConstants.primaryColor
-                                            : ColorConstants.hintGrey
-                                                .withValues(alpha: 0.3),
-                                  ),
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(
-                                      Icons.search,
-                                      size: 16,
-                                      color:
-                                          _nameSearch.isNotEmpty
-                                              ? ColorConstants.primaryColor
-                                              : ColorConstants.hintGrey,
-                                    ),
-                                    SizedBox(width: 4),
-                                    Text(
-                                      'Name',
-                                      style: TextStyle(
-                                        fontSize: 13,
-                                        color:
-                                            _nameSearch.isNotEmpty
-                                                ? ColorConstants.primaryColor
-                                                : ColorConstants.hintGrey,
-                                        fontWeight:
-                                            _nameSearch.isNotEmpty
-                                                ? FontWeight.w600
-                                                : FontWeight.normal,
-                                      ),
-                                    ),
-                                    if (_nameSearch.isNotEmpty) ...[
-                                      Text(
-                                        ': $_nameSearch',
-                                        style: TextStyle(
-                                          fontSize: 13,
-                                          color: ColorConstants.primaryColor,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                        overflow: TextOverflow.ellipsis,
-                                        maxLines: 1,
-                                      ),
-                                    ],
-                                  ],
-                                ),
-                              ),
-                            ),
-
-                            SizedBox(width: 8),
-
-                            // Creator Search Chip
-                            InkWell(
-                              onTap: () => _showCreatorSearchDialog(context),
-                              child: Container(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 8,
-                                ),
-                                decoration: BoxDecoration(
-                                  color:
-                                      _creatorSearch.isNotEmpty
-                                          ? ColorConstants.primaryColor
-                                              .withValues(alpha: 0.15)
-                                          : Colors.transparent,
-                                  border: Border.all(
-                                    color:
-                                        _creatorSearch.isNotEmpty
-                                            ? ColorConstants.primaryColor
-                                            : ColorConstants.hintGrey
-                                                .withValues(alpha: 0.3),
-                                  ),
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(
-                                      Icons.search,
-                                      size: 16,
-                                      color:
-                                          _creatorSearch.isNotEmpty
-                                              ? ColorConstants.primaryColor
-                                              : ColorConstants.hintGrey,
-                                    ),
-                                    SizedBox(width: 4),
-                                    Text(
-                                      'Creator',
-                                      style: TextStyle(
-                                        fontSize: 13,
-                                        color:
-                                            _creatorSearch.isNotEmpty
-                                                ? ColorConstants.primaryColor
-                                                : ColorConstants.hintGrey,
-                                        fontWeight:
-                                            _creatorSearch.isNotEmpty
-                                                ? FontWeight.w600
-                                                : FontWeight.normal,
-                                      ),
-                                    ),
-                                    if (_creatorSearch.isNotEmpty) ...[
-                                      Text(
-                                        ': $_creatorSearch',
-                                        style: TextStyle(
-                                          fontSize: 13,
-                                          color: ColorConstants.primaryColor,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                        overflow: TextOverflow.ellipsis,
-                                        maxLines: 1,
-                                      ),
-                                    ],
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-
-                    SizedBox(width: 12),
-
-                    // Sort Dropdown
-                    PopupMenuButton<String>(
-                      child: Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 8,
-                        ),
-                        decoration: BoxDecoration(
-                          border: Border.all(
-                            color: ColorConstants.hintGrey.withValues(
-                              alpha: 0.3,
-                            ),
-                          ),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.sort,
-                              size: 16,
-                              color: ColorConstants.hintGrey,
-                            ),
-                            SizedBox(width: 6),
-                            Text(
-                              _sortBy,
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: ColorConstants.hintGrey,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      itemBuilder:
-                          (context) => [
-                            PopupMenuItem(
-                              value: 'Name: A → Z',
-                              child: Text('Name: A → Z'),
-                            ),
-                            PopupMenuItem(
-                              value: 'Name: Z → A',
-                              child: Text('Name: Z → A'),
-                            ),
-                            PopupMenuDivider(),
-                            PopupMenuItem(
-                              value: 'Difficulty: High to Low',
-                              child: Text('Difficulty: High to Low'),
-                            ),
-                            PopupMenuItem(
-                              value: 'Difficulty: Low to High',
-                              child: Text('Difficulty: Low to High'),
-                            ),
-                            PopupMenuDivider(),
-                            PopupMenuItem(
-                              value: 'Creation Date: Newest first',
-                              child: Text('Creation Date: Newest first'),
-                            ),
-                            PopupMenuItem(
-                              value: 'Creation Date: Oldest first',
-                              child: Text('Creation Date: Oldest first'),
-                            ),
-                          ],
-                      onSelected: (value) {
-                        setState(() {
-                          _sortBy = value;
-                        });
-                      },
-                    ),
-
-                    // Clear Filters
-                    if (_activeFilters.isNotEmpty) ...[
-                      SizedBox(width: 8),
-                      TextButton(
-                        onPressed: _clearFilters,
-                        child: Text(
-                          'Clear',
-                          style: TextStyle(
-                            color: ColorConstants.primaryColor,
-                            fontSize: 13,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-
-                SizedBox(height: 16),
-
-                // Sets/Boards List
-                Expanded(
-                  child:
-                      _isSetView
-                          ? (_isLoading
-                              ? Center(
-                                child: CircularProgressIndicator(
-                                  color: ColorConstants.primaryColor,
-                                ),
-                              )
-                              : _errorMessage != null
-                              ? Center(
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(
-                                      Icons.error_outline,
-                                      size: 64,
-                                      color: ColorConstants.errorColor,
-                                    ),
-                                    SizedBox(height: 16),
-                                    Text(
-                                      'Error loading sets',
-                                      style: AppTextStyles.titleMedium.copyWith(
-                                        color: ColorConstants.errorColor,
-                                      ),
-                                    ),
-                                    SizedBox(height: 8),
-                                    Text(
-                                      _errorMessage!,
-                                      style: AppTextStyles.bodySmall.copyWith(
-                                        color: ColorConstants.hintGrey,
-                                      ),
-                                      textAlign: TextAlign.center,
-                                    ),
-                                    SizedBox(height: 16),
-                                    ElevatedButton(
-                                      onPressed: _loadSets,
-                                      child: Text('Retry'),
-                                    ),
-                                  ],
-                                ),
-                              )
-                              : _filteredSets.isEmpty
-                              ? Center(
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(
-                                      Icons.inventory_2_outlined,
-                                      size: 64,
-                                      color: ColorConstants.hintGrey,
-                                    ),
-                                    SizedBox(height: 16),
-                                    Text(
-                                      'No sets found',
-                                      style: AppTextStyles.titleMedium.copyWith(
-                                        color: ColorConstants.hintGrey,
-                                      ),
-                                    ),
-                                    SizedBox(height: 8),
-                                    Text(
-                                      'Try adjusting your filters or create a new set',
-                                      style: AppTextStyles.bodySmall.copyWith(
-                                        color: ColorConstants.hintGrey,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              )
-                              : ListView.builder(
-                                itemCount: _filteredSets.length,
-                                itemBuilder: (context, index) {
-                                  final set = _filteredSets[index];
-                                  return SetListItemTile(
-                                    set: set,
-                                    isSelected: _selectedSetIds.contains(
-                                      set.id,
-                                    ),
-                                    onSelectionChanged: (selected) {
-                                      setState(() {
-                                        if (selected) {
-                                          _selectedSetIds.add(set.id);
-                                        } else {
-                                          _selectedSetIds.remove(set.id);
-                                        }
-                                      });
-                                    },
-                                    onEdit: () {
-                                      Navigator.of(context)
-                                          .push(
-                                            MaterialPageRoute(
-                                              builder:
-                                                  (context) => NewSetPage(
-                                                    existingSet: set,
-                                                  ),
-                                            ),
-                                          )
-                                          .then((_) => _loadSets());
-                                    },
-                                    onDuplicate: () {
-                                      _duplicateSet(set);
-                                    },
-                                    onDelete: () async {
-                                      final confirmed = await showDialog<bool>(
-                                        context: context,
-                                        builder:
-                                            (context) => AlertDialog(
-                                              title: Text('Delete Set'),
-                                              content: Text(
-                                                'Are you sure you want to delete "${set.name}"?',
-                                              ),
-                                              actions: [
-                                                TextButton(
-                                                  onPressed:
-                                                      () => Navigator.of(
-                                                        context,
-                                                      ).pop(false),
-                                                  child: Text('Cancel'),
-                                                ),
-                                                TextButton(
-                                                  onPressed:
-                                                      () => Navigator.of(
-                                                        context,
-                                                      ).pop(true),
-                                                  style: TextButton.styleFrom(
-                                                    foregroundColor:
-                                                        ColorConstants
-                                                            .errorColor,
-                                                  ),
-                                                  child: Text('Delete'),
-                                                ),
-                                              ],
-                                            ),
-                                      );
-                                      if (confirmed == true) {
-                                        await _deleteSet(set);
-                                      }
-                                    },
-                                  );
-                                },
-                              ))
-                          : (_filteredBoards.isEmpty
-                              ? Center(
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(
-                                      Icons.dashboard_outlined,
-                                      size: 64,
-                                      color: ColorConstants.hintGrey,
-                                    ),
-                                    SizedBox(height: 16),
-                                    Text(
-                                      'No boards found',
-                                      style: AppTextStyles.titleMedium.copyWith(
-                                        color: ColorConstants.hintGrey,
-                                      ),
-                                    ),
-                                    SizedBox(height: 8),
-                                    Text(
-                                      'Try adjusting your filters or create a new board',
-                                      style: AppTextStyles.bodySmall.copyWith(
-                                        color: ColorConstants.hintGrey,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              )
-                              : ListView.builder(
-                                itemCount: _filteredBoards.length,
-                                itemBuilder: (context, index) {
-                                  final board = _filteredBoards[index];
-                                  return BoardListItemTile(
-                                    board: board,
-                                    isSelected: _selectedSetIds.contains(
-                                      board.id,
-                                    ),
-                                    onSelectionChanged: (selected) {
-                                      setState(() {
-                                        if (selected) {
-                                          _selectedSetIds.add(board.id);
-                                        } else {
-                                          _selectedSetIds.remove(board.id);
-                                        }
-                                      });
-                                    },
-                                  );
-                                },
-                              )),
-                ),
+                // Main content: Sets or Boards list
+                Expanded(child: _buildContent()),
               ],
             ),
           ),
@@ -1379,615 +722,609 @@ class _CreatePageState extends State<CreatePage>
       ),
     );
   }
-}
 
-class SetListItemTile extends StatelessWidget {
-  final SetModel set;
-  final bool isSelected;
-  final Function(bool) onSelectionChanged;
-  final VoidCallback? onEdit;
-  final VoidCallback? onDuplicate;
-  final VoidCallback? onDelete;
-
-  const SetListItemTile({
-    super.key,
-    required this.set,
-    required this.isSelected,
-    required this.onSelectionChanged,
-    this.onEdit,
-    this.onDuplicate,
-    this.onDelete,
-  });
-
-  String _formatTagName(PredefinedTags tag) {
-    final name = tag.toString().split('.').last;
-    final specialCases = {
-      'foodAndDrinks': 'Food & Drinks',
-      'popCulture': 'Pop Culture',
-      'videoGames': 'Video Games',
-      'us': 'US',
-    };
-    if (specialCases.containsKey(name)) {
-      return specialCases[name]!;
-    }
-    return name[0].toUpperCase() + name.substring(1);
-  }
-
-  String _getDifficultyLabel(DifficultyLevel? difficulty) {
-    switch (difficulty) {
-      case DifficultyLevel.easy:
-        return 'Easy';
-      case DifficultyLevel.medium:
-        return 'Medium';
-      case DifficultyLevel.hard:
-        return 'Hard';
-      default:
-        return 'N/A';
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final isDraft = set.status == SetStatus.draft;
-
-    return Card(
-      margin: EdgeInsets.symmetric(vertical: 8.0),
-      color:
-          Theme.of(context).brightness == Brightness.dark
-              ? ColorConstants.darkCard
-              : ColorConstants.surfaceColor,
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Stack(
-        children: [
-          // Vertical draft indicator on the left edge (40% thinner: 28 * 0.6 = 17px)
-          if (isDraft)
-            Positioned(
-              left: 0,
-              top: 0,
-              bottom: 0,
-              child: Container(
-                width: 17,
-                decoration: BoxDecoration(
-                  color: Colors.orange,
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(12),
-                    bottomLeft: Radius.circular(12),
+  /// Builds the page header with title, description, and action buttons.
+  Widget _buildHeader() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Title and description
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Your Sets and Boards',
+                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                      color:
+                          Theme.of(context).brightness == Brightness.dark
+                              ? ColorConstants.lightTextColor
+                              : ColorConstants.darkTextColor,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                ),
-                child: Center(
-                  child: RotatedBox(
-                    quarterTurns: 3,
-                    child: Text(
-                      'DRAFT',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 1.2,
+                  const SizedBox(height: 8),
+                  Text(
+                    'Create, edit and organize your quiz questions in sets and boards.',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: ColorConstants.hintGrey,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 24),
+            // Action buttons
+            Row(
+              children: [
+                // Import button (only shown on Sets tab)
+                if (_isSetView) ...[
+                  OutlinedButton.icon(
+                    icon: Icon(Icons.upload_file, size: 18),
+                    label: Text('Import'),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ImportSetPage(),
+                        ),
+                      );
+                    },
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor:
+                          Theme.of(context).brightness == Brightness.dark
+                              ? ColorConstants.lightTextColor
+                              : ColorConstants.darkTextColor,
+                      side: BorderSide(
+                        color:
+                            Theme.of(context).brightness == Brightness.dark
+                                ? ColorConstants.lightTextColor.withValues(
+                                  alpha: 0.3,
+                                )
+                                : ColorConstants.darkTextColor.withValues(
+                                  alpha: 0.3,
+                                ),
+                      ),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 12,
+                      ),
+                      minimumSize: Size(110, 40),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
                       ),
                     ),
                   ),
-                ),
-              ),
-            ),
-
-          // Main content
-          Padding(
-            padding: EdgeInsets.only(
-              left: isDraft ? 29.0 : 16.0,
-              right: 16.0,
-              top: 16.0,
-              bottom: 16.0,
-            ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                // Checkbox aligned with content
-                Checkbox(
-                  value: isSelected,
-                  onChanged: (value) => onSelectionChanged(value ?? false),
-                  activeColor: ColorConstants.primaryColor,
-                ),
-
-                SizedBox(width: 12),
-
-                // Main Content
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Set Name with Rating and Downloads in the same row
-                      Row(
-                        children: [
-                          // Set Name
-                          Expanded(
-                            child: Text(
-                              set.name,
-                              style: Theme.of(
-                                context,
-                              ).textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.bold,
-                                color:
-                                    Theme.of(context).brightness ==
-                                            Brightness.dark
-                                        ? ColorConstants.lightTextColor
-                                        : ColorConstants.darkTextColor,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-
-                          SizedBox(width: 12),
-
-                          // Rating
-                          RatingDisplay(rating: set.rating),
-
-                          SizedBox(width: 12),
-
-                          // Downloads
-                          DownloadDisplay(downloads: set.downloads),
-                        ],
+                  const SizedBox(width: 12),
+                ],
+                // New Set/Board button
+                ElevatedButton.icon(
+                  icon: Icon(Icons.add, size: 18),
+                  label: Text(_isSetView ? 'New Set' : 'New Board'),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder:
+                            (context) =>
+                                _isSetView
+                                    ? NewSetPage()
+                                    : CreateNewBoardPage(),
                       ),
-
-                      SizedBox(height: 4),
-
-                      // Description
-                      Text(
-                        set.description,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: ColorConstants.hintGrey,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-
-                      SizedBox(height: 12),
-
-                      // Difficulty and Tags Row with spacing
-                      Row(
-                        children: [
-                          // Difficulty chip (outlined, no background)
-                          if (set.difficulty != null) ...[
-                            Container(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: 10,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color:
-                                    Colors
-                                        .transparent, // Transparent background
-                                borderRadius: BorderRadius.circular(6),
-                                border: Border.all(
-                                  color: ColorConstants.hintGrey.withValues(
-                                    alpha: 0.5,
-                                  ),
-                                  width: 1,
-                                ),
-                              ),
-                              child: Text(
-                                _getDifficultyLabel(set.difficulty),
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600,
-                                  color: ColorConstants.lightTextColor,
-                                ),
-                              ),
-                            ),
-
-                            SizedBox(width: 12),
-
-                            // Vertical Divider
-                            Container(
-                              width: 1,
-                              height: 24,
-                              color: ColorConstants.hintGrey.withValues(
-                                alpha: 0.2,
-                              ),
-                            ),
-
-                            SizedBox(width: 12),
-                          ],
-
-                          // Tag chips
-                          Expanded(
-                            child: Wrap(
-                              spacing: 8,
-                              runSpacing: 4,
-                              children: [
-                                ...set.tags
-                                    .take(3)
-                                    .map(
-                                      (tag) => Chip(
-                                        label: Text(
-                                          _formatTagName(tag),
-                                          style: AppTextStyles.labelSmall
-                                              .copyWith(fontSize: 11),
-                                        ),
-                                        backgroundColor: ColorConstants
-                                            .primaryColor
-                                            .withValues(alpha: 0.2),
-                                        padding: EdgeInsets.symmetric(
-                                          horizontal: 4,
-                                          vertical: 0,
-                                        ),
-                                        materialTapTargetSize:
-                                            MaterialTapTargetSize.shrinkWrap,
-                                        visualDensity: VisualDensity.compact,
-                                      ),
-                                    ),
-                                // Show "+N" chip if there are more tags
-                                if (set.tags.length > 3)
-                                  Chip(
-                                    label: Text(
-                                      '+${set.tags.length - 3}',
-                                      style: AppTextStyles.labelSmall.copyWith(
-                                        fontSize: 11,
-                                        color: ColorConstants.primaryColor,
-                                      ),
-                                    ),
-                                    backgroundColor: ColorConstants.primaryColor
-                                        .withValues(alpha: 0.1),
-                                    padding: EdgeInsets.symmetric(
-                                      horizontal: 4,
-                                      vertical: 0,
-                                    ),
-                                    materialTapTargetSize:
-                                        MaterialTapTargetSize.shrinkWrap,
-                                    visualDensity: VisualDensity.compact,
-                                  ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-
-                SizedBox(width: 8),
-
-                // Actions menu, aligned
-                PopupMenuButton<String>(
-                  icon: Icon(
-                    Icons.more_vert,
-                    color:
-                        Theme.of(context).brightness == Brightness.dark
-                            ? ColorConstants.lightTextColor
-                            : ColorConstants.darkTextColor,
-                  ),
-                  itemBuilder:
-                      (BuildContext context) => [
-                        PopupMenuItem<String>(
-                          value: 'edit',
-                          child: StandardMenuItem(
-                            icon: Icons.edit,
-                            label: 'Edit',
-                          ),
-                        ),
-                        PopupMenuItem<String>(
-                          value: 'duplicate',
-                          child: StandardMenuItem(
-                            icon: Icons.copy,
-                            label: 'Duplicate',
-                          ),
-                        ),
-                        PopupMenuItem<String>(
-                          value: 'delete',
-                          child: StandardMenuItem(
-                            icon: Icons.delete,
-                            label: 'Delete',
-                          ),
-                        ),
-                      ],
-                  onSelected: (String value) {
-                    switch (value) {
-                      case 'edit':
-                        onEdit?.call();
-                        break;
-                      case 'duplicate':
-                        onDuplicate?.call();
-                        break;
-                      case 'delete':
-                        onDelete?.call();
-                        break;
-                    }
+                    );
                   },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: ColorConstants.primaryColor,
+                    foregroundColor: ColorConstants.lightTextColor,
+                    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    minimumSize: Size(120, 40),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
                 ),
               ],
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  /// Builds the tab bar for switching between Sets and Boards views.
+  Widget _buildTabBar() {
+    return TabBar(
+      controller: _tabController,
+      isScrollable: true,
+      tabAlignment: TabAlignment.start,
+      labelColor:
+          Theme.of(context).brightness == Brightness.dark
+              ? ColorConstants.lightTextColor
+              : ColorConstants.darkTextColor,
+      unselectedLabelColor: ColorConstants.hintGrey,
+      indicatorColor: ColorConstants.primaryColor,
+      indicatorWeight: 3,
+      indicatorSize: TabBarIndicatorSize.label,
+      labelPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      labelStyle: AppTextStyles.labelMedium.copyWith(
+        fontWeight: FontWeight.bold,
+      ),
+      tabs: const [Tab(text: 'Sets'), Tab(text: 'Boards')],
+    );
+  }
+
+  /// Builds the filter and sort control bar.
+  Widget _buildFilterSortBar() {
+    return Row(
+      children: [
+        // Filter chips (scrollable)
+        Expanded(
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                // Filter icon
+                Icon(
+                  Icons.filter_list,
+                  size: 18,
+                  color: ColorConstants.hintGrey,
+                ),
+                const SizedBox(width: 8),
+
+                // Status filter chip
+                _buildFilterChip(
+                  label: 'Status',
+                  value: _activeFilters['Status'],
+                  isActive: _statusFilter != null,
+                  onTap: () {
+                    final renderBox = context.findRenderObject() as RenderBox;
+                    _showStatusFilterDropdown(context, renderBox);
+                  },
+                ),
+
+                const SizedBox(width: 8),
+
+                // Tags filter chip (only for Sets)
+                if (_isSetView) ...[
+                  _buildFilterChip(
+                    label: 'Tags',
+                    value:
+                        _selectedTags.isNotEmpty
+                            ? '${_selectedTags.length} selected'
+                            : null,
+                    isActive: _selectedTags.isNotEmpty,
+                    onTap: () {
+                      final renderBox = context.findRenderObject() as RenderBox;
+                      _showTagsFilterDropdown(context, renderBox);
+                    },
+                  ),
+                  const SizedBox(width: 8),
+                ],
+
+                // Name search chip
+                _buildSearchChip(
+                  label: 'Name',
+                  value: _nameSearch.isNotEmpty ? _nameSearch : null,
+                  isActive: _nameSearch.isNotEmpty,
+                  onTap: () => _showNameSearchDialog(context),
+                ),
+
+                const SizedBox(width: 8),
+
+                // Creator search chip
+                _buildSearchChip(
+                  label: 'Creator',
+                  value: _creatorSearch.isNotEmpty ? _creatorSearch : null,
+                  isActive: _creatorSearch.isNotEmpty,
+                  onTap: () => _showCreatorSearchDialog(context),
+                ),
+              ],
+            ),
+          ),
+        ),
+
+        const SizedBox(width: 12),
+
+        // Sort dropdown
+        _buildSortDropdown(),
+
+        // Clear filters button
+        if (_activeFilters.isNotEmpty) ...[
+          const SizedBox(width: 8),
+          TextButton(
+            onPressed: _clearFilters,
+            child: Text(
+              'Clear',
+              style: TextStyle(
+                color: ColorConstants.primaryColor,
+                fontSize: 13,
+              ),
             ),
           ),
         ],
-      ),
+      ],
     );
   }
-}
 
-// Placeholder page for Import Set
-class ImportSetPage extends StatelessWidget {
-  const ImportSetPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Import Set', style: AppTextStyles.titleBig),
-        backgroundColor: ColorConstants.primaryContainerColor,
-      ),
-      body: Center(
-        child: Text(
-          'Import Set Page - Coming Soon',
-          style: AppTextStyles.titleMedium.copyWith(
-            color: ColorConstants.hintGrey,
+  /// Builds a filter chip button with dropdown arrow.
+  Widget _buildFilterChip({
+    required String label,
+    String? value,
+    required bool isActive,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color:
+              isActive
+                  ? ColorConstants.primaryColor.withValues(alpha: 0.15)
+                  : Colors.transparent,
+          border: Border.all(
+            color:
+                isActive
+                    ? ColorConstants.primaryColor
+                    : ColorConstants.hintGrey.withValues(alpha: 0.3),
           ),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 13,
+                color:
+                    isActive
+                        ? ColorConstants.primaryColor
+                        : ColorConstants.hintGrey,
+                fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
+              ),
+            ),
+            if (value != null) ...[
+              Text(
+                ': $value',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: ColorConstants.primaryColor,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+            SizedBox(width: 4),
+            Icon(
+              Icons.arrow_drop_down,
+              size: 18,
+              color:
+                  isActive
+                      ? ColorConstants.primaryColor
+                      : ColorConstants.hintGrey,
+            ),
+          ],
         ),
       ),
     );
   }
-}
 
-// Placeholder page for Create New Board
-class CreateNewBoardPage extends StatelessWidget {
-  const CreateNewBoardPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Create New Board', style: AppTextStyles.titleBig),
-        backgroundColor: ColorConstants.primaryContainerColor,
-      ),
-      body: Center(
-        child: Text(
-          'Create New Board Page - Coming Soon',
-          style: AppTextStyles.titleMedium.copyWith(
-            color: ColorConstants.hintGrey,
+  /// Builds a search chip button with search icon.
+  Widget _buildSearchChip({
+    required String label,
+    String? value,
+    required bool isActive,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color:
+              isActive
+                  ? ColorConstants.primaryColor.withValues(alpha: 0.15)
+                  : Colors.transparent,
+          border: Border.all(
+            color:
+                isActive
+                    ? ColorConstants.primaryColor
+                    : ColorConstants.hintGrey.withValues(alpha: 0.3),
           ),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.search,
+              size: 16,
+              color:
+                  isActive
+                      ? ColorConstants.primaryColor
+                      : ColorConstants.hintGrey,
+            ),
+            SizedBox(width: 4),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 13,
+                color:
+                    isActive
+                        ? ColorConstants.primaryColor
+                        : ColorConstants.hintGrey,
+                fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
+              ),
+            ),
+            if (value != null) ...[
+              Text(
+                ': $value',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: ColorConstants.primaryColor,
+                  fontWeight: FontWeight.w600,
+                ),
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
+              ),
+            ],
+          ],
         ),
       ),
     );
   }
-}
 
-// Board List Item Tile
-class BoardListItemTile extends StatelessWidget {
-  final BoardModel board;
-  final bool isSelected;
-  final Function(bool) onSelectionChanged;
+  /// Builds the sort dropdown menu.
+  Widget _buildSortDropdown() {
+    return PopupMenuButton<String>(
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          border: Border.all(
+            color: ColorConstants.hintGrey.withValues(alpha: 0.3),
+          ),
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.sort, size: 16, color: ColorConstants.hintGrey),
+            SizedBox(width: 6),
+            Text(
+              _sortBy,
+              style: TextStyle(fontSize: 13, color: ColorConstants.hintGrey),
+            ),
+          ],
+        ),
+      ),
+      itemBuilder:
+          (context) => [
+            PopupMenuItem(value: 'Name: A → Z', child: Text('Name: A → Z')),
+            PopupMenuItem(value: 'Name: Z → A', child: Text('Name: Z → A')),
+            PopupMenuDivider(),
+            PopupMenuItem(
+              value: 'Difficulty: High to Low',
+              child: Text('Difficulty: High to Low'),
+            ),
+            PopupMenuItem(
+              value: 'Difficulty: Low to High',
+              child: Text('Difficulty: Low to High'),
+            ),
+            PopupMenuDivider(),
+            PopupMenuItem(
+              value: 'Creation Date: Newest first',
+              child: Text('Creation Date: Newest first'),
+            ),
+            PopupMenuItem(
+              value: 'Creation Date: Oldest first',
+              child: Text('Creation Date: Oldest first'),
+            ),
+          ],
+      onSelected: (value) {
+        setState(() {
+          _sortBy = value;
+        });
+      },
+    );
+  }
 
-  const BoardListItemTile({
-    super.key,
-    required this.board,
-    required this.isSelected,
-    required this.onSelectionChanged,
-  });
-
-  String _getRelativeTime(DateTime dateTime) {
-    final now = DateTime.now();
-    final difference = now.difference(dateTime);
-
-    if (difference.inDays > 30) {
-      return '${(difference.inDays / 30).floor()}mo ago';
-    } else if (difference.inDays > 0) {
-      return '${difference.inDays}d ago';
-    } else if (difference.inHours > 0) {
-      return '${difference.inHours}h ago';
-    } else if (difference.inMinutes > 0) {
-      return '${difference.inMinutes}m ago';
+  /// Builds the main content area (sets list or boards list).
+  Widget _buildContent() {
+    if (_isSetView) {
+      return _buildSetsContent();
     } else {
-      return 'just now';
+      return _buildBoardsContent();
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      margin: EdgeInsets.symmetric(vertical: 8.0),
-      color:
-          Theme.of(context).brightness == Brightness.dark
-              ? ColorConstants.darkCard
-              : ColorConstants.surfaceColor,
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: InkWell(
-        onTap: () {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text('Opening ${board.name}...')));
-        },
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Checkbox
-              Checkbox(
-                value: isSelected,
-                onChanged: (value) => onSelectionChanged(value ?? false),
-                activeColor: ColorConstants.primaryColor,
+  /// Builds the sets list content with loading, error, and empty states.
+  Widget _buildSetsContent() {
+    // Loading state
+    if (_isLoading) {
+      return Center(
+        child: CircularProgressIndicator(color: ColorConstants.primaryColor),
+      );
+    }
+
+    // Error state
+    if (_errorMessage != null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.error_outline,
+              size: 64,
+              color: ColorConstants.errorColor,
+            ),
+            SizedBox(height: 16),
+            Text(
+              'Error loading sets',
+              style: AppTextStyles.titleMedium.copyWith(
+                color: ColorConstants.errorColor,
               ),
-
-              SizedBox(width: 12),
-
-              // Main Content
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Board Name and Status Badge
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            board.name,
-                            style: Theme.of(
-                              context,
-                            ).textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color:
-                                  Theme.of(context).brightness ==
-                                          Brightness.dark
-                                      ? ColorConstants.lightTextColor
-                                      : ColorConstants.darkTextColor,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        SizedBox(width: 8),
-                        Container(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color:
-                                board.status == BoardStatus.complete
-                                    ? Colors.green.withValues(alpha: 0.15)
-                                    : Colors.orange.withValues(alpha: 0.15),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            board.status == BoardStatus.complete
-                                ? 'Complete'
-                                : 'Draft',
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              color:
-                                  board.status == BoardStatus.complete
-                                      ? Colors.green
-                                      : Colors.orange,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-
-                    SizedBox(height: 4),
-
-                    // Description
-                    Text(
-                      board.description,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: ColorConstants.hintGrey,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-
-                    SizedBox(height: 8),
-
-                    // Metadata Row
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        // Sets count
-                        Icon(
-                          Icons.layers,
-                          size: 14,
-                          color: ColorConstants.hintGrey,
-                        ),
-                        SizedBox(width: 4),
-                        Text(
-                          '${board.setCount}/5 sets',
-                          style: AppTextStyles.bodySmall.copyWith(
-                            color: ColorConstants.hintGrey,
-                            fontSize: 12,
-                          ),
-                        ),
-                        Spacer(),
-                        // Last modified
-                        Icon(
-                          Icons.edit_calendar,
-                          size: 14,
-                          color: ColorConstants.hintGrey,
-                        ),
-                        SizedBox(width: 4),
-                        Text(
-                          'Modified ${_getRelativeTime(board.modifiedDate)}',
-                          style: AppTextStyles.bodySmall.copyWith(
-                            color: ColorConstants.hintGrey,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+            ),
+            SizedBox(height: 8),
+            Text(
+              _errorMessage!,
+              style: AppTextStyles.bodySmall.copyWith(
+                color: ColorConstants.hintGrey,
               ),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: 16),
+            ElevatedButton(onPressed: _loadSets, child: Text('Retry')),
+          ],
+        ),
+      );
+    }
 
-              // Actions
-              PopupMenuButton<String>(
-                icon: Icon(
-                  Icons.more_vert,
-                  color:
-                      Theme.of(context).brightness == Brightness.dark
-                          ? ColorConstants.lightTextColor
-                          : ColorConstants.darkTextColor,
-                ),
-                itemBuilder:
-                    (BuildContext context) => [
-                      PopupMenuItem<String>(
-                        value: 'edit',
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.edit,
-                              size: 20,
-                              color: ColorConstants.primaryColor,
-                            ),
-                            SizedBox(width: 12),
-                            Text('Edit'),
-                          ],
-                        ),
+    // Empty state
+    if (_filteredSets.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.inventory_2_outlined,
+              size: 64,
+              color: ColorConstants.hintGrey,
+            ),
+            SizedBox(height: 16),
+            Text(
+              'No sets found',
+              style: AppTextStyles.titleMedium.copyWith(
+                color: ColorConstants.hintGrey,
+              ),
+            ),
+            SizedBox(height: 8),
+            Text(
+              'Try adjusting your filters or create a new set',
+              style: AppTextStyles.bodySmall.copyWith(
+                color: ColorConstants.hintGrey,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Sets list
+    return ListView.builder(
+      itemCount: _filteredSets.length,
+      itemBuilder: (context, index) {
+        final set = _filteredSets[index];
+        return SetListItemTile(
+          set: set,
+          isSelected: _selectedSetIds.contains(set.id),
+          onSelectionChanged: (selected) {
+            setState(() {
+              if (selected) {
+                _selectedSetIds.add(set.id);
+              } else {
+                _selectedSetIds.remove(set.id);
+              }
+            });
+          },
+          onEdit: () {
+            Navigator.of(context)
+                .push(
+                  MaterialPageRoute(
+                    builder: (context) => NewSetPage(existingSet: set),
+                  ),
+                )
+                .then((_) => _loadSets());
+          },
+          onDuplicate: () => _duplicateSet(set),
+          onDelete: () async {
+            // Show confirmation dialog before deleting
+            final confirmed = await showDialog<bool>(
+              context: context,
+              builder:
+                  (context) => AlertDialog(
+                    title: Text('Delete Set'),
+                    content: Text(
+                      'Are you sure you want to delete "${set.name}"?',
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(false),
+                        child: Text('Cancel'),
                       ),
-                      PopupMenuItem<String>(
-                        value: 'duplicate',
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.copy,
-                              size: 20,
-                              color: ColorConstants.secondaryColor,
-                            ),
-                            SizedBox(width: 12),
-                            Text('Duplicate'),
-                          ],
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(true),
+                        style: TextButton.styleFrom(
+                          foregroundColor: ColorConstants.errorColor,
                         ),
-                      ),
-                      PopupMenuItem<String>(
-                        value: 'delete',
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.delete,
-                              size: 20,
-                              color: ColorConstants.errorColor,
-                            ),
-                            SizedBox(width: 12),
-                            Text(
-                              'Delete',
-                              style: TextStyle(
-                                color: ColorConstants.errorColor,
-                              ),
-                            ),
-                          ],
-                        ),
+                        child: Text('Delete'),
                       ),
                     ],
-                onSelected: (String value) {
-                  AppLogger.i('Selected: $value for board: ${board.name}');
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('$value: ${board.name}')),
-                  );
-                },
+                  ),
+            );
+            if (confirmed == true) {
+              await _deleteSet(set);
+            }
+          },
+        );
+      },
+    );
+  }
+
+  /// Builds the boards list content with empty state handling.
+  Widget _buildBoardsContent() {
+    // Empty state
+    if (_filteredBoards.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.dashboard_outlined,
+              size: 64,
+              color: ColorConstants.hintGrey,
+            ),
+            SizedBox(height: 16),
+            Text(
+              'No boards found',
+              style: AppTextStyles.titleMedium.copyWith(
+                color: ColorConstants.hintGrey,
               ),
-            ],
-          ),
+            ),
+            SizedBox(height: 8),
+            Text(
+              'Try adjusting your filters or create a new board',
+              style: AppTextStyles.bodySmall.copyWith(
+                color: ColorConstants.hintGrey,
+              ),
+            ),
+          ],
         ),
-      ),
+      );
+    }
+
+    // Boards list
+    return ListView.builder(
+      itemCount: _filteredBoards.length,
+      itemBuilder: (context, index) {
+        final board = _filteredBoards[index];
+        return BoardListItemTile(
+          board: board,
+          isSelected: _selectedSetIds.contains(board.id),
+          onSelectionChanged: (selected) {
+            setState(() {
+              if (selected) {
+                _selectedSetIds.add(board.id);
+              } else {
+                _selectedSetIds.remove(board.id);
+              }
+            });
+          },
+        );
+      },
     );
   }
 }
