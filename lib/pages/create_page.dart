@@ -1547,21 +1547,21 @@ class SetListItemTile extends StatelessWidget {
                       // Difficulty and Tags Row with spacing
                       Row(
                         children: [
-                          // Difficulty chip (no color)
+                          // Difficulty chip (outlined, no background)
                           if (set.difficulty != null) ...[
                             Container(
                               padding: EdgeInsets.symmetric(
-                                horizontal: 8,
+                                horizontal: 10,
                                 vertical: 4,
                               ),
                               decoration: BoxDecoration(
-                                color: ColorConstants.hintGrey.withValues(
-                                  alpha: 0.2,
-                                ),
+                                color:
+                                    Colors
+                                        .transparent, // Transparent background
                                 borderRadius: BorderRadius.circular(6),
                                 border: Border.all(
                                   color: ColorConstants.hintGrey.withValues(
-                                    alpha: 0.3,
+                                    alpha: 0.5,
                                   ),
                                   width: 1,
                                 ),
@@ -1571,17 +1571,23 @@ class SetListItemTile extends StatelessWidget {
                                 style: TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w600,
-                                  color:
-                                      Theme.of(context).brightness ==
-                                              Brightness.dark
-                                          ? ColorConstants.lightTextColor
-                                          : ColorConstants.darkTextColor,
+                                  color: ColorConstants.lightTextColor,
                                 ),
                               ),
                             ),
-                            SizedBox(
-                              width: 16,
-                            ), // Space between difficulty and tags
+
+                            SizedBox(width: 12),
+
+                            // Vertical Divider
+                            Container(
+                              width: 1,
+                              height: 24,
+                              color: ColorConstants.hintGrey.withValues(
+                                alpha: 0.2,
+                              ),
+                            ),
+
+                            SizedBox(width: 12),
                           ],
 
                           // Tag chips
