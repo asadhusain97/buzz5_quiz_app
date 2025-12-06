@@ -5,8 +5,9 @@ import 'package:buzz5_quiz_app/config/logger.dart';
 import 'package:buzz5_quiz_app/models/set_model.dart';
 import 'package:buzz5_quiz_app/models/question_model.dart';
 import 'package:buzz5_quiz_app/models/media_model.dart';
-import 'package:buzz5_quiz_app/models/all_enums.dart';
+import 'package:buzz5_quiz_app/models/all_enums.dart' hide QuestionStatus;
 import 'package:buzz5_quiz_app/services/storage_service.dart';
+import 'package:buzz5_quiz_app/services/import_service.dart';
 import 'package:uuid/uuid.dart';
 
 /// Service for handling Firestore operations for Sets
@@ -621,6 +622,113 @@ class SetService {
       AppLogger.i('Set deleted successfully: $setId');
     } catch (e, stackTrace) {
       AppLogger.e('Error deleting set: $e', error: e, stackTrace: stackTrace);
+      rethrow;
+    }
+  }
+
+  /// Bulk import sets from parsed data
+  ///
+  /// Parameters:
+  /// - parsedSets: List of ParsedSet objects to import
+  ///
+  /// Returns: List of created set IDs
+  Future<List<String>> importSets(List<ParsedSet> parsedSets) async {
+    try {
+      final User? currentUser = _auth.currentUser;
+      if (currentUser == null) {
+        throw Exception('No user is currently signed in');
+      }
+
+      AppLogger.i('Starting bulk import of ${parsedSets.length} sets');
+      final List<String> createdSetIds = [];
+
+      // Track valid operations in batch (max 500 per batch in Firestore)
+      // Since we are doing read-then-write for unique names, we can't fully batch everything strictly.
+      // But we can batch the final writes.
+      //
+      // Actually, for simplicity and to handle the async unique name check,
+      // we'll process one by one but could optimized to execute in parallel.
+      // Given typical import size (small), sequential is safer and simpler for now to prevent name collisions.
+
+      for (final parsedSet in parsedSets) {
+        // 1. Generate unique name
+        final String uniqueName = await generateUniqueName(parsedSet.name);
+
+        // 2. Generate IDs
+        final String setId = _uuid.v4();
+
+        // 3. Create Questions
+        final List<Question> questions = [];
+        for (final pQuestion in parsedSet.questions) {
+          final String questionId = _uuid.v4();
+
+          // Handle Media URLs
+          Media? qMedia;
+          if (pQuestion.questionMediaUrl != null) {
+            qMedia = Media(
+              type: 'image',
+              storagePath: '',
+              downloadURL: pQuestion.questionMediaUrl!,
+              fileSize: 0,
+              status: 'ready',
+            );
+          }
+
+          Media? aMedia;
+          if (pQuestion.answerMediaUrl != null) {
+            aMedia = Media(
+              type: 'image',
+              storagePath: '',
+              downloadURL: pQuestion.answerMediaUrl!,
+              fileSize: 0,
+              status: 'ready',
+            );
+          }
+
+          questions.add(
+            Question(
+              id: questionId,
+              questionText: pQuestion.questionText,
+              questionMedia: qMedia,
+              answerText: pQuestion.answerText,
+              answerMedia: aMedia,
+              points: pQuestion.points,
+              status: QuestionStatus.complete,
+            ),
+          );
+        }
+
+        // 4. Create SetModel
+        final setModel = SetModel(
+          id: setId,
+          name: uniqueName,
+          description: parsedSet.description,
+          authorId: currentUser.uid,
+          authorName:
+              currentUser.displayName ?? currentUser.email ?? 'Imported User',
+          tags: [PredefinedTags.general], // Default tag
+          difficulty: parsedSet.difficulty,
+          isPrivate: true,
+          questions: questions,
+        );
+
+        // 5. Add to batch (or save directly)
+        // Since we did async checks above, let's just save directly to be safe and simple
+        await _firestore.collection('sets').doc(setId).set(setModel.toJson());
+        createdSetIds.add(setId);
+        AppLogger.i('Imported set: $uniqueName ($setId)');
+      }
+
+      AppLogger.i(
+        'Bulk import completed. Created ${createdSetIds.length} sets.',
+      );
+      return createdSetIds;
+    } catch (e, stackTrace) {
+      AppLogger.e(
+        'Error during bulk import: $e',
+        error: e,
+        stackTrace: stackTrace,
+      );
       rethrow;
     }
   }

@@ -45,6 +45,11 @@ class SetModel {
   /// Dynamic getter for the status.
   /// A set is complete only if it has exactly 5 questions and all are published.
   SetStatus get status {
+    // A set must have a valid name and description.
+    if (name.trim().isEmpty || description.trim().isEmpty) {
+      return SetStatus.draft;
+    }
+
     // A set must have exactly 5 questions to be considered complete.
     if (questions.length != 5) {
       return SetStatus.draft;

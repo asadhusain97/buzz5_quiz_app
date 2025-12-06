@@ -49,6 +49,9 @@ dependencies:
   connectivity_plus: ^6.1.2
   path: ^1.9.0
   uuid: ^4.5.1
+  excel: ^4.0.6
+  csv: ^6.0.0
+  file_saver: ^0.3.1
 
 dev_dependencies:
   flutter_test:
@@ -77,6 +80,7 @@ flutter:
     - assets/images/bolt_transparent_simple.png
     - assets/images/dark_background.png
     - assets/images/light_background.png
+    - assets/templates/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

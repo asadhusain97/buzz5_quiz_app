@@ -766,13 +766,16 @@ class _CreatePageState extends State<CreatePage>
                   OutlinedButton.icon(
                     icon: Icon(Icons.upload_file, size: 18),
                     label: Text('Import'),
-                    onPressed: () {
-                      Navigator.push(
+                    onPressed: () async {
+                      final result = await Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder: (context) => ImportSetPage(),
                         ),
                       );
+                      if (result == true) {
+                        _loadSets();
+                      }
                     },
                     style: OutlinedButton.styleFrom(
                       foregroundColor:
