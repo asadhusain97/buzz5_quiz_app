@@ -49,8 +49,8 @@ class DevConfig {
   // ADVANCED OPTIONS
   // ============================================================================
 
-  /// Enable verbose debug logging
-  static const bool verboseLogging = true;
+  /// disable verbose debug logging
+  static const bool verboseLogging = false;
 
   /// Simulate guest user (unauthenticated but can access app)
   /// Only applies when bypassAuth is true
