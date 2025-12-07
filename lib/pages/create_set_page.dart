@@ -6,8 +6,10 @@ import 'package:buzz5_quiz_app/config/logger.dart';
 import 'package:buzz5_quiz_app/models/all_enums.dart';
 import 'package:buzz5_quiz_app/models/set_model.dart';
 import 'package:buzz5_quiz_app/widgets/app_background.dart';
+import 'package:buzz5_quiz_app/widgets/duplicate_name_dialog.dart';
 import 'package:buzz5_quiz_app/widgets/dynamic_save_button.dart';
 import 'package:buzz5_quiz_app/widgets/media_upload_widget.dart';
+import 'package:buzz5_quiz_app/widgets/minimal_text_field.dart';
 import 'package:buzz5_quiz_app/widgets/stat_displays.dart';
 import 'package:buzz5_quiz_app/services/set_service.dart';
 
@@ -204,36 +206,11 @@ class _NewSetPageState extends State<NewSetPage>
           _isSaving = false;
         });
 
-        // Show error dialog
-        await showDialog(
+        // Show error dialog using shared utility
+        await showDuplicateNameDialog(
           context: context,
-          builder:
-              (context) => AlertDialog(
-                title: Row(
-                  children: [
-                    Icon(
-                      Icons.error_outline,
-                      color: ColorConstants.errorColor,
-                      size: 28,
-                    ),
-                    SizedBox(width: 12),
-                    Text('Duplicate Name'),
-                  ],
-                ),
-                content: Text(
-                  'A set with the name "$setName" already exists. Please choose a different name.',
-                  style: AppTextStyles.bodyMedium,
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    child: Text(
-                      'OK',
-                      style: TextStyle(color: ColorConstants.primaryColor),
-                    ),
-                  ),
-                ],
-              ),
+          itemType: 'set',
+          name: setName,
         );
         return;
       }
@@ -313,10 +290,10 @@ class _NewSetPageState extends State<NewSetPage>
         ),
       );
 
-      // Navigate back after a short delay
+      // Navigate back after a short delay, returning true to indicate success
       await Future.delayed(Duration(milliseconds: 500));
       if (!mounted) return;
-      Navigator.of(context).pop();
+      Navigator.of(context).pop(true);
     } catch (e, stackTrace) {
       AppLogger.e('Error saving set: $e', error: e, stackTrace: stackTrace);
 
@@ -336,20 +313,6 @@ class _NewSetPageState extends State<NewSetPage>
         });
       }
     }
-  }
-
-  String _formatTagName(PredefinedTags tag) {
-    final name = tag.toString().split('.').last;
-    final specialCases = {
-      'foodAndDrinks': 'Food & Drinks',
-      'popCulture': 'Pop Culture',
-      'videoGames': 'Video Games',
-      'us': 'US',
-    };
-    if (specialCases.containsKey(name)) {
-      return specialCases[name]!;
-    }
-    return name[0].toUpperCase() + name.substring(1);
   }
 
   Future<void> _showTagsDropdown(BuildContext context) async {
@@ -494,7 +457,7 @@ class _NewSetPageState extends State<NewSetPage>
                                         SizedBox(width: 12),
                                         Expanded(
                                           child: Text(
-                                            _formatTagName(tag),
+                                            tag.displayName,
                                             style: TextStyle(
                                               fontSize: 14,
                                               color:
@@ -597,7 +560,7 @@ class _NewSetPageState extends State<NewSetPage>
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Expanded(
-                                child: _buildMinimalTextField(
+                                child: MinimalTextField(
                                   controller: _nameController,
                                   label: 'Name *',
                                   hint: 'Enter set name',
@@ -607,7 +570,7 @@ class _NewSetPageState extends State<NewSetPage>
                               SizedBox(width: 16),
                               Expanded(
                                 flex: 2,
-                                child: _buildMinimalTextField(
+                                child: MinimalTextField(
                                   controller: _descriptionController,
                                   label: 'Description *',
                                   hint:
@@ -876,7 +839,6 @@ class _NewSetPageState extends State<NewSetPage>
                                 controllers: _questionControllers[index],
                                 media: _questionMedia[index],
                                 mediaUrls: _questionMediaUrls[index],
-                                buildMinimalTextField: _buildMinimalTextField,
                                 points: _questionPoints[index],
                                 onMediaChanged: (
                                   String key,
@@ -910,78 +872,6 @@ class _NewSetPageState extends State<NewSetPage>
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildMinimalTextField({
-    required TextEditingController controller,
-    required String label,
-    required String hint,
-    int maxLines = 1,
-    int? maxLength,
-    bool isSmall = false,
-    TextInputType? keyboardType,
-    String? prefixText,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: AppTextStyles.labelSmall.copyWith(
-            color: ColorConstants.lightTextColor.withValues(alpha: 0.7),
-            fontSize: isSmall ? 12 : 14,
-          ),
-        ),
-        SizedBox(height: 4),
-        TextFormField(
-          controller: controller,
-          maxLines: maxLines,
-          maxLength: maxLength,
-          keyboardType: keyboardType,
-          decoration: InputDecoration(
-            hintText: hint,
-            hintStyle: TextStyle(
-              color: ColorConstants.lightTextColor.withValues(alpha: 0.4),
-              fontSize: isSmall ? 10 : 16,
-            ),
-            prefixText: prefixText,
-            prefixStyle: AppTextStyles.bodySmall,
-            counterText: '', // Hide character counter
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(4),
-              borderSide: BorderSide(
-                color: ColorConstants.lightTextColor.withValues(alpha: 0.3),
-                width: 1,
-              ),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(4),
-              borderSide: BorderSide(
-                color: ColorConstants.lightTextColor.withValues(alpha: 0.3),
-                width: 1,
-              ),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(4),
-              borderSide: BorderSide(
-                color: ColorConstants.primaryColor,
-                width: 1.5,
-              ),
-            ),
-            contentPadding: EdgeInsets.symmetric(
-              horizontal: isSmall ? 8 : 14,
-              vertical: isSmall ? 8 : (maxLines > 1 ? 14 : 16),
-            ),
-            isDense: true,
-            filled: false,
-          ),
-          style: AppTextStyles.bodySmall.copyWith(
-            color: ColorConstants.lightTextColor,
-            fontSize: isSmall ? 11 : 16,
-          ),
-        ),
-      ],
     );
   }
 
@@ -1035,24 +925,12 @@ class _CachedQuestionForm extends StatefulWidget {
   final int points;
   final Function(String key, PlatformFile? file) onMediaChanged;
   final Function(String key, String? url) onMediaUrlChanged;
-  final Widget Function({
-    required TextEditingController controller,
-    required String label,
-    required String hint,
-    int maxLines,
-    int? maxLength,
-    bool isSmall,
-    TextInputType? keyboardType,
-    String? prefixText,
-  })
-  buildMinimalTextField;
 
   const _CachedQuestionForm({
     super.key,
     required this.controllers,
     required this.media,
     required this.mediaUrls,
-    required this.buildMinimalTextField,
     required this.points,
     required this.onMediaChanged,
     required this.onMediaUrlChanged,
@@ -1096,7 +974,7 @@ class _CachedQuestionFormState extends State<_CachedQuestionForm>
                           ),
                         ),
                         SizedBox(height: 12),
-                        widget.buildMinimalTextField(
+                        MinimalTextField(
                           controller: widget.controllers['questionText']!,
                           label: 'Text',
                           hint: 'Enter question text',
@@ -1134,7 +1012,7 @@ class _CachedQuestionFormState extends State<_CachedQuestionForm>
                           ),
                         ),
                         SizedBox(height: 12),
-                        widget.buildMinimalTextField(
+                        MinimalTextField(
                           controller: widget.controllers['answerText']!,
                           label: 'Text',
                           hint: 'Enter answer text',
@@ -1244,7 +1122,7 @@ class _CachedQuestionFormState extends State<_CachedQuestionForm>
                   // Hint Field (takes most space)
                   SizedBox(
                     width: 300,
-                    child: widget.buildMinimalTextField(
+                    child: MinimalTextField(
                       controller: widget.controllers['hint']!,
                       label: 'Hint (Optional)',
                       hint: 'Enter a hint to help players',
@@ -1260,7 +1138,7 @@ class _CachedQuestionFormState extends State<_CachedQuestionForm>
           SizedBox(height: 16),
 
           // Full Width - Funda/Explanation
-          widget.buildMinimalTextField(
+          MinimalTextField(
             controller: widget.controllers['funda']!,
             label: 'Funda (Optional)',
             hint: 'Explain the concept or provide context or sources',

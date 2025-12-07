@@ -26,6 +26,8 @@ import 'package:buzz5_quiz_app/config/logger.dart';
 import 'package:buzz5_quiz_app/models/board_model.dart';
 import 'package:buzz5_quiz_app/models/set_model.dart';
 import 'package:buzz5_quiz_app/widgets/app_background.dart';
+import 'package:buzz5_quiz_app/widgets/content_state_builder.dart';
+import 'package:buzz5_quiz_app/widgets/delete_confirmation_dialog.dart';
 import 'package:buzz5_quiz_app/widgets/filter_sort_bar.dart';
 import 'package:buzz5_quiz_app/pages/create_set_page.dart';
 import 'package:buzz5_quiz_app/pages/import_set_page.dart';
@@ -82,9 +84,9 @@ class _CreatePageState extends State<CreatePage>
   String _creatorSearch = '';
 
   // ============================================================
-  // SELECTION STATE (for bulk operations)
+  // SELECTION STATE (for bulk operations on both sets and boards)
   // ============================================================
-  final Set<String> _selectedSetIds = {};
+  final Set<String> _selectedItemIds = {};
 
   @override
   void initState() {
@@ -333,8 +335,8 @@ class _CreatePageState extends State<CreatePage>
   // FILTERING LOGIC
   // ============================================================
 
-  /// Returns the list of sets filtered by current filter criteria.
-  /// Applies status, name, creator, and tag filters in sequence.
+  /// Returns the list of sets filtered and sorted by current criteria.
+  /// Applies status, name, creator, and tag filters, then sorts.
   List<SetModel> get _filteredSets {
     List<SetModel> filtered = _sets;
 
@@ -379,10 +381,45 @@ class _CreatePageState extends State<CreatePage>
               .toList();
     }
 
-    return filtered;
+    // Apply sorting
+    return _sortSets(filtered);
   }
 
-  /// Returns the list of boards filtered by current filter criteria.
+  /// Sort sets based on current sort option
+  List<SetModel> _sortSets(List<SetModel> sets) {
+    final sorted = List<SetModel>.from(sets);
+    switch (_currentSort) {
+      case SortOption.nameAZ:
+        sorted.sort((a, b) => a.name.compareTo(b.name));
+        break;
+      case SortOption.nameZA:
+        sorted.sort((a, b) => b.name.compareTo(a.name));
+        break;
+      case SortOption.difficultyHighToLow:
+        sorted.sort((a, b) {
+          final aIndex = a.difficulty?.index ?? 1;
+          final bIndex = b.difficulty?.index ?? 1;
+          return bIndex.compareTo(aIndex);
+        });
+        break;
+      case SortOption.difficultyLowToHigh:
+        sorted.sort((a, b) {
+          final aIndex = a.difficulty?.index ?? 1;
+          final bIndex = b.difficulty?.index ?? 1;
+          return aIndex.compareTo(bIndex);
+        });
+        break;
+      case SortOption.dateNewest:
+        sorted.sort((a, b) => b.creationDate.compareTo(a.creationDate));
+        break;
+      case SortOption.dateOldest:
+        sorted.sort((a, b) => a.creationDate.compareTo(b.creationDate));
+        break;
+    }
+    return sorted;
+  }
+
+  /// Returns the list of boards filtered and sorted by current criteria.
   /// Maps SetStatus filter to BoardStatus for consistency.
   List<BoardModel> get _filteredBoards {
     List<BoardModel> filtered = _boards;
@@ -421,7 +458,33 @@ class _CreatePageState extends State<CreatePage>
               .toList();
     }
 
-    return filtered;
+    // Apply sorting
+    return _sortBoards(filtered);
+  }
+
+  /// Sort boards based on current sort option (no difficulty for boards)
+  List<BoardModel> _sortBoards(List<BoardModel> boards) {
+    final sorted = List<BoardModel>.from(boards);
+    switch (_currentSort) {
+      case SortOption.nameAZ:
+        sorted.sort((a, b) => a.name.compareTo(b.name));
+        break;
+      case SortOption.nameZA:
+        sorted.sort((a, b) => b.name.compareTo(a.name));
+        break;
+      case SortOption.difficultyHighToLow:
+      case SortOption.difficultyLowToHigh:
+        // Boards don't have difficulty, fall back to date newest
+        sorted.sort((a, b) => b.creationDate.compareTo(a.creationDate));
+        break;
+      case SortOption.dateNewest:
+        sorted.sort((a, b) => b.creationDate.compareTo(a.creationDate));
+        break;
+      case SortOption.dateOldest:
+        sorted.sort((a, b) => a.creationDate.compareTo(b.creationDate));
+        break;
+    }
+    return sorted;
   }
 
   /// Resets all active filters to their default state.
@@ -665,9 +728,13 @@ class _CreatePageState extends State<CreatePage>
                                 _isSetView ? NewSetPage() : NewBoardPage(),
                       ),
                     );
-                    // Reload data if a board was created
-                    if (result == true && !_isSetView) {
-                      _loadBoards();
+                    // Reload data if a set or board was created
+                    if (result == true) {
+                      if (_isSetView) {
+                        _loadSets();
+                      } else {
+                        _loadBoards();
+                      }
                     }
                   },
                   style: ElevatedButton.styleFrom(
@@ -816,269 +883,110 @@ class _CreatePageState extends State<CreatePage>
 
   /// Builds the sets list content with loading, error, and empty states.
   Widget _buildSetsContent() {
-    // Loading state
-    if (_isLoading) {
-      return Center(
-        child: CircularProgressIndicator(color: ColorConstants.primaryColor),
-      );
-    }
-
-    // Error state
-    if (_errorMessage != null) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.error_outline,
-              size: 64,
-              color: ColorConstants.errorColor,
-            ),
-            SizedBox(height: 16),
-            Text(
-              'Error loading sets',
-              style: AppTextStyles.titleMedium.copyWith(
-                color: ColorConstants.errorColor,
-              ),
-            ),
-            SizedBox(height: 8),
-            Text(
-              _errorMessage!,
-              style: AppTextStyles.bodySmall.copyWith(
-                color: ColorConstants.hintGrey,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            SizedBox(height: 16),
-            ElevatedButton(onPressed: _loadSets, child: Text('Retry')),
-          ],
-        ),
-      );
-    }
-
-    // Empty state
-    if (_filteredSets.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.inventory_2_outlined,
-              size: 64,
-              color: ColorConstants.hintGrey,
-            ),
-            SizedBox(height: 16),
-            Text(
-              'No sets found',
-              style: AppTextStyles.titleMedium.copyWith(
-                color: ColorConstants.hintGrey,
-              ),
-            ),
-            SizedBox(height: 8),
-            Text(
-              'Try adjusting your filters or create a new set',
-              style: AppTextStyles.bodySmall.copyWith(
-                color: ColorConstants.hintGrey,
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    // Sets list
-    return ListView.builder(
-      itemCount: _filteredSets.length,
-      itemBuilder: (context, index) {
-        final set = _filteredSets[index];
-        return SetListItemTile(
-          set: set,
-          isSelected: _selectedSetIds.contains(set.id),
-          onSelectionChanged: (selected) {
-            setState(() {
-              if (selected) {
-                _selectedSetIds.add(set.id);
-              } else {
-                _selectedSetIds.remove(set.id);
-              }
-            });
-          },
-          onEdit: () {
-            Navigator.of(context)
-                .push(
-                  MaterialPageRoute(
-                    builder: (context) => NewSetPage(existingSet: set),
-                  ),
-                )
-                .then((_) => _loadSets());
-          },
-          onDuplicate: () => _duplicateSet(set),
-          onDelete: () async {
-            // Show confirmation dialog before deleting
-            final confirmed = await showDialog<bool>(
-              context: context,
-              builder:
-                  (context) => AlertDialog(
-                    title: Text('Delete Set'),
-                    content: Text(
-                      'Are you sure you want to delete "${set.name}"?',
+    return ContentStateBuilder(
+      isLoading: _isLoading,
+      errorMessage: _errorMessage,
+      errorTitle: 'Error loading sets',
+      onRetry: _loadSets,
+      isEmpty: _filteredSets.isEmpty,
+      emptyIcon: Icons.inventory_2_outlined,
+      emptyTitle: 'No sets found',
+      emptySubtitle: 'Try adjusting your filters or create a new set',
+      content: ListView.builder(
+        itemCount: _filteredSets.length,
+        itemBuilder: (context, index) {
+          final set = _filteredSets[index];
+          return SetListItemTile(
+            set: set,
+            isSelected: _selectedItemIds.contains(set.id),
+            onSelectionChanged: (selected) {
+              setState(() {
+                if (selected) {
+                  _selectedItemIds.add(set.id);
+                } else {
+                  _selectedItemIds.remove(set.id);
+                }
+              });
+            },
+            onEdit: () {
+              Navigator.of(context)
+                  .push(
+                    MaterialPageRoute(
+                      builder: (context) => NewSetPage(existingSet: set),
                     ),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.of(context).pop(false),
-                        child: Text('Cancel'),
-                      ),
-                      TextButton(
-                        onPressed: () => Navigator.of(context).pop(true),
-                        style: TextButton.styleFrom(
-                          foregroundColor: ColorConstants.errorColor,
-                        ),
-                        child: Text('Delete'),
-                      ),
-                    ],
-                  ),
-            );
-            if (confirmed == true) {
-              await _deleteSet(set);
-            }
-          },
-        );
-      },
+                  )
+                  .then((_) => _loadSets());
+            },
+            onDuplicate: () => _duplicateSet(set),
+            onDelete: () async {
+              final confirmed = await showDeleteConfirmationDialog(
+                context: context,
+                itemType: 'set',
+                itemName: set.name,
+              );
+              if (confirmed == true) {
+                await _deleteSet(set);
+              }
+            },
+          );
+        },
+      ),
     );
   }
 
   /// Builds the boards list content with loading, error, and empty state handling.
   Widget _buildBoardsContent() {
-    // Loading state
-    if (_isBoardsLoading) {
-      return Center(
-        child: CircularProgressIndicator(color: ColorConstants.primaryColor),
-      );
-    }
-
-    // Error state
-    if (_boardsErrorMessage != null) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.error_outline,
-              size: 64,
-              color: ColorConstants.errorColor,
-            ),
-            SizedBox(height: 16),
-            Text(
-              'Error loading boards',
-              style: AppTextStyles.titleMedium.copyWith(
-                color: ColorConstants.errorColor,
-              ),
-            ),
-            SizedBox(height: 8),
-            Text(
-              _boardsErrorMessage!,
-              style: AppTextStyles.bodySmall.copyWith(
-                color: ColorConstants.hintGrey,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            SizedBox(height: 16),
-            ElevatedButton(onPressed: _loadBoards, child: Text('Retry')),
-          ],
-        ),
-      );
-    }
-
-    // Empty state
-    if (_filteredBoards.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.dashboard_outlined,
-              size: 64,
-              color: ColorConstants.hintGrey,
-            ),
-            SizedBox(height: 16),
-            Text(
-              'No boards found',
-              style: AppTextStyles.titleMedium.copyWith(
-                color: ColorConstants.hintGrey,
-              ),
-            ),
-            SizedBox(height: 8),
-            Text(
-              _boards.isEmpty
-                  ? 'Create your first board to get started'
-                  : 'Try adjusting your filters or create a new board',
-              style: AppTextStyles.bodySmall.copyWith(
-                color: ColorConstants.hintGrey,
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    // Boards list
-    return ListView.builder(
-      itemCount: _filteredBoards.length,
-      itemBuilder: (context, index) {
-        final board = _filteredBoards[index];
-        return BoardListItemTile(
-          board: board,
-          isSelected: _selectedSetIds.contains(board.id),
-          onSelectionChanged: (selected) {
-            setState(() {
-              if (selected) {
-                _selectedSetIds.add(board.id);
-              } else {
-                _selectedSetIds.remove(board.id);
-              }
-            });
-          },
-          onEdit: () {
-            Navigator.of(context)
-                .push(
-                  MaterialPageRoute(
-                    builder: (context) => NewBoardPage(existingBoard: board),
-                  ),
-                )
-                .then((_) => _loadBoards());
-          },
-          onDuplicate: () => _duplicateBoard(board),
-          onDelete: () async {
-            // Show confirmation dialog
-            final confirmed = await showDialog<bool>(
-              context: context,
-              builder:
-                  (context) => AlertDialog(
-                    title: Text('Delete Board'),
-                    content: Text(
-                      'Are you sure you want to delete "${board.name}"? This action cannot be undone.',
+    return ContentStateBuilder(
+      isLoading: _isBoardsLoading,
+      errorMessage: _boardsErrorMessage,
+      errorTitle: 'Error loading boards',
+      onRetry: _loadBoards,
+      isEmpty: _filteredBoards.isEmpty,
+      emptyIcon: Icons.dashboard_outlined,
+      emptyTitle: 'No boards found',
+      emptySubtitle: _boards.isEmpty
+          ? 'Create your first board to get started'
+          : 'Try adjusting your filters or create a new board',
+      content: ListView.builder(
+        itemCount: _filteredBoards.length,
+        itemBuilder: (context, index) {
+          final board = _filteredBoards[index];
+          return BoardListItemTile(
+            board: board,
+            isSelected: _selectedItemIds.contains(board.id),
+            onSelectionChanged: (selected) {
+              setState(() {
+                if (selected) {
+                  _selectedItemIds.add(board.id);
+                } else {
+                  _selectedItemIds.remove(board.id);
+                }
+              });
+            },
+            onEdit: () {
+              Navigator.of(context)
+                  .push(
+                    MaterialPageRoute(
+                      builder: (context) => NewBoardPage(existingBoard: board),
                     ),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(context, false),
-                        child: Text('Cancel'),
-                      ),
-                      ElevatedButton(
-                        onPressed: () => Navigator.pop(context, true),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: ColorConstants.errorColor,
-                        ),
-                        child: Text('Delete'),
-                      ),
-                    ],
-                  ),
-            );
-            if (confirmed == true) {
-              _deleteBoard(board);
-            }
-          },
-        );
-      },
+                  )
+                  .then((_) => _loadBoards());
+            },
+            onDuplicate: () => _duplicateBoard(board),
+            onDelete: () async {
+              final confirmed = await showDeleteConfirmationDialog(
+                context: context,
+                itemType: 'board',
+                itemName: board.name,
+                additionalMessage: 'This action cannot be undone.',
+              );
+              if (confirmed == true) {
+                _deleteBoard(board);
+              }
+            },
+          );
+        },
+      ),
     );
   }
 }

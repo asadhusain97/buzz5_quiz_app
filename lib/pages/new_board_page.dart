@@ -20,8 +20,10 @@ import 'package:buzz5_quiz_app/models/all_enums.dart';
 import 'package:buzz5_quiz_app/models/board_model.dart';
 import 'package:buzz5_quiz_app/models/set_model.dart';
 import 'package:buzz5_quiz_app/widgets/app_background.dart';
+import 'package:buzz5_quiz_app/widgets/duplicate_name_dialog.dart';
 import 'package:buzz5_quiz_app/widgets/dynamic_save_button.dart';
 import 'package:buzz5_quiz_app/widgets/filter_sort_bar.dart';
+import 'package:buzz5_quiz_app/widgets/minimal_text_field.dart';
 import 'package:buzz5_quiz_app/services/set_service.dart';
 import 'package:buzz5_quiz_app/services/board_service.dart';
 
@@ -301,34 +303,11 @@ class _NewBoardPageState extends State<NewBoardPage> {
           _isSaving = false;
         });
 
-        await showDialog(
+        // Show error dialog using shared utility
+        await showDuplicateNameDialog(
           context: context,
-          builder: (context) => AlertDialog(
-            title: Row(
-              children: [
-                Icon(
-                  Icons.error_outline,
-                  color: ColorConstants.errorColor,
-                  size: 28,
-                ),
-                SizedBox(width: 12),
-                Text('Duplicate Name'),
-              ],
-            ),
-            content: Text(
-              'A board with the name "${_nameController.text.trim()}" already exists. Please choose a different name.',
-              style: AppTextStyles.bodyMedium,
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: Text(
-                  'OK',
-                  style: TextStyle(color: ColorConstants.primaryColor),
-                ),
-              ),
-            ],
-          ),
+          itemType: 'board',
+          name: _nameController.text.trim(),
         );
         return;
       }
@@ -672,7 +651,7 @@ class _NewBoardPageState extends State<NewBoardPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                child: _buildMinimalTextField(
+                child: MinimalTextField(
                   controller: _nameController,
                   label: 'Board Name *',
                   hint: 'Enter board name',
@@ -682,7 +661,7 @@ class _NewBoardPageState extends State<NewBoardPage> {
               SizedBox(width: 16),
               Expanded(
                 flex: 2,
-                child: _buildMinimalTextField(
+                child: MinimalTextField(
                   controller: _descriptionController,
                   label: 'Description *',
                   hint: 'Describe what this board is about',
@@ -693,73 +672,6 @@ class _NewBoardPageState extends State<NewBoardPage> {
           ),
         ],
       ),
-    );
-  }
-
-  /// Build a minimal text field matching the NewSetPage style
-  Widget _buildMinimalTextField({
-    required TextEditingController controller,
-    required String label,
-    required String hint,
-    int maxLines = 1,
-    int? maxLength,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: AppTextStyles.labelSmall.copyWith(
-            color: ColorConstants.lightTextColor.withValues(alpha: 0.7),
-            fontSize: 14,
-          ),
-        ),
-        SizedBox(height: 4),
-        TextFormField(
-          controller: controller,
-          maxLines: maxLines,
-          maxLength: maxLength,
-          decoration: InputDecoration(
-            hintText: hint,
-            hintStyle: TextStyle(
-              color: ColorConstants.lightTextColor.withValues(alpha: 0.4),
-              fontSize: 16,
-            ),
-            counterText: '',
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(4),
-              borderSide: BorderSide(
-                color: ColorConstants.lightTextColor.withValues(alpha: 0.3),
-                width: 1,
-              ),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(4),
-              borderSide: BorderSide(
-                color: ColorConstants.lightTextColor.withValues(alpha: 0.3),
-                width: 1,
-              ),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(4),
-              borderSide: BorderSide(
-                color: ColorConstants.primaryColor,
-                width: 1.5,
-              ),
-            ),
-            contentPadding: EdgeInsets.symmetric(
-              horizontal: 14,
-              vertical: 16,
-            ),
-            isDense: true,
-            filled: false,
-          ),
-          style: AppTextStyles.bodySmall.copyWith(
-            color: ColorConstants.lightTextColor,
-            fontSize: 16,
-          ),
-        ),
-      ],
     );
   }
 
@@ -1326,18 +1238,16 @@ class _DraggableSetCard extends StatelessWidget {
               Container(
                 padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: _getDifficultyColor(set.difficulty!)
-                      .withValues(alpha: 0.15),
+                  color: set.difficulty!.color.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(6),
                   border: Border.all(
-                    color: _getDifficultyColor(set.difficulty!)
-                        .withValues(alpha: 0.3),
+                    color: set.difficulty!.color.withValues(alpha: 0.3),
                   ),
                 ),
                 child: Text(
-                  _getDifficultyLabel(set.difficulty!),
+                  set.difficulty!.label,
                   style: TextStyle(
-                    color: _getDifficultyColor(set.difficulty!),
+                    color: set.difficulty!.color,
                     fontSize: 11,
                     fontWeight: FontWeight.w500,
                   ),
@@ -1347,28 +1257,6 @@ class _DraggableSetCard extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  Color _getDifficultyColor(DifficultyLevel difficulty) {
-    switch (difficulty) {
-      case DifficultyLevel.easy:
-        return Colors.green;
-      case DifficultyLevel.medium:
-        return Colors.orange;
-      case DifficultyLevel.hard:
-        return Colors.red;
-    }
-  }
-
-  String _getDifficultyLabel(DifficultyLevel difficulty) {
-    switch (difficulty) {
-      case DifficultyLevel.easy:
-        return 'Easy';
-      case DifficultyLevel.medium:
-        return 'Medium';
-      case DifficultyLevel.hard:
-        return 'Hard';
-    }
   }
 }
 

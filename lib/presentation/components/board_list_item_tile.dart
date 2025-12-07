@@ -47,9 +47,10 @@ class BoardListItemTile extends StatelessWidget {
 
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 8.0),
-      color: Theme.of(context).brightness == Brightness.dark
-          ? ColorConstants.darkCard
-          : ColorConstants.surfaceColor,
+      color:
+          Theme.of(context).brightness == Brightness.dark
+              ? ColorConstants.darkCard
+              : ColorConstants.surfaceColor,
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Stack(
@@ -89,7 +90,7 @@ class BoardListItemTile extends StatelessWidget {
           // Main content with adjusted padding for draft indicator
           Padding(
             padding: EdgeInsets.only(
-              left: isDraft ? 29.0 : 16.0,
+              left: 29.0,
               right: 16.0,
               top: 16.0,
               bottom: 16.0,
@@ -115,14 +116,15 @@ class BoardListItemTile extends StatelessWidget {
                       // Board name
                       Text(
                         board.name,
-                        style:
-                            Theme.of(context).textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  color: Theme.of(context).brightness ==
-                                          Brightness.dark
-                                      ? ColorConstants.lightTextColor
-                                      : ColorConstants.darkTextColor,
-                                ),
+                        style: Theme.of(
+                          context,
+                        ).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color:
+                              Theme.of(context).brightness == Brightness.dark
+                                  ? ColorConstants.lightTextColor
+                                  : ColorConstants.darkTextColor,
+                        ),
                         overflow: TextOverflow.ellipsis,
                         maxLines: 1,
                       ),
@@ -133,8 +135,8 @@ class BoardListItemTile extends StatelessWidget {
                       Text(
                         board.description,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: ColorConstants.hintGrey,
-                            ),
+                          color: ColorConstants.hintGrey,
+                        ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -148,33 +150,35 @@ class BoardListItemTile extends StatelessWidget {
                 PopupMenuButton<String>(
                   icon: Icon(
                     Icons.more_vert,
-                    color: Theme.of(context).brightness == Brightness.dark
-                        ? ColorConstants.lightTextColor
-                        : ColorConstants.darkTextColor,
+                    color:
+                        Theme.of(context).brightness == Brightness.dark
+                            ? ColorConstants.lightTextColor
+                            : ColorConstants.darkTextColor,
                   ),
-                  itemBuilder: (BuildContext context) => [
-                    PopupMenuItem<String>(
-                      value: 'edit',
-                      child: StandardMenuItem(
-                        icon: Icons.edit,
-                        label: 'Edit',
-                      ),
-                    ),
-                    PopupMenuItem<String>(
-                      value: 'duplicate',
-                      child: StandardMenuItem(
-                        icon: Icons.copy,
-                        label: 'Duplicate',
-                      ),
-                    ),
-                    PopupMenuItem<String>(
-                      value: 'delete',
-                      child: StandardMenuItem(
-                        icon: Icons.delete,
-                        label: 'Delete',
-                      ),
-                    ),
-                  ],
+                  itemBuilder:
+                      (BuildContext context) => [
+                        PopupMenuItem<String>(
+                          value: 'edit',
+                          child: StandardMenuItem(
+                            icon: Icons.edit,
+                            label: 'Edit',
+                          ),
+                        ),
+                        PopupMenuItem<String>(
+                          value: 'duplicate',
+                          child: StandardMenuItem(
+                            icon: Icons.copy,
+                            label: 'Duplicate',
+                          ),
+                        ),
+                        PopupMenuItem<String>(
+                          value: 'delete',
+                          child: StandardMenuItem(
+                            icon: Icons.delete,
+                            label: 'Delete',
+                          ),
+                        ),
+                      ],
                   onSelected: (String value) {
                     switch (value) {
                       case 'edit':

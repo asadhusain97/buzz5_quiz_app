@@ -120,7 +120,7 @@ class SetListItemTile extends StatelessWidget {
           // Main content with adjusted padding for draft indicator
           Padding(
             padding: EdgeInsets.only(
-              left: isDraft ? 29.0 : 16.0,
+              left: 29.0,
               right: 16.0,
               top: 12.0,
               bottom: 12.0,
