@@ -16,6 +16,10 @@ class BoardModel {
   /// Storing IDs instead of full objects saves space and allows sets to be in multiple boards.
   final List<String> setIds;
 
+  /// The explicit status of this board.
+  /// A board can only be marked as complete if it has exactly 5 sets.
+  final BoardStatus _status;
+
   BoardModel({
     required this.id,
     required this.name,
@@ -25,24 +29,35 @@ class BoardModel {
     DateTime? creationDate,
     DateTime? modifiedDate,
     this.setIds = const [],
+    BoardStatus? status,
   }) : creationDate = creationDate ?? DateTime.now(),
        modifiedDate = modifiedDate ?? DateTime.now(),
+       // Status defaults to draft. Can only be complete if 5 sets are present.
+       _status = (status == BoardStatus.complete && setIds.length == 5)
+           ? BoardStatus.complete
+           : BoardStatus.draft,
        assert(setIds.length <= 5, 'A board can have a maximum of 5 sets.');
 
-  /// Dynamic getter for the status.
-  /// A board is complete only if it has exactly 5 sets.
-  BoardStatus get status {
-    if (setIds.length == 5) {
-      return BoardStatus.complete;
-    }
-    return BoardStatus.draft;
-  }
+  /// Get the status of this board.
+  /// A board is complete only if it was explicitly saved as complete AND has exactly 5 sets.
+  BoardStatus get status => _status;
 
   /// Get the number of sets in this board.
   int get setCount => setIds.length;
 
   // Factory constructor to create a BoardModel from a JSON object
   factory BoardModel.fromJson(Map<String, dynamic> json) {
+    // Parse status from string (e.g., "BoardStatus.complete" or "BoardStatus.draft")
+    BoardStatus? parsedStatus;
+    if (json['status'] != null) {
+      final statusString = json['status'] as String;
+      if (statusString.contains('complete')) {
+        parsedStatus = BoardStatus.complete;
+      } else {
+        parsedStatus = BoardStatus.draft;
+      }
+    }
+
     return BoardModel(
       id: json['id'] as String,
       name: json['name'] as String,
@@ -52,6 +67,7 @@ class BoardModel {
       creationDate: DateTime.parse(json['creationDate'] as String),
       modifiedDate: DateTime.parse(json['modifiedDate'] as String),
       setIds: List<String>.from(json['setIds'] as List<dynamic>? ?? []),
+      status: parsedStatus,
     );
   }
 

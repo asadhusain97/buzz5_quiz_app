@@ -6,6 +6,7 @@ import 'package:buzz5_quiz_app/config/logger.dart';
 import 'package:buzz5_quiz_app/models/all_enums.dart';
 import 'package:buzz5_quiz_app/models/set_model.dart';
 import 'package:buzz5_quiz_app/widgets/app_background.dart';
+import 'package:buzz5_quiz_app/widgets/dynamic_save_button.dart';
 import 'package:buzz5_quiz_app/widgets/media_upload_widget.dart';
 import 'package:buzz5_quiz_app/widgets/stat_displays.dart';
 import 'package:buzz5_quiz_app/services/set_service.dart';
@@ -38,6 +39,7 @@ class _NewSetPageState extends State<NewSetPage>
   // ValueNotifiers for efficient button updates (avoids full page rebuilds)
   final _nameNotifier = ValueNotifier<String>('');
   final _descriptionNotifier = ValueNotifier<String>('');
+  final _completedQuestionsNotifier = ValueNotifier<int>(0);
 
   // Question controllers - 5 questions with incremental points
   final List<Map<String, TextEditingController>> _questionControllers = [];
@@ -84,6 +86,12 @@ class _NewSetPageState extends State<NewSetPage>
       _descriptionNotifier.value = _descriptionController.text;
     });
 
+    // Add listeners to question/answer controllers to update completion count
+    for (int i = 0; i < 5; i++) {
+      _questionControllers[i]['questionText']!.addListener(_updateCompletedCount);
+      _questionControllers[i]['answerText']!.addListener(_updateCompletedCount);
+    }
+
     // Pre-populate if editing an existing set
     if (isEditing) {
       final existingSet = widget.existingSet!;
@@ -91,6 +99,10 @@ class _NewSetPageState extends State<NewSetPage>
       _descriptionController.text = existingSet.description;
       _selectedDifficulty = existingSet.difficulty;
       _selectedTags.addAll(existingSet.tags);
+
+      // Also update notifiers so buttons work immediately in edit mode
+      _nameNotifier.value = existingSet.name;
+      _descriptionNotifier.value = existingSet.description;
 
       // Pre-populate question controllers
       for (int i = 0; i < existingSet.questions.length && i < 5; i++) {
@@ -105,11 +117,10 @@ class _NewSetPageState extends State<NewSetPage>
         _questionMediaUrls[i]['answerMedia'] =
             question.answerMedia?.downloadURL;
       }
-    }
 
-    // OPTIMIZATION: Question controllers only trigger rebuild for tab indicators
-    // We don't need real-time updates while typing in questions
-    // Tab completion will be checked on tab change instead
+      // Update completed questions count for edit mode
+      _updateCompletedCount();
+    }
   }
 
   @override
@@ -119,6 +130,7 @@ class _NewSetPageState extends State<NewSetPage>
     _descriptionController.dispose();
     _nameNotifier.dispose();
     _descriptionNotifier.dispose();
+    _completedQuestionsNotifier.dispose();
 
     // Dispose question controllers
     for (var controllers in _questionControllers) {
@@ -128,6 +140,17 @@ class _NewSetPageState extends State<NewSetPage>
     }
 
     super.dispose();
+  }
+
+  /// Updates the completed questions count notifier
+  void _updateCompletedCount() {
+    int count = 0;
+    for (int i = 0; i < 5; i++) {
+      if (_isQuestionComplete(i)) {
+        count++;
+      }
+    }
+    _completedQuestionsNotifier.value = count;
   }
 
   bool _isQuestionComplete(int index) {
@@ -547,7 +570,7 @@ class _NewSetPageState extends State<NewSetPage>
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(
-                                'Create a Set',
+                                isEditing ? 'Edit Set' : 'Create a Set',
                                 style: AppTextStyles.titleBig.copyWith(
                                   color: ColorConstants.lightTextColor,
                                   fontWeight: FontWeight.bold,
@@ -555,13 +578,12 @@ class _NewSetPageState extends State<NewSetPage>
                                 ),
                               ),
                               SizedBox(width: 16),
-                              // OPTIMIZED: Buttons only rebuild when name/description change
-                              _ActionButtons(
+                              // Dynamic save button - switches between Draft/Save based on completion
+                              DynamicSaveButton(
                                 nameNotifier: _nameNotifier,
                                 descriptionNotifier: _descriptionNotifier,
-                                questionControllers: _questionControllers,
-                                questionMedia: _questionMedia,
-                                questionMediaUrls: _questionMediaUrls,
+                                completionCountNotifier: _completedQuestionsNotifier,
+                                requiredCount: 5,
                                 onSaveDraft: _saveAsDraft,
                                 onSave: _save,
                                 isSaving: _isSaving,
@@ -862,6 +884,7 @@ class _NewSetPageState extends State<NewSetPage>
                                 ) {
                                   // Update media and rebuild for tab completion indicator
                                   _questionMedia[index][key] = file;
+                                  _updateCompletedCount(); // Update button state
                                   setState(
                                     () {},
                                   ); // Only rebuilds tab indicators
@@ -869,6 +892,7 @@ class _NewSetPageState extends State<NewSetPage>
                                 onMediaUrlChanged: (String key, String? url) {
                                   // Update URL and rebuild for tab completion indicator
                                   _questionMediaUrls[index][key] = url;
+                                  _updateCompletedCount(); // Update button state
                                   setState(
                                     () {},
                                   ); // Only rebuilds tab indicators
@@ -999,174 +1023,6 @@ class _NewSetPageState extends State<NewSetPage>
           ),
         ),
       ),
-    );
-  }
-}
-
-// OPTIMIZATION: Action buttons as separate widget
-// Uses ValueListenableBuilder to rebuild ONLY buttons, not entire page
-class _ActionButtons extends StatelessWidget {
-  final ValueNotifier<String> nameNotifier;
-  final ValueNotifier<String> descriptionNotifier;
-  final List<Map<String, TextEditingController>> questionControllers;
-  final List<Map<String, PlatformFile?>> questionMedia;
-  final List<Map<String, String?>> questionMediaUrls;
-  final VoidCallback onSaveDraft;
-  final VoidCallback onSave;
-  final bool isSaving;
-
-  const _ActionButtons({
-    required this.nameNotifier,
-    required this.descriptionNotifier,
-    required this.questionControllers,
-    required this.questionMedia,
-    required this.questionMediaUrls,
-    required this.onSaveDraft,
-    required this.onSave,
-    this.isSaving = false,
-  });
-
-  bool _isQuestionComplete(int index) {
-    final controllers = questionControllers[index];
-    final media = questionMedia[index];
-    final mediaUrls = questionMediaUrls[index];
-    final hasQuestion =
-        controllers['questionText']!.text.trim().isNotEmpty ||
-        media['questionMedia'] != null ||
-        (mediaUrls['questionMedia'] != null &&
-            mediaUrls['questionMedia']!.trim().isNotEmpty);
-    final hasAnswer =
-        controllers['answerText']!.text.trim().isNotEmpty ||
-        media['answerMedia'] != null ||
-        (mediaUrls['answerMedia'] != null &&
-            mediaUrls['answerMedia']!.trim().isNotEmpty);
-    return hasQuestion && hasAnswer;
-  }
-
-  bool _canSaveAsDraft(String name, String description) {
-    return name.trim().isNotEmpty && description.trim().isNotEmpty;
-  }
-
-  bool _canSave(String name, String description) {
-    if (!_canSaveAsDraft(name, description)) return false;
-
-    for (int i = 0; i < 5; i++) {
-      if (!_isQuestionComplete(i)) return false;
-    }
-    return true;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return ValueListenableBuilder<String>(
-      valueListenable: nameNotifier,
-      builder: (context, name, child) {
-        return ValueListenableBuilder<String>(
-          valueListenable: descriptionNotifier,
-          builder: (context, description, _) {
-            final canDraft = _canSaveAsDraft(name, description);
-            final canSave = _canSave(name, description);
-
-            return Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Save as Draft Button
-                SizedBox(
-                  width: 110,
-                  height: 45,
-                  child: OutlinedButton(
-                    onPressed: (canDraft && !isSaving) ? onSaveDraft : null,
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: ColorConstants.primaryColor,
-                      disabledForegroundColor: ColorConstants.hintGrey
-                          .withValues(alpha: 0.5),
-                      side: BorderSide(
-                        color:
-                            (canDraft && !isSaving)
-                                ? ColorConstants.primaryColor
-                                : ColorConstants.hintGrey.withValues(
-                                  alpha: 0.3,
-                                ),
-                        width: 1.5,
-                      ),
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 12,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                    ),
-                    child:
-                        isSaving
-                            ? SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                  ColorConstants.primaryColor,
-                                ),
-                              ),
-                            )
-                            : Text(
-                              'Save As Draft',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                  ),
-                ),
-                SizedBox(width: 12),
-                // Save Button
-                SizedBox(
-                  width: 110,
-                  height: 45,
-                  child: ElevatedButton(
-                    onPressed: (canSave && !isSaving) ? onSave : null,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: ColorConstants.primaryColor,
-                      foregroundColor: ColorConstants.lightTextColor,
-                      disabledBackgroundColor: ColorConstants.primaryColor
-                          .withValues(alpha: 0.3),
-                      disabledForegroundColor: ColorConstants.lightTextColor
-                          .withValues(alpha: 0.5),
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 12,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      elevation: canSave ? 2 : 0,
-                    ),
-                    child:
-                        isSaving
-                            ? SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                  ColorConstants.lightTextColor,
-                                ),
-                              ),
-                            )
-                            : Text(
-                              'Save',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                  ),
-                ),
-              ],
-            );
-          },
-        );
-      },
     );
   }
 }

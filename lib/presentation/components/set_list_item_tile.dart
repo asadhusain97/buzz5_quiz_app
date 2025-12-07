@@ -76,7 +76,7 @@ class SetListItemTile extends StatelessWidget {
     final isDraft = set.status == SetStatus.draft;
 
     return Card(
-      margin: const EdgeInsets.symmetric(vertical: 8.0),
+      margin: const EdgeInsets.symmetric(vertical: 6.0),
       color:
           Theme.of(context).brightness == Brightness.dark
               ? ColorConstants.darkCard
@@ -122,8 +122,8 @@ class SetListItemTile extends StatelessWidget {
             padding: EdgeInsets.only(
               left: isDraft ? 29.0 : 16.0,
               right: 16.0,
-              top: 16.0,
-              bottom: 16.0,
+              top: 12.0,
+              bottom: 12.0,
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
@@ -186,7 +186,7 @@ class SetListItemTile extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                       ),
 
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 8),
 
                       // Difficulty badge and tags row
                       Row(

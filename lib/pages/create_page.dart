@@ -26,12 +26,14 @@ import 'package:buzz5_quiz_app/config/logger.dart';
 import 'package:buzz5_quiz_app/models/board_model.dart';
 import 'package:buzz5_quiz_app/models/set_model.dart';
 import 'package:buzz5_quiz_app/widgets/app_background.dart';
+import 'package:buzz5_quiz_app/widgets/filter_sort_bar.dart';
 import 'package:buzz5_quiz_app/pages/create_set_page.dart';
 import 'package:buzz5_quiz_app/pages/import_set_page.dart';
-import 'package:buzz5_quiz_app/pages/create_new_board_page.dart';
+import 'package:buzz5_quiz_app/pages/new_board_page.dart';
 import 'package:buzz5_quiz_app/presentation/components/set_list_item_tile.dart';
 import 'package:buzz5_quiz_app/presentation/components/board_list_item_tile.dart';
 import 'package:buzz5_quiz_app/services/set_service.dart';
+import 'package:buzz5_quiz_app/services/board_service.dart';
 
 class CreatePage extends StatefulWidget {
   const CreatePage({super.key});
@@ -49,21 +51,28 @@ class _CreatePageState extends State<CreatePage>
   int _currentTabIndex = 0;
 
   // ============================================================
-  // FIREBASE SERVICE
+  // FIREBASE SERVICES
   // ============================================================
   final SetService _setService = SetService();
+  final BoardService _boardService = BoardService();
 
   // ============================================================
   // DATA STATE
   // ============================================================
+  // Sets data
   List<SetModel> _sets = [];
   bool _isLoading = true;
   String? _errorMessage;
 
+  // Boards data
+  List<BoardModel> _boards = [];
+  bool _isBoardsLoading = true;
+  String? _boardsErrorMessage;
+
   // ============================================================
   // FILTER AND SORT STATE
   // ============================================================
-  String _sortBy = 'Creation Date: Newest first';
+  SortOption _currentSort = SortOption.dateNewest;
   final Map<String, dynamic> _activeFilters = {};
 
   // Individual filter values
@@ -87,12 +96,13 @@ class _CreatePageState extends State<CreatePage>
         _currentTabIndex = _tabController.index;
       });
     });
-    // Load sets from Firebase on page load
+    // Load data from Firebase on page load
     _loadSets();
+    _loadBoards();
   }
 
   // ============================================================
-  // DATA LOADING AND CRUD OPERATIONS
+  // SET DATA LOADING AND CRUD OPERATIONS
   // ============================================================
 
   /// Fetches user's sets from Firebase and updates the UI state.
@@ -204,6 +214,112 @@ class _CreatePageState extends State<CreatePage>
     }
   }
 
+  // ============================================================
+  // BOARD DATA LOADING AND CRUD OPERATIONS
+  // ============================================================
+
+  /// Fetches user's boards from Firebase and updates the UI state.
+  Future<void> _loadBoards() async {
+    try {
+      setState(() {
+        _isBoardsLoading = true;
+        _boardsErrorMessage = null;
+      });
+      final boards = await _boardService.getUserBoards();
+      if (mounted) {
+        setState(() {
+          _boards = boards;
+          _isBoardsLoading = false;
+        });
+      }
+    } catch (e) {
+      AppLogger.e('Error loading boards: $e');
+      if (mounted) {
+        setState(() {
+          _boardsErrorMessage = 'Failed to load boards: $e';
+          _isBoardsLoading = false;
+        });
+      }
+    }
+  }
+
+  /// Deletes a board from Firebase and refreshes the list.
+  Future<void> _deleteBoard(BoardModel board) async {
+    try {
+      await _boardService.deleteBoard(board.id);
+      await _loadBoards();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('"${board.name}" deleted successfully'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      AppLogger.e('Error deleting board: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to delete board: $e'),
+            backgroundColor: ColorConstants.errorColor,
+          ),
+        );
+      }
+    }
+  }
+
+  /// Creates a duplicate of an existing board with "(Copy)" suffix.
+  Future<void> _duplicateBoard(BoardModel board) async {
+    try {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                ),
+                SizedBox(width: 16),
+                Text('Duplicating "${board.name}"...'),
+              ],
+            ),
+            duration: Duration(seconds: 10),
+          ),
+        );
+      }
+
+      await _boardService.duplicateBoard(board.id);
+      await _loadBoards();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('"${board.name}" duplicated successfully'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      AppLogger.e('Error duplicating board: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to duplicate board: $e'),
+            backgroundColor: ColorConstants.errorColor,
+          ),
+        );
+      }
+    }
+  }
+
   /// Returns true if currently viewing the Sets tab, false for Boards tab.
   bool get _isSetView => _currentTabIndex == 0;
 
@@ -212,64 +328,6 @@ class _CreatePageState extends State<CreatePage>
     _tabController.dispose();
     super.dispose();
   }
-
-  // ============================================================
-  // MOCK BOARDS DATA (TODO: Replace with Firebase integration)
-  // ============================================================
-  final List<BoardModel> _boards = [
-    BoardModel(
-      id: 'b1',
-      name: 'General Knowledge Championship',
-      description:
-          'A comprehensive board covering history, science, and pop culture',
-      authorName: 'John Doe',
-      authorId: 'user1',
-      creationDate: DateTime.now().subtract(Duration(days: 10)),
-      modifiedDate: DateTime.now().subtract(Duration(days: 2)),
-      setIds: ['1', '2', '3'],
-    ),
-    BoardModel(
-      id: 'b2',
-      name: 'Science & Technology Mastery',
-      description:
-          'Deep dive into scientific concepts and technological innovations',
-      authorName: 'Jane Smith',
-      authorId: 'user2',
-      creationDate: DateTime.now().subtract(Duration(days: 20)),
-      modifiedDate: DateTime.now().subtract(Duration(days: 5)),
-      setIds: ['2', '4'],
-    ),
-    BoardModel(
-      id: 'b3',
-      name: 'Entertainment Extravaganza',
-      description: 'Movies, music, TV shows, and celebrity trivia',
-      authorName: 'Mike Johnson',
-      authorId: 'user3',
-      creationDate: DateTime.now().subtract(Duration(days: 3)),
-      modifiedDate: DateTime.now().subtract(Duration(hours: 10)),
-      setIds: ['3'],
-    ),
-    BoardModel(
-      id: 'b4',
-      name: 'World Geography Explorer',
-      description: 'Countries, capitals, landmarks, and geographical features',
-      authorName: 'Sarah Williams',
-      authorId: 'user4',
-      creationDate: DateTime.now().subtract(Duration(days: 15)),
-      modifiedDate: DateTime.now().subtract(Duration(days: 1)),
-      setIds: ['5', '1', '2', '3', '4'],
-    ),
-    BoardModel(
-      id: 'b5',
-      name: 'History Through Ages',
-      description: 'From ancient civilizations to modern world events',
-      authorName: 'Tom Brown',
-      authorId: 'user5',
-      creationDate: DateTime.now().subtract(Duration(days: 30)),
-      modifiedDate: DateTime.now().subtract(Duration(hours: 5)),
-      setIds: ['1'],
-    ),
-  ];
 
   // ============================================================
   // FILTERING LOGIC
@@ -378,295 +436,85 @@ class _CreatePageState extends State<CreatePage>
   }
 
   // ============================================================
-  // FILTER DIALOG BUILDERS
+  // FILTER DIALOG HANDLERS (using shared widgets)
   // ============================================================
 
   /// Shows a dialog to filter sets/boards by status (Complete/Draft).
-  void _showStatusFilterDropdown(BuildContext context, RenderBox renderBox) {
-    showDialog(
+  void _showStatusFilter() async {
+    final result = await showStatusFilterDialog(
       context: context,
-      builder: (context) {
-        SetStatus? selectedStatus = _statusFilter;
-
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            // Helper to build radio button options
-            Widget buildRadioOption(String label, SetStatus? value) {
-              final isSelected = selectedStatus == value;
-              return InkWell(
-                onTap: () {
-                  setDialogState(() {
-                    selectedStatus = value;
-                  });
-                },
-                child: Padding(
-                  padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 20,
-                        height: 20,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color:
-                                isSelected
-                                    ? ColorConstants.primaryColor
-                                    : ColorConstants.hintGrey,
-                            width: 2,
-                          ),
-                        ),
-                        child:
-                            isSelected
-                                ? Center(
-                                  child: Container(
-                                    width: 10,
-                                    height: 10,
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      color: ColorConstants.primaryColor,
-                                    ),
-                                  ),
-                                )
-                                : null,
-                      ),
-                      SizedBox(width: 16),
-                      Text(
-                        label,
-                        style: TextStyle(
-                          fontSize: 16,
-                          color:
-                              isSelected ? ColorConstants.primaryColor : null,
-                          fontWeight:
-                              isSelected ? FontWeight.w600 : FontWeight.normal,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            }
-
-            return AlertDialog(
-              title: Text('Filter by Status'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  buildRadioOption('All', null),
-                  buildRadioOption('Complete', SetStatus.complete),
-                  buildRadioOption('Draft', SetStatus.draft),
-                ],
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: Text('Cancel'),
-                ),
-                ElevatedButton(
-                  onPressed: () {
-                    setState(() {
-                      _statusFilter = selectedStatus;
-                      if (selectedStatus == null) {
-                        _activeFilters.remove('Status');
-                      } else {
-                        _activeFilters['Status'] =
-                            selectedStatus == SetStatus.complete
-                                ? 'Complete'
-                                : 'Draft';
-                      }
-                    });
-                    Navigator.pop(context);
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: ColorConstants.primaryColor,
-                    foregroundColor: ColorConstants.lightTextColor,
-                  ),
-                  child: Text('Apply'),
-                ),
-              ],
-            );
-          },
-        );
-      },
+      currentStatus: _statusFilter,
     );
+    // Only apply if user clicked Apply (not cancelled)
+    if (result != null && result.applied) {
+      setState(() {
+        _statusFilter = result.status;
+        if (result.status == null) {
+          _activeFilters.remove('Status');
+        } else {
+          _activeFilters['Status'] =
+              result.status == SetStatus.complete ? 'Complete' : 'Draft';
+        }
+      });
+    }
   }
 
   /// Shows a dialog to filter sets by tags (multi-select).
-  void _showTagsFilterDropdown(BuildContext context, RenderBox renderBox) {
-    final availableTags = [
-      'history',
-      'science',
-      'tech',
-      'math',
-      'geography',
-      'pop culture',
-      'education',
-      'entertainment',
-      'trivia',
-      'travel',
-    ];
-
-    showDialog(
+  void _showTagsFilter() async {
+    final result = await showTagsFilterDialog(
       context: context,
-      builder:
-          (context) => AlertDialog(
-            title: Text('Select Tags'),
-            content: StatefulBuilder(
-              builder:
-                  (context, setDialogState) => SingleChildScrollView(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children:
-                          availableTags.map((tag) {
-                            return CheckboxListTile(
-                              title: Text(tag),
-                              value: _selectedTags.contains(tag),
-                              onChanged: (checked) {
-                                setDialogState(() {
-                                  if (checked == true) {
-                                    _selectedTags.add(tag);
-                                  } else {
-                                    _selectedTags.remove(tag);
-                                  }
-                                });
-                              },
-                              activeColor: ColorConstants.primaryColor,
-                              dense: true,
-                            );
-                          }).toList(),
-                    ),
-                  ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text('Cancel'),
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  setState(() {
-                    if (_selectedTags.isEmpty) {
-                      _activeFilters.remove('Tags');
-                    } else {
-                      _activeFilters['Tags'] = _selectedTags.join(', ');
-                    }
-                  });
-                  Navigator.pop(context);
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: ColorConstants.primaryColor,
-                  foregroundColor: ColorConstants.lightTextColor,
-                ),
-                child: Text('Apply'),
-              ),
-            ],
-          ),
+      availableTags: getAvailableTagNames(),
+      selectedTags: _selectedTags,
     );
+    if (result != null) {
+      setState(() {
+        _selectedTags.clear();
+        _selectedTags.addAll(result);
+        if (_selectedTags.isEmpty) {
+          _activeFilters.remove('Tags');
+        } else {
+          _activeFilters['Tags'] = _selectedTags.join(', ');
+        }
+      });
+    }
   }
 
   /// Shows a dialog to search sets/boards by name.
-  void _showNameSearchDialog(BuildContext context) {
-    final controller = TextEditingController(text: _nameSearch);
-
-    showDialog(
+  void _showNameSearch() async {
+    final result = await showNameSearchDialog(
       context: context,
-      builder:
-          (context) => AlertDialog(
-            title: Text('Search by Name'),
-            content: TextField(
-              controller: controller,
-              decoration: InputDecoration(
-                hintText: 'Enter set name',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                contentPadding: EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 12,
-                ),
-                prefixIcon: Icon(Icons.search),
-              ),
-              autofocus: true,
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text('Cancel'),
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  setState(() {
-                    _nameSearch = controller.text;
-                    if (_nameSearch.isEmpty) {
-                      _activeFilters.remove('Name');
-                    } else {
-                      _activeFilters['Name'] = _nameSearch;
-                    }
-                  });
-                  Navigator.pop(context);
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: ColorConstants.primaryColor,
-                  foregroundColor: ColorConstants.lightTextColor,
-                ),
-                child: Text('Apply'),
-              ),
-            ],
-          ),
+      currentValue: _nameSearch,
+      title: 'Search by Name',
+      hint: 'Enter set name',
     );
+    if (result != null) {
+      setState(() {
+        _nameSearch = result;
+        if (_nameSearch.isEmpty) {
+          _activeFilters.remove('Name');
+        } else {
+          _activeFilters['Name'] = _nameSearch;
+        }
+      });
+    }
   }
 
   /// Shows a dialog to search sets/boards by creator name.
-  void _showCreatorSearchDialog(BuildContext context) {
-    final controller = TextEditingController(text: _creatorSearch);
-
-    showDialog(
+  void _showCreatorSearch() async {
+    final result = await showCreatorSearchDialog(
       context: context,
-      builder:
-          (context) => AlertDialog(
-            title: Text('Search by Creator'),
-            content: TextField(
-              controller: controller,
-              decoration: InputDecoration(
-                hintText: 'Enter creator name',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                contentPadding: EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 12,
-                ),
-                prefixIcon: Icon(Icons.search),
-              ),
-              autofocus: true,
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text('Cancel'),
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  setState(() {
-                    _creatorSearch = controller.text;
-                    if (_creatorSearch.isEmpty) {
-                      _activeFilters.remove('Creator');
-                    } else {
-                      _activeFilters['Creator'] = _creatorSearch;
-                    }
-                  });
-                  Navigator.pop(context);
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: ColorConstants.primaryColor,
-                  foregroundColor: ColorConstants.lightTextColor,
-                ),
-                child: Text('Apply'),
-              ),
-            ],
-          ),
+      currentValue: _creatorSearch,
     );
+    if (result != null) {
+      setState(() {
+        _creatorSearch = result;
+        if (_creatorSearch.isEmpty) {
+          _activeFilters.remove('Creator');
+        } else {
+          _activeFilters['Creator'] = _creatorSearch;
+        }
+      });
+    }
   }
 
   // ============================================================
@@ -808,17 +656,19 @@ class _CreatePageState extends State<CreatePage>
                 ElevatedButton.icon(
                   icon: Icon(Icons.add, size: 18),
                   label: Text(_isSetView ? 'New Set' : 'New Board'),
-                  onPressed: () {
-                    Navigator.push(
+                  onPressed: () async {
+                    final result = await Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder:
                             (context) =>
-                                _isSetView
-                                    ? NewSetPage()
-                                    : CreateNewBoardPage(),
+                                _isSetView ? NewSetPage() : NewBoardPage(),
                       ),
                     );
+                    // Reload data if a board was created
+                    if (result == true && !_isSetView) {
+                      _loadBoards();
+                    }
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: ColorConstants.primaryColor,
@@ -860,7 +710,7 @@ class _CreatePageState extends State<CreatePage>
     );
   }
 
-  /// Builds the filter and sort control bar.
+  /// Builds the filter and sort control bar using shared widgets.
   Widget _buildFilterSortBar() {
     return Row(
       children: [
@@ -879,51 +729,45 @@ class _CreatePageState extends State<CreatePage>
                 const SizedBox(width: 8),
 
                 // Status filter chip
-                _buildFilterChip(
+                FilterChipButton(
                   label: 'Status',
-                  value: _activeFilters['Status'],
+                  value: _activeFilters['Status'] as String?,
                   isActive: _statusFilter != null,
-                  onTap: () {
-                    final renderBox = context.findRenderObject() as RenderBox;
-                    _showStatusFilterDropdown(context, renderBox);
-                  },
+                  onTap: _showStatusFilter,
                 ),
 
                 const SizedBox(width: 8),
 
                 // Tags filter chip (only for Sets)
                 if (_isSetView) ...[
-                  _buildFilterChip(
+                  FilterChipButton(
                     label: 'Tags',
                     value:
                         _selectedTags.isNotEmpty
                             ? '${_selectedTags.length} selected'
                             : null,
                     isActive: _selectedTags.isNotEmpty,
-                    onTap: () {
-                      final renderBox = context.findRenderObject() as RenderBox;
-                      _showTagsFilterDropdown(context, renderBox);
-                    },
+                    onTap: _showTagsFilter,
                   ),
                   const SizedBox(width: 8),
                 ],
 
                 // Name search chip
-                _buildSearchChip(
+                SearchChipButton(
                   label: 'Name',
                   value: _nameSearch.isNotEmpty ? _nameSearch : null,
                   isActive: _nameSearch.isNotEmpty,
-                  onTap: () => _showNameSearchDialog(context),
+                  onTap: _showNameSearch,
                 ),
 
                 const SizedBox(width: 8),
 
                 // Creator search chip
-                _buildSearchChip(
+                SearchChipButton(
                   label: 'Creator',
                   value: _creatorSearch.isNotEmpty ? _creatorSearch : null,
                   isActive: _creatorSearch.isNotEmpty,
-                  onTap: () => _showCreatorSearchDialog(context),
+                  onTap: _showCreatorSearch,
                 ),
               ],
             ),
@@ -932,8 +776,16 @@ class _CreatePageState extends State<CreatePage>
 
         const SizedBox(width: 12),
 
-        // Sort dropdown
-        _buildSortDropdown(),
+        // Sort dropdown (using shared widget)
+        SortDropdownButton(
+          currentSort: _currentSort,
+          onSortChanged: (sort) {
+            setState(() {
+              _currentSort = sort;
+            });
+          },
+          showDifficulty: _isSetView, // Only show difficulty for Sets
+        ),
 
         // Clear filters button
         if (_activeFilters.isNotEmpty) ...[
@@ -950,188 +802,6 @@ class _CreatePageState extends State<CreatePage>
           ),
         ],
       ],
-    );
-  }
-
-  /// Builds a filter chip button with dropdown arrow.
-  Widget _buildFilterChip({
-    required String label,
-    String? value,
-    required bool isActive,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color:
-              isActive
-                  ? ColorConstants.primaryColor.withValues(alpha: 0.15)
-                  : Colors.transparent,
-          border: Border.all(
-            color:
-                isActive
-                    ? ColorConstants.primaryColor
-                    : ColorConstants.hintGrey.withValues(alpha: 0.3),
-          ),
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 13,
-                color:
-                    isActive
-                        ? ColorConstants.primaryColor
-                        : ColorConstants.hintGrey,
-                fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
-              ),
-            ),
-            if (value != null) ...[
-              Text(
-                ': $value',
-                style: TextStyle(
-                  fontSize: 13,
-                  color: ColorConstants.primaryColor,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-            SizedBox(width: 4),
-            Icon(
-              Icons.arrow_drop_down,
-              size: 18,
-              color:
-                  isActive
-                      ? ColorConstants.primaryColor
-                      : ColorConstants.hintGrey,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// Builds a search chip button with search icon.
-  Widget _buildSearchChip({
-    required String label,
-    String? value,
-    required bool isActive,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color:
-              isActive
-                  ? ColorConstants.primaryColor.withValues(alpha: 0.15)
-                  : Colors.transparent,
-          border: Border.all(
-            color:
-                isActive
-                    ? ColorConstants.primaryColor
-                    : ColorConstants.hintGrey.withValues(alpha: 0.3),
-          ),
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.search,
-              size: 16,
-              color:
-                  isActive
-                      ? ColorConstants.primaryColor
-                      : ColorConstants.hintGrey,
-            ),
-            SizedBox(width: 4),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 13,
-                color:
-                    isActive
-                        ? ColorConstants.primaryColor
-                        : ColorConstants.hintGrey,
-                fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
-              ),
-            ),
-            if (value != null) ...[
-              Text(
-                ': $value',
-                style: TextStyle(
-                  fontSize: 13,
-                  color: ColorConstants.primaryColor,
-                  fontWeight: FontWeight.w600,
-                ),
-                overflow: TextOverflow.ellipsis,
-                maxLines: 1,
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// Builds the sort dropdown menu.
-  Widget _buildSortDropdown() {
-    return PopupMenuButton<String>(
-      child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          border: Border.all(
-            color: ColorConstants.hintGrey.withValues(alpha: 0.3),
-          ),
-          borderRadius: BorderRadius.circular(6),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.sort, size: 16, color: ColorConstants.hintGrey),
-            SizedBox(width: 6),
-            Text(
-              _sortBy,
-              style: TextStyle(fontSize: 13, color: ColorConstants.hintGrey),
-            ),
-          ],
-        ),
-      ),
-      itemBuilder:
-          (context) => [
-            PopupMenuItem(value: 'Name: A → Z', child: Text('Name: A → Z')),
-            PopupMenuItem(value: 'Name: Z → A', child: Text('Name: Z → A')),
-            PopupMenuDivider(),
-            PopupMenuItem(
-              value: 'Difficulty: High to Low',
-              child: Text('Difficulty: High to Low'),
-            ),
-            PopupMenuItem(
-              value: 'Difficulty: Low to High',
-              child: Text('Difficulty: Low to High'),
-            ),
-            PopupMenuDivider(),
-            PopupMenuItem(
-              value: 'Creation Date: Newest first',
-              child: Text('Creation Date: Newest first'),
-            ),
-            PopupMenuItem(
-              value: 'Creation Date: Oldest first',
-              child: Text('Creation Date: Oldest first'),
-            ),
-          ],
-      onSelected: (value) {
-        setState(() {
-          _sortBy = value;
-        });
-      },
     );
   }
 
@@ -1277,8 +947,48 @@ class _CreatePageState extends State<CreatePage>
     );
   }
 
-  /// Builds the boards list content with empty state handling.
+  /// Builds the boards list content with loading, error, and empty state handling.
   Widget _buildBoardsContent() {
+    // Loading state
+    if (_isBoardsLoading) {
+      return Center(
+        child: CircularProgressIndicator(color: ColorConstants.primaryColor),
+      );
+    }
+
+    // Error state
+    if (_boardsErrorMessage != null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.error_outline,
+              size: 64,
+              color: ColorConstants.errorColor,
+            ),
+            SizedBox(height: 16),
+            Text(
+              'Error loading boards',
+              style: AppTextStyles.titleMedium.copyWith(
+                color: ColorConstants.errorColor,
+              ),
+            ),
+            SizedBox(height: 8),
+            Text(
+              _boardsErrorMessage!,
+              style: AppTextStyles.bodySmall.copyWith(
+                color: ColorConstants.hintGrey,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: 16),
+            ElevatedButton(onPressed: _loadBoards, child: Text('Retry')),
+          ],
+        ),
+      );
+    }
+
     // Empty state
     if (_filteredBoards.isEmpty) {
       return Center(
@@ -1299,7 +1009,9 @@ class _CreatePageState extends State<CreatePage>
             ),
             SizedBox(height: 8),
             Text(
-              'Try adjusting your filters or create a new board',
+              _boards.isEmpty
+                  ? 'Create your first board to get started'
+                  : 'Try adjusting your filters or create a new board',
               style: AppTextStyles.bodySmall.copyWith(
                 color: ColorConstants.hintGrey,
               ),
@@ -1325,6 +1037,45 @@ class _CreatePageState extends State<CreatePage>
                 _selectedSetIds.remove(board.id);
               }
             });
+          },
+          onEdit: () {
+            Navigator.of(context)
+                .push(
+                  MaterialPageRoute(
+                    builder: (context) => NewBoardPage(existingBoard: board),
+                  ),
+                )
+                .then((_) => _loadBoards());
+          },
+          onDuplicate: () => _duplicateBoard(board),
+          onDelete: () async {
+            // Show confirmation dialog
+            final confirmed = await showDialog<bool>(
+              context: context,
+              builder:
+                  (context) => AlertDialog(
+                    title: Text('Delete Board'),
+                    content: Text(
+                      'Are you sure you want to delete "${board.name}"? This action cannot be undone.',
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, false),
+                        child: Text('Cancel'),
+                      ),
+                      ElevatedButton(
+                        onPressed: () => Navigator.pop(context, true),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: ColorConstants.errorColor,
+                        ),
+                        child: Text('Delete'),
+                      ),
+                    ],
+                  ),
+            );
+            if (confirmed == true) {
+              _deleteBoard(board);
+            }
           },
         );
       },
