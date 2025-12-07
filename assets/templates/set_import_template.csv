@@ -1,0 +1,6 @@
+set_name,set_explaination,difficulty,points,question,qstn_media,answer,ans_media
+Example Set,This is a sample set to show format,medium,10,What is the capital of France?,,Paris,
+Example Set,This is a sample set to show format,medium,10,Which planet is known as the Red Planet?,,Mars,
+Example Set,This is a sample set to show format,medium,10,What is 2 + 2?,,4,
+Example Set,This is a sample set to show format,medium,10,In which year did WW2 end?,,1945,
+Example Set,This is a sample set to show format,medium,10,Who wrote Hamlet?,,Shakespeare,

@@ -1,8 +1,7 @@
 import 'dart:math';
+import 'package:buzz5_quiz_app/models/all_enums.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:buzz5_quiz_app/config/logger.dart';
-
-enum RoomStatus { waiting, active, questionActive, ended }
 
 class Room {
   final String roomId;
