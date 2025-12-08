@@ -11,6 +11,8 @@ import 'package:buzz5_quiz_app/providers/player_provider.dart';
 import 'package:buzz5_quiz_app/models/player.dart';
 import 'package:buzz5_quiz_app/providers/room_provider.dart';
 import 'package:buzz5_quiz_app/models/qrow.dart';
+import 'package:buzz5_quiz_app/services/host_board_service.dart';
+import 'package:buzz5_quiz_app/pages/create_page.dart';
 import 'package:provider/provider.dart';
 import 'package:buzz5_quiz_app/config/logger.dart';
 
@@ -41,7 +43,10 @@ class _InstructionsPageState extends State<InstructionsPage> {
   bool _showBuzzerSection = false;
   bool _showInstructionsSection = false;
 
-  // API loading state
+  // Firebase service for fetching boards
+  final HostBoardService _hostBoardService = HostBoardService();
+
+  // Board loading state
   List<QRow> _allQRows = [];
   List<String> _uniqueRounds = [];
   String? _selectedRound;
@@ -71,8 +76,8 @@ class _InstructionsPageState extends State<InstructionsPage> {
     });
 
     try {
-      AppLogger.i("Starting to fetch QRows from API");
-      _qrowsFuture = QRow.fetchAll();
+      AppLogger.i("Starting to fetch boards from Firebase");
+      _qrowsFuture = _hostBoardService.fetchHostableBoardsAsQRows();
       await _loadData();
     } catch (e) {
       AppLogger.e("Error in _fetchQRows: $e");
@@ -87,7 +92,7 @@ class _InstructionsPageState extends State<InstructionsPage> {
     try {
       _allQRows = await _qrowsFuture;
 
-      AppLogger.i("Loaded ${_allQRows.length} QRows from API");
+      AppLogger.i("Loaded ${_allQRows.length} QRows from Firebase");
 
       final uniqueRoundsResult = QRow.getUniqueRounds(_allQRows);
 
@@ -294,7 +299,48 @@ class _InstructionsPageState extends State<InstructionsPage> {
               }
             },
           ),
+          SizedBox(height: 16),
+
+          // Link to create/manage boards
+          _buildManageBoardsLink(context),
         ],
+      ),
+    );
+  }
+
+  Widget _buildManageBoardsLink(BuildContext context) {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: InkWell(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const CreatePage(initialTabIndex: 1),
+            ),
+          );
+        },
+        borderRadius: BorderRadius.circular(4),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.add_circle_outline,
+              color: ColorConstants.secondaryContainerColor,
+              size: 16,
+            ),
+            SizedBox(width: 6),
+            Text(
+              "Create or manage your boards",
+              style: TextStyle(
+                fontSize: 13,
+                color: ColorConstants.secondaryContainerColor,
+                decoration: TextDecoration.underline,
+                decorationColor: ColorConstants.secondaryContainerColor,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

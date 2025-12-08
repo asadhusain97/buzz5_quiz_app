@@ -12,7 +12,6 @@ import 'package:buzz5_quiz_app/pages/marketplace_page.dart';
 import 'package:buzz5_quiz_app/pages/joingame_page.dart';
 import 'package:buzz5_quiz_app/pages/instructions_page.dart';
 import 'package:buzz5_quiz_app/pages/final_page.dart';
-import 'package:buzz5_quiz_app/pages/gsheet_check.dart';
 import 'package:buzz5_quiz_app/pages/create_set_page.dart';
 
 /// Development-aware AuthGate
@@ -73,8 +72,6 @@ class DevAuthGate extends StatelessWidget {
         return const _DevQuestionPageWrapper();
       case 'final':
         return const FinalPage();
-      case 'gsheet':
-        return const GSheetCheckPage();
       case 'new_set':
         return const NewSetPage();
       default:
