@@ -28,7 +28,6 @@ jobs:
           --dart-define=FIREBASE_MESSAGING_SENDER_ID=${{ secrets.FIREBASE_MESSAGING_SENDER_ID }} \
           --dart-define=FIREBASE_APP_ID=${{ secrets.FIREBASE_APP_ID }} \
           --dart-define=GOOGLE_WEB_CLIENT_ID=${{ secrets.GOOGLE_WEB_CLIENT_ID }} \
-          --dart-define=GOOGLE_SHEET_API_KEY=${{ secrets.GOOGLE_SHEET_API_KEY }} \
           --dart-define=RECAPTCHA_SITE_KEY=${{ secrets.RECAPTCHA_SITE_KEY }} \
           --dart-define=ENV=prod
       - uses: FirebaseExtended/action-hosting-deploy@v0

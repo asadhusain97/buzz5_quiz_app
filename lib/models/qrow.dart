@@ -1,8 +1,9 @@
-import 'dart:convert';
+import 'package:buzz5_quiz_app/models/set_model.dart';
 
-import 'package:buzz5_quiz_app/config/app_config.dart';
-import 'package:http/http.dart' as http;
-
+/// Model representing a question row for the quiz board.
+///
+/// This is a flat data structure used by QuestionBoardPage and related components.
+/// It can be created from Firebase data using the [QRow.fromFirebase] factory.
 class QRow {
   final int qid;
   final String round;
@@ -13,8 +14,6 @@ class QRow {
   final dynamic answer;
   final String ansMedia;
   final String setExplanation;
-  final String setExampleQuestion;
-  final String setExampleAnswer;
 
   QRow({
     required this.qid,
@@ -26,47 +25,43 @@ class QRow {
     required this.answer,
     required this.ansMedia,
     this.setExplanation = "This category covers various topics and themes.",
-    this.setExampleQuestion = "What is an example question from this category?",
-    this.setExampleAnswer = "This would be an example answer.",
   });
 
-  factory QRow.fromJson(Map<String, dynamic> json) {
-    int parseInt(dynamic value) {
-      if (value is int) return value;
-      if (value is String) return int.tryParse(value) ?? 0;
-      return 0;
-    }
-
+  /// Factory constructor to create a QRow from Firebase data.
+  ///
+  /// This transforms the hierarchical Firebase structure (Board -> Set -> Question)
+  /// into the flat QRow format expected by QuestionBoardPage.
+  ///
+  /// Parameters:
+  /// - qid: Unique question ID (generated sequentially)
+  /// - boardName: The board name (becomes 'round')
+  /// - setModel: The SetModel containing set metadata
+  /// - questionText: The question text (can be null/empty if media is present)
+  /// - questionMediaUrl: URL for question media (can be null)
+  /// - answerText: The answer text (can be null/empty if media is present)
+  /// - answerMediaUrl: URL for answer media (can be null)
+  /// - points: Point value for this question
+  factory QRow.fromFirebase({
+    required int qid,
+    required String boardName,
+    required SetModel setModel,
+    String? questionText,
+    String? questionMediaUrl,
+    String? answerText,
+    String? answerMediaUrl,
+    required int points,
+  }) {
     return QRow(
-      qid: parseInt(json['qid']),
-      round: json['round'] ?? '',
-      setName: json['set_name'] ?? '',
-      points: parseInt(json['points']),
-      question: json['question'] ?? '',
-      qstnMedia: json['qstn_media'] ?? '',
-      answer: json['answer'],
-      ansMedia: json['ans_media'] ?? '',
-      setExplanation:
-          json['set_explanation'] ??
-          "This category covers various topics and themes.",
-      setExampleQuestion:
-          json['set_example_question'] ??
-          "What is an example question from this category?",
-      setExampleAnswer:
-          json['set_example_answer'] ?? "This would be an example answer.",
+      qid: qid,
+      round: boardName,
+      setName: setModel.name,
+      points: points,
+      question: questionText ?? '',
+      qstnMedia: questionMediaUrl ?? '',
+      answer: answerText ?? '',
+      ansMedia: answerMediaUrl ?? '',
+      setExplanation: setModel.description,
     );
-  }
-
-  static Future<List<QRow>> fetchAll({http.Client? client}) async {
-    client ??= http.Client();
-    final response = await client.get(Uri.parse(AppConfig.googleSheetApiKey));
-
-    if (response.statusCode == 200) {
-      List<dynamic> data = json.decode(response.body);
-      return data.map((json) => QRow.fromJson(json)).toList();
-    } else {
-      throw Exception('Failed to load data from google sheet');
-    }
   }
 
   static List<QRow> filterByRound(List<QRow> qrows, String round) {

@@ -345,8 +345,6 @@ class _QuestionBoardContentState extends State<QuestionBoardContent> {
       'answer': qrow.answer,
       'ans_media': qrow.ansMedia,
       'set_explanation': qrow.setExplanation,
-      'set_example_question': qrow.setExampleQuestion,
-      'set_example_answer': qrow.setExampleAnswer,
     };
   }
 }

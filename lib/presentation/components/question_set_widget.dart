@@ -226,7 +226,7 @@ class QuestionSetWidget extends StatelessWidget {
     );
   }
 
-  /// Shows popup with set information and examples
+  /// Shows popup with set information
   void _showSetInfoPopup(BuildContext context) {
     if (data.isEmpty) return;
 
@@ -248,15 +248,7 @@ class QuestionSetWidget extends StatelessWidget {
                 _buildPopupHeader(context, setData),
                 const SizedBox(height: 24),
                 _buildPopupExplanation(context, setData),
-                const SizedBox(height: 20),
-                if (_hasExampleQuestion(setData)) ...[
-                  _buildPopupExampleQuestion(context, setData),
-                  const SizedBox(height: 20),
-                ],
-                if (_hasExampleAnswer(setData)) ...[
-                  _buildPopupExampleAnswer(context, setData),
-                  const SizedBox(height: 24),
-                ],
+                const SizedBox(height: 24),
                 _buildPopupCloseButton(context),
               ],
             ),
@@ -303,50 +295,6 @@ class QuestionSetWidget extends StatelessWidget {
     );
   }
 
-  /// Builds popup example question section
-  Widget _buildPopupExampleQuestion(BuildContext context, Map<String, dynamic> setData) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Example Question',
-          style: Theme.of(context).textTheme.titleSmall?.copyWith(
-            color: Theme.of(context).colorScheme.secondary,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          _truncateText(setData['set_example_question'], 500),
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: Theme.of(context).colorScheme.onSurface,
-          ),
-        ),
-      ],
-    );
-  }
-
-  /// Builds popup example answer section
-  Widget _buildPopupExampleAnswer(BuildContext context, Map<String, dynamic> setData) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Example Answer',
-          style: Theme.of(context).textTheme.titleSmall?.copyWith(
-            color: Theme.of(context).colorScheme.secondary,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          _truncateText(setData['set_example_answer'], 500),
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: Theme.of(context).colorScheme.onSurface,
-          ),
-        ),
-      ],
-    );
-  }
-
   /// Builds popup close button
   Widget _buildPopupCloseButton(BuildContext context) {
     return Center(
@@ -365,18 +313,6 @@ class QuestionSetWidget extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  /// Helper method to check if example question exists
-  bool _hasExampleQuestion(Map<String, dynamic> setData) {
-    return setData['set_example_question'] != null &&
-        setData['set_example_question'].toString().trim().isNotEmpty;
-  }
-
-  /// Helper method to check if example answer exists
-  bool _hasExampleAnswer(Map<String, dynamic> setData) {
-    return setData['set_example_answer'] != null &&
-        setData['set_example_answer'].toString().trim().isNotEmpty;
   }
 
   /// Helper method to truncate text

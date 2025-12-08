@@ -38,7 +38,10 @@ import 'package:buzz5_quiz_app/services/set_service.dart';
 import 'package:buzz5_quiz_app/services/board_service.dart';
 
 class CreatePage extends StatefulWidget {
-  const CreatePage({super.key});
+  /// Initial tab to display (0 = Sets, 1 = Boards)
+  final int initialTabIndex;
+
+  const CreatePage({super.key, this.initialTabIndex = 0});
 
   @override
   State<CreatePage> createState() => _CreatePageState();
@@ -91,8 +94,13 @@ class _CreatePageState extends State<CreatePage>
   @override
   void initState() {
     super.initState();
-    // Initialize tab controller for Sets/Boards tabs
-    _tabController = TabController(length: 2, vsync: this);
+    // Initialize tab controller for Sets/Boards tabs with initial index
+    _tabController = TabController(
+      length: 2,
+      vsync: this,
+      initialIndex: widget.initialTabIndex,
+    );
+    _currentTabIndex = widget.initialTabIndex;
     _tabController.addListener(() {
       setState(() {
         _currentTabIndex = _tabController.index;
