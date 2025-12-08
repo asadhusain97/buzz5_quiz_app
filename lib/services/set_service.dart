@@ -42,6 +42,7 @@ class SetService {
     required String description,
     required List<PredefinedTags> tags,
     required DifficultyLevel? difficulty,
+    required bool isPrivate,
     required List<Map<String, dynamic>> questionData,
     required bool isDraft,
   }) async {
@@ -145,8 +146,7 @@ class SetService {
         authorName: currentUser.displayName ?? currentUser.email ?? 'Anonymous',
         tags: tags,
         difficulty: difficulty,
-        isPrivate:
-            true, // Always private as per requirement (drafts are private)
+        isPrivate: isPrivate,
         questions: questions,
       );
 
@@ -205,6 +205,7 @@ class SetService {
     required String description,
     required List<PredefinedTags> tags,
     required DifficultyLevel? difficulty,
+    required bool isPrivate,
     required List<Map<String, dynamic>> questionData,
   }) async {
     try {
@@ -304,7 +305,7 @@ class SetService {
         authorName: currentUser.displayName ?? currentUser.email ?? 'Anonymous',
         tags: tags,
         difficulty: difficulty,
-        isPrivate: true, // Always private
+        isPrivate: isPrivate,
         questions: questions,
         creationDate: DateTime.parse(setData['creationDate'] as String),
       );
