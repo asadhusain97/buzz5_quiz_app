@@ -720,7 +720,8 @@ class SetService {
         }
 
         // Increment downloads on source set
-        final currentDownloads = sourceSnapshot.data()?['downloads'] as int? ?? 0;
+        final currentDownloads =
+            sourceSnapshot.data()?['downloads'] as int? ?? 0;
         transaction.update(sourceRef, {'downloads': currentDownloads + 1});
 
         // Create the copy
@@ -778,7 +779,6 @@ class SetService {
               .collection('sets')
               .where('isPrivate', isEqualTo: false)
               .orderBy('creationDate', descending: true)
-              .orderBy('downloads', descending: true)
               .limit(limit)
               .get();
 
@@ -787,7 +787,9 @@ class SetService {
               .map(
                 (doc) => SetModel.fromJson(doc.data() as Map<String, dynamic>),
               )
-              .where((set) => set.status == SetStatus.complete) // Client-side filter for status
+              .where(
+                (set) => set.status == SetStatus.complete,
+              ) // Client-side filter for status
               .toList();
 
       AppLogger.i('Fetched ${sets.length} marketplace sets');

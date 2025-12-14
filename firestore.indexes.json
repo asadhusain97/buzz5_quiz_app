@@ -39,10 +39,6 @@
                 {
                     "fieldPath": "creationDate",
                     "order": "DESCENDING"
-                },
-                {
-                    "fieldPath": "downloads",
-                    "order": "DESCENDING"
                 }
             ]
         },

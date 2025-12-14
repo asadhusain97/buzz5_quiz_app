@@ -19,6 +19,7 @@ import 'package:buzz5_quiz_app/widgets/app_background.dart';
 import 'package:buzz5_quiz_app/widgets/content_state_builder.dart';
 import 'package:buzz5_quiz_app/widgets/filter_sort_bar.dart';
 import 'package:buzz5_quiz_app/presentation/components/discover_set_tile.dart';
+import 'package:buzz5_quiz_app/widgets/pagination_controls.dart';
 import 'package:buzz5_quiz_app/services/set_service.dart';
 
 /// Sort options for marketplace discovery
@@ -60,7 +61,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
   // ============================================================
   // FILTER AND SORT STATE
   // ============================================================
-  DiscoverSortOption _currentSort = DiscoverSortOption.downloadsHighToLow;
+  DiscoverSortOption _currentSort = DiscoverSortOption.dateNewest;
   final Map<String, dynamic> _activeFilters = {};
 
   // Individual filter values
@@ -68,6 +69,12 @@ class _DiscoverPageState extends State<DiscoverPage> {
   final List<String> _selectedTags = [];
   String _nameSearch = '';
   String _authorSearch = '';
+
+  // ============================================================
+  // PAGINATION STATE
+  // ============================================================
+  int _currentPage = 0;
+  static const int _itemsPerPage = 25;
 
   @override
   void initState() {
@@ -258,6 +265,27 @@ class _DiscoverPageState extends State<DiscoverPage> {
     return sorted;
   }
 
+  /// Returns the subsets of filtered sets for the current page.
+  List<SetModel> get _paginatedSets {
+    final sets = _filteredSets;
+    if (sets.isEmpty) return [];
+
+    final startIndex = _currentPage * _itemsPerPage;
+    // Ensure start index is valid
+    if (startIndex >= sets.length) {
+      // If we're out of bounds (e.g. after filtering), showing empty or resetting
+      // But typically we should reset to page 0 on filter change
+      return [];
+    }
+
+    final endIndex =
+        (startIndex + _itemsPerPage < sets.length)
+            ? startIndex + _itemsPerPage
+            : sets.length;
+
+    return sets.sublist(startIndex, endIndex);
+  }
+
   /// Resets all active filters to their default state.
   void _clearFilters() {
     setState(() {
@@ -266,6 +294,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
       _selectedTags.clear();
       _nameSearch = '';
       _authorSearch = '';
+      _currentPage = 0; // Reset pagination
     });
   }
 
@@ -280,34 +309,30 @@ class _DiscoverPageState extends State<DiscoverPage> {
       builder: (context) {
         return AlertDialog(
           title: Text('Filter by Difficulty'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              RadioListTile<DifficultyLevel?>(
-                title: Text('All'),
-                value: null,
-                groupValue: _difficultyFilter,
-                onChanged: (value) => Navigator.pop(context, value),
-              ),
-              RadioListTile<DifficultyLevel?>(
-                title: Text('Easy'),
-                value: DifficultyLevel.easy,
-                groupValue: _difficultyFilter,
-                onChanged: (value) => Navigator.pop(context, value),
-              ),
-              RadioListTile<DifficultyLevel?>(
-                title: Text('Medium'),
-                value: DifficultyLevel.medium,
-                groupValue: _difficultyFilter,
-                onChanged: (value) => Navigator.pop(context, value),
-              ),
-              RadioListTile<DifficultyLevel?>(
-                title: Text('Hard'),
-                value: DifficultyLevel.hard,
-                groupValue: _difficultyFilter,
-                onChanged: (value) => Navigator.pop(context, value),
-              ),
-            ],
+          content: RadioGroup<DifficultyLevel?>(
+            groupValue: _difficultyFilter,
+            onChanged: (value) => Navigator.pop(context, value),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                RadioListTile<DifficultyLevel?>(
+                  title: Text('All'),
+                  value: null,
+                ),
+                RadioListTile<DifficultyLevel?>(
+                  title: Text('Easy'),
+                  value: DifficultyLevel.easy,
+                ),
+                RadioListTile<DifficultyLevel?>(
+                  title: Text('Medium'),
+                  value: DifficultyLevel.medium,
+                ),
+                RadioListTile<DifficultyLevel?>(
+                  title: Text('Hard'),
+                  value: DifficultyLevel.hard,
+                ),
+              ],
+            ),
           ),
         );
       },
@@ -321,6 +346,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
         } else {
           _activeFilters['Difficulty'] = result.label;
         }
+        _currentPage = 0; // Reset pagination
       });
     }
   }
@@ -341,6 +367,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
         } else {
           _activeFilters['Tags'] = _selectedTags.join(', ');
         }
+        _currentPage = 0; // Reset pagination
       });
     }
   }
@@ -361,6 +388,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
         } else {
           _activeFilters['Name'] = _nameSearch;
         }
+        _currentPage = 0; // Reset pagination
       });
     }
   }
@@ -381,6 +409,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
         } else {
           _activeFilters['Author'] = _authorSearch;
         }
+        _currentPage = 0; // Reset pagination
       });
     }
   }
@@ -574,6 +603,8 @@ class _DiscoverPageState extends State<DiscoverPage> {
       onSelected: (sort) {
         setState(() {
           _currentSort = sort;
+          // Note: Sorting changes order but usually users want to stay on page 1 to see top results
+          _currentPage = 0;
         });
       },
       itemBuilder:
@@ -643,22 +674,42 @@ class _DiscoverPageState extends State<DiscoverPage> {
           _sets.isEmpty
               ? 'There are no public sets available yet. Be the first to publish one!'
               : 'Try adjusting your filters to find more sets.',
-      content: ListView.builder(
-        itemCount: _filteredSets.length,
-        itemBuilder: (context, index) {
-          final set = _filteredSets[index];
-          final isOwnSet = set.authorId == currentUserId;
+      content: Column(
+        children: [
+          Expanded(
+            child: ListView.builder(
+              // Add padding at bottom for pagination controls
+              padding: const EdgeInsets.only(bottom: 16),
+              itemCount: _paginatedSets.length,
+              itemBuilder: (context, index) {
+                final set = _paginatedSets[index];
+                final isOwnSet = set.authorId == currentUserId;
 
-          final isAdded = _downloadedSetIds.contains(set.id);
+                final isAdded = _downloadedSetIds.contains(set.id);
 
-          return DiscoverSetTile(
-            set: set,
-            isOwnSet: isOwnSet,
-            isAdded: isAdded,
-            onAddToCollection:
-                isOwnSet || isAdded ? null : () => _addToCollection(set),
-          );
-        },
+                return DiscoverSetTile(
+                  set: set,
+                  isOwnSet: isOwnSet,
+                  isAdded: isAdded,
+                  onAddToCollection:
+                      isOwnSet || isAdded ? null : () => _addToCollection(set),
+                );
+              },
+            ),
+          ),
+
+          // Pagination Controls
+          if (_filteredSets.length > _itemsPerPage)
+            PaginationControls(
+              currentPage: _currentPage,
+              totalPages: (_filteredSets.length / _itemsPerPage).ceil(),
+              onPageChanged: (page) {
+                setState(() {
+                  _currentPage = page;
+                });
+              },
+            ),
+        ],
       ),
     );
   }

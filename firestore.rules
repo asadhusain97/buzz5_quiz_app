@@ -60,6 +60,13 @@ service cloud.firestore {
       allow read, write: if isAuthenticated();
     }
 
+    // Transactions collection - for tracking marketplace activity
+    match /transactions/{transactionId} {
+      allow read: if isAuthenticated() && 
+                  (resource.data.buyerId == request.auth.uid || resource.data.sellerId == request.auth.uid);
+      allow create: if isAuthenticated(); // Application logic handles the content
+    }
+
     // Default deny all other collections
     match /{document=**} {
       allow read, write: if false;
