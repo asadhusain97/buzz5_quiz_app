@@ -775,16 +775,34 @@ class _NewSetPageState extends State<NewSetPage>
                                             alignment: Alignment.centerLeft,
                                             child: Switch(
                                               value: _isPublished,
-                                              onChanged: (value) {
-                                                setState(() {
-                                                  _isPublished = value;
-                                                });
-                                              },
+                                              onChanged: (widget.existingSet
+                                                          ?.isDownloadedFromMarketplace ??
+                                                      false)
+                                                  ? null // Disable switch for downloaded sets
+                                                  : (value) {
+                                                      setState(() {
+                                                        _isPublished = value;
+                                                      });
+                                                    },
                                               activeThumbColor:
                                                   ColorConstants.primaryColor,
                                               activeTrackColor: ColorConstants
                                                   .primaryColor
                                                   .withValues(alpha: 0.5),
+                                              inactiveThumbColor: (widget
+                                                          .existingSet
+                                                          ?.isDownloadedFromMarketplace ??
+                                                      false)
+                                                  ? ColorConstants.hintGrey
+                                                      .withValues(alpha: 0.3)
+                                                  : null,
+                                              inactiveTrackColor: (widget
+                                                          .existingSet
+                                                          ?.isDownloadedFromMarketplace ??
+                                                      false)
+                                                  ? ColorConstants.hintGrey
+                                                      .withValues(alpha: 0.2)
+                                                  : null,
                                               // THIS CONTROLS THE MARGIN AROUND THE TOGGLE
                                               materialTapTargetSize:
                                                   MaterialTapTargetSize
@@ -812,6 +830,26 @@ class _NewSetPageState extends State<NewSetPage>
                                             ),
                                           ),
                                         ),
+                                        // Helper text for downloaded sets
+                                        if (widget.existingSet
+                                                ?.isDownloadedFromMarketplace ??
+                                            false) ...[
+                                          SizedBox(height: 4),
+                                          SizedBox(
+                                            width: 120,
+                                            child: Text(
+                                              'Downloaded sets cannot be published',
+                                              style: TextStyle(
+                                                fontSize: 9,
+                                                color: ColorConstants.hintGrey
+                                                    .withValues(alpha: 0.7),
+                                                fontStyle: FontStyle.italic,
+                                              ),
+                                              maxLines: 2,
+                                              overflow: TextOverflow.visible,
+                                            ),
+                                          ),
+                                        ],
                                       ],
                                     ),
                                   ],

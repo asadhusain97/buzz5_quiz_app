@@ -8,6 +8,7 @@ import 'package:buzz5_quiz_app/models/media_model.dart';
 import 'package:buzz5_quiz_app/models/all_enums.dart' hide QuestionStatus;
 import 'package:buzz5_quiz_app/services/storage_service.dart';
 import 'package:buzz5_quiz_app/services/import_service.dart';
+import 'package:buzz5_quiz_app/services/transaction_service.dart';
 import 'package:uuid/uuid.dart';
 
 /// Service for handling Firestore operations for Sets
@@ -16,15 +17,18 @@ class SetService {
   final FirebaseFirestore _firestore;
   final FirebaseAuth _auth;
   final StorageService _storageService;
+  final TransactionService _transactionService;
   final Uuid _uuid = const Uuid();
 
   SetService({
     FirebaseFirestore? firestore,
     FirebaseAuth? auth,
     StorageService? storageService,
+    TransactionService? transactionService,
   }) : _firestore = firestore ?? FirebaseFirestore.instance,
        _auth = auth ?? FirebaseAuth.instance,
-       _storageService = storageService ?? StorageService();
+       _storageService = storageService ?? StorageService(),
+       _transactionService = transactionService ?? TransactionService();
 
   /// Create a new set in Firestore
   ///
@@ -694,7 +698,7 @@ class SetService {
         questions: newQuestions,
         downloads: 0, // Reset downloads
         rating: 0.0, // Reset rating
-        price: null, // Clear price
+        price: 0.0, // Reset price to 0
         // Lineage tracking
         originalSetId: sourceSet.id,
         originalAuthorId: sourceSet.authorId,
@@ -727,6 +731,21 @@ class SetService {
       AppLogger.i(
         'Marketplace set duplicated successfully. Original: ${sourceSet.id}, New: $newSetId',
       );
+
+      // Create a transaction record for this download
+      try {
+        await _transactionService.createTransaction(
+          buyerId: currentUser.uid,
+          sellerId: sourceSet.authorId,
+          setId: sourceSet.id,
+          amount: 0.0, // Currently free, prepared for future payments
+        );
+        AppLogger.i('Transaction recorded for set download');
+      } catch (e) {
+        // Log the error but don't fail the entire operation
+        // The set copy was successful, transaction is just for tracking
+        AppLogger.w('Failed to create transaction record: $e');
+      }
 
       return newSetId;
     } catch (e, stackTrace) {

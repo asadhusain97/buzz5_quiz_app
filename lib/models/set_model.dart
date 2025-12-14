@@ -48,7 +48,7 @@ class SetModel {
     required this.authorName,
     this.tags = const [],
     DateTime? creationDate,
-    this.price,
+    this.price = 0.0,
     this.downloads = 0,
     this.rating = 0.0,
     this.difficulty,
@@ -153,7 +153,7 @@ class SetModel {
       authorName: json['authorName'] as String,
       tags: parseTags(json['tags'] as List<dynamic>?),
       creationDate: DateTime.parse(json['creationDate'] as String),
-      price: json['price'] as double?,
+      price: (json['price'] as double?) ?? 0.0,
       downloads: json['downloads'] as int? ?? 0,
       rating: json['rating'] as double? ?? 0.0,
       difficulty: DifficultyLevel.values.firstWhere(

@@ -54,6 +54,9 @@ class _DiscoverPageState extends State<DiscoverPage> {
   bool _isLoading = true;
   String? _errorMessage;
 
+  // Track which sets have been downloaded in this session
+  final Set<String> _downloadedSetIds = {};
+
   // ============================================================
   // FILTER AND SORT STATE
   // ============================================================
@@ -130,6 +133,11 @@ class _DiscoverPageState extends State<DiscoverPage> {
       // Perform the copy operation
       await _setService.duplicateSetToLibrary(set);
 
+      // Track that this set was downloaded (for immediate UI feedback)
+      setState(() {
+        _downloadedSetIds.add(set.id);
+      });
+
       // Reload sets to update download counts
       await _loadSets();
 
@@ -175,9 +183,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
     // Filter by difficulty
     if (_difficultyFilter != null) {
       filtered =
-          filtered
-              .where((set) => set.difficulty == _difficultyFilter)
-              .toList();
+          filtered.where((set) => set.difficulty == _difficultyFilter).toList();
     }
 
     // Filter by name search
@@ -446,9 +452,9 @@ class _DiscoverPageState extends State<DiscoverPage> {
         const SizedBox(height: 8),
         Text(
           'Browse and add public quiz sets from other creators to your collection.',
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: ColorConstants.hintGrey,
-          ),
+          style: Theme.of(
+            context,
+          ).textTheme.bodyMedium?.copyWith(color: ColorConstants.hintGrey),
         ),
       ],
     );
@@ -610,7 +616,11 @@ class _DiscoverPageState extends State<DiscoverPage> {
               getSortLabel(_currentSort),
               style: TextStyle(fontSize: 13, color: ColorConstants.hintGrey),
             ),
-            Icon(Icons.arrow_drop_down, size: 18, color: ColorConstants.hintGrey),
+            Icon(
+              Icons.arrow_drop_down,
+              size: 18,
+              color: ColorConstants.hintGrey,
+            ),
           ],
         ),
       ),
@@ -639,10 +649,14 @@ class _DiscoverPageState extends State<DiscoverPage> {
           final set = _filteredSets[index];
           final isOwnSet = set.authorId == currentUserId;
 
+          final isAdded = _downloadedSetIds.contains(set.id);
+
           return DiscoverSetTile(
             set: set,
             isOwnSet: isOwnSet,
-            onAddToCollection: isOwnSet ? null : () => _addToCollection(set),
+            isAdded: isAdded,
+            onAddToCollection:
+                isOwnSet || isAdded ? null : () => _addToCollection(set),
           );
         },
       ),

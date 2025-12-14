@@ -19,12 +19,14 @@ import 'package:buzz5_quiz_app/widgets/stat_displays.dart';
 class DiscoverSetTile extends StatelessWidget {
   final SetModel set;
   final bool isOwnSet;
+  final bool isAdded;
   final VoidCallback? onAddToCollection;
 
   const DiscoverSetTile({
     super.key,
     required this.set,
     required this.isOwnSet,
+    this.isAdded = false,
     this.onAddToCollection,
   });
 
@@ -84,7 +86,9 @@ class DiscoverSetTile extends StatelessWidget {
                       // Set name
                       Text(
                         set.name,
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        style: Theme.of(
+                          context,
+                        ).textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.bold,
                           color:
                               Theme.of(context).brightness == Brightness.dark
@@ -100,11 +104,8 @@ class DiscoverSetTile extends StatelessWidget {
                         children: [
                           Text(
                             'by ',
-                            style: Theme.of(
-                              context,
-                            ).textTheme.bodySmall?.copyWith(
-                              color: ColorConstants.hintGrey,
-                            ),
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(color: ColorConstants.hintGrey),
                           ),
                           Text(
                             set.authorName,
@@ -163,9 +164,9 @@ class DiscoverSetTile extends StatelessWidget {
             // Description
             Text(
               set.description,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: ColorConstants.hintGrey,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: ColorConstants.hintGrey),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
@@ -256,22 +257,63 @@ class DiscoverSetTile extends StatelessWidget {
                   ),
                 ),
 
-                // "Add to Collection" button
-                if (!isOwnSet && onAddToCollection != null)
-                  ElevatedButton.icon(
-                    onPressed: onAddToCollection,
-                    icon: Icon(Icons.add, size: 18),
-                    label: Text('Get'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: ColorConstants.primaryColor,
-                      foregroundColor: ColorConstants.lightTextColor,
-                      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      minimumSize: Size(80, 36),
-                      shape: RoundedRectangleBorder(
+                // "Add to Collection" button or "Added" state
+                if (!isOwnSet) ...[
+                  if (isAdded)
+                    // Show "Added" state with checkmark
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.green.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: Colors.green.withValues(alpha: 0.5),
+                          width: 1,
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.check_circle,
+                            size: 18,
+                            color: Colors.green,
+                          ),
+                          SizedBox(width: 6),
+                          Text(
+                            'Added',
+                            style: TextStyle(
+                              color: Colors.green,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  else if (onAddToCollection != null)
+                    // Show "Add to your collection" button
+                    ElevatedButton.icon(
+                      onPressed: onAddToCollection,
+                      icon: Icon(Icons.add, size: 18),
+                      label: Text('Add to your collection'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: ColorConstants.primaryColor,
+                        foregroundColor: ColorConstants.lightTextColor,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        minimumSize: Size(80, 36),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
                       ),
                     ),
-                  ),
+                ],
               ],
             ),
           ],
