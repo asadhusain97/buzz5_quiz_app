@@ -1,8 +1,8 @@
-// Create Page - Set and Board Management
+// Collection Page - Set and Board Management (User's Library)
 //
-// This page serves as the main hub for creating and managing quiz content.
+// This page serves as the main hub for managing the user's quiz content library.
 // It provides a tabbed interface to view and manage:
-// - Sets: Individual question sets with 5 questions each
+// - Sets: Individual question sets with 5 questions each (both original and downloaded)
 // - Boards: Collections of up to 5 sets for complete quiz games
 //
 // Key Features:
@@ -12,10 +12,11 @@
 // - CRUD operations: Create, Edit, Duplicate, Delete sets/boards
 // - Bulk selection for future batch operations
 // - Import set functionality (from external sources)
+// - Shows original author attribution for downloaded sets
 //
 // Data Flow:
-// - Sets are fetched from Firebase via SetService
-// - Boards currently use mock data (Firebase integration pending)
+// - Sets are fetched from Firebase via SetService (filtered by authorId)
+// - Downloaded sets appear here automatically (copy strategy)
 // - Filters and sorts are applied client-side for performance
 
 import 'package:buzz5_quiz_app/models/all_enums.dart';
@@ -37,17 +38,17 @@ import 'package:buzz5_quiz_app/presentation/components/board_list_item_tile.dart
 import 'package:buzz5_quiz_app/services/set_service.dart';
 import 'package:buzz5_quiz_app/services/board_service.dart';
 
-class CreatePage extends StatefulWidget {
+class CollectionPage extends StatefulWidget {
   /// Initial tab to display (0 = Sets, 1 = Boards)
   final int initialTabIndex;
 
-  const CreatePage({super.key, this.initialTabIndex = 0});
+  const CollectionPage({super.key, this.initialTabIndex = 0});
 
   @override
-  State<CreatePage> createState() => _CreatePageState();
+  State<CollectionPage> createState() => _CollectionPageState();
 }
 
-class _CreatePageState extends State<CreatePage>
+class _CollectionPageState extends State<CollectionPage>
     with SingleTickerProviderStateMixin {
   // ============================================================
   // TAB CONTROLLER AND VIEW STATE
@@ -596,7 +597,7 @@ class _CreatePageState extends State<CreatePage>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Create', style: AppTextStyles.titleBig),
+        title: Text('Collection', style: AppTextStyles.titleBig),
         backgroundColor: ColorConstants.primaryContainerColor,
         leading: IconButton(
           icon: Icon(Icons.arrow_back),
@@ -657,7 +658,7 @@ class _CreatePageState extends State<CreatePage>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Your Sets and Boards',
+                    'Your Collection',
                     style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                       color:
                           Theme.of(context).brightness == Brightness.dark
@@ -668,7 +669,7 @@ class _CreatePageState extends State<CreatePage>
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Create, edit and organize your quiz questions in sets and boards.',
+                    'Create, edit, and organize your quiz questions in sets and boards.',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: ColorConstants.hintGrey,
                     ),
@@ -952,9 +953,10 @@ class _CreatePageState extends State<CreatePage>
       isEmpty: _filteredBoards.isEmpty,
       emptyIcon: Icons.dashboard_outlined,
       emptyTitle: 'No boards found',
-      emptySubtitle: _boards.isEmpty
-          ? 'Create your first board to get started'
-          : 'Try adjusting your filters or create a new board',
+      emptySubtitle:
+          _boards.isEmpty
+              ? 'Create your first board to get started'
+              : 'Try adjusting your filters or create a new board',
       content: ListView.builder(
         itemCount: _filteredBoards.length,
         itemBuilder: (context, index) {

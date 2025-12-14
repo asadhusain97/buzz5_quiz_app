@@ -627,6 +627,163 @@ class SetService {
     }
   }
 
+  /// Duplicate a set from the marketplace to user's library (Copy/Fork Strategy)
+  ///
+  /// Creates a full copy of the source set in the user's collection.
+  /// The copy:
+  /// - Has a new unique ID
+  /// - Is owned by the current user
+  /// - Is private (draft mode)
+  /// - Cannot be republished to marketplace (canBePublished = false)
+  /// - Tracks lineage (originalSetId, originalAuthorId, originalAuthorName)
+  /// - Has reset downloads (0) and rating (0.0)
+  ///
+  /// Also atomically increments the source set's download counter.
+  ///
+  /// Parameters:
+  /// - sourceSet: The marketplace set to copy
+  ///
+  /// Returns: The ID of the newly created copy
+  Future<String> duplicateSetToLibrary(SetModel sourceSet) async {
+    try {
+      final User? currentUser = _auth.currentUser;
+      if (currentUser == null) {
+        throw Exception('No user is currently signed in');
+      }
+
+      // Prevent users from downloading their own sets
+      if (sourceSet.authorId == currentUser.uid) {
+        throw Exception('You cannot download your own set');
+      }
+
+      AppLogger.i('Duplicating marketplace set to library: ${sourceSet.id}');
+
+      // Generate a unique name for the copy
+      final String uniqueName = await generateUniqueName(sourceSet.name);
+      AppLogger.d('Generated unique name: $uniqueName');
+
+      // Generate new IDs
+      final String newSetId = _uuid.v4();
+      final List<Question> newQuestions = [];
+
+      // Copy questions with new IDs (media references are kept the same)
+      for (final question in sourceSet.questions) {
+        final newQuestion = Question(
+          id: _uuid.v4(),
+          questionText: question.questionText,
+          questionMedia: question.questionMedia,
+          answerText: question.answerText,
+          answerMedia: question.answerMedia,
+          points: question.points,
+          hint: question.hint,
+          funda: question.funda,
+        );
+        newQuestions.add(newQuestion);
+      }
+
+      // Create the copy with lineage tracking
+      final copiedSet = SetModel(
+        id: newSetId,
+        name: uniqueName,
+        description: sourceSet.description,
+        authorId: currentUser.uid,
+        authorName: currentUser.displayName ?? currentUser.email ?? 'Anonymous',
+        tags: sourceSet.tags,
+        difficulty: sourceSet.difficulty,
+        isPrivate: true, // Always private when downloaded
+        questions: newQuestions,
+        downloads: 0, // Reset downloads
+        rating: 0.0, // Reset rating
+        price: null, // Clear price
+        // Lineage tracking
+        originalSetId: sourceSet.id,
+        originalAuthorId: sourceSet.authorId,
+        originalAuthorName: sourceSet.authorName,
+        isRemix: false, // Not yet modified
+        canBePublished: false, // Cannot republish downloaded sets
+      );
+
+      // Use a transaction to:
+      // 1. Create the new copy
+      // 2. Atomically increment the source set's download counter
+      await _firestore.runTransaction((transaction) async {
+        // Get the source set reference
+        final sourceRef = _firestore.collection('sets').doc(sourceSet.id);
+        final sourceSnapshot = await transaction.get(sourceRef);
+
+        if (!sourceSnapshot.exists) {
+          throw Exception('Source set no longer exists');
+        }
+
+        // Increment downloads on source set
+        final currentDownloads = sourceSnapshot.data()?['downloads'] as int? ?? 0;
+        transaction.update(sourceRef, {'downloads': currentDownloads + 1});
+
+        // Create the copy
+        final copyRef = _firestore.collection('sets').doc(newSetId);
+        transaction.set(copyRef, copiedSet.toJson());
+      });
+
+      AppLogger.i(
+        'Marketplace set duplicated successfully. Original: ${sourceSet.id}, New: $newSetId',
+      );
+
+      return newSetId;
+    } catch (e, stackTrace) {
+      AppLogger.e(
+        'Error duplicating marketplace set to library: $e',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      rethrow;
+    }
+  }
+
+  /// Get all public sets available in the marketplace
+  ///
+  /// Returns sets where:
+  /// - isPrivate == false
+  /// - status == 'complete' (derived from having 5 complete questions)
+  /// - Sorted by: newest first (creationDate), then by downloads
+  ///
+  /// Parameters:
+  /// - limit: Maximum number of sets to return (default: 50)
+  ///
+  /// Returns: List of public SetModel objects
+  Future<List<SetModel>> getMarketplaceSets({int limit = 50}) async {
+    try {
+      AppLogger.i('Fetching marketplace sets');
+
+      final QuerySnapshot snapshot =
+          await _firestore
+              .collection('sets')
+              .where('isPrivate', isEqualTo: false)
+              .orderBy('creationDate', descending: true)
+              .orderBy('downloads', descending: true)
+              .limit(limit)
+              .get();
+
+      final List<SetModel> sets =
+          snapshot.docs
+              .map(
+                (doc) => SetModel.fromJson(doc.data() as Map<String, dynamic>),
+              )
+              .where((set) => set.status == SetStatus.complete) // Client-side filter for status
+              .toList();
+
+      AppLogger.i('Fetched ${sets.length} marketplace sets');
+
+      return sets;
+    } catch (e, stackTrace) {
+      AppLogger.e(
+        'Error fetching marketplace sets: $e',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      rethrow;
+    }
+  }
+
   /// Bulk import sets from parsed data
   ///
   /// Parameters:

@@ -174,6 +174,44 @@ class SetListItemTile extends StatelessWidget {
                         ],
                       ),
 
+                      // Original author attribution for downloaded sets
+                      if (set.isDownloadedFromMarketplace &&
+                          set.originalAuthorName != null) ...[
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.download_done,
+                              size: 14,
+                              color: ColorConstants.primaryColor,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Originally by ',
+                              style: Theme.of(
+                                context,
+                              ).textTheme.bodySmall?.copyWith(
+                                color: ColorConstants.hintGrey,
+                                fontSize: 11,
+                              ),
+                            ),
+                            Flexible(
+                              child: Text(
+                                set.originalAuthorName!,
+                                style: Theme.of(
+                                  context,
+                                ).textTheme.bodySmall?.copyWith(
+                                  color: ColorConstants.primaryColor,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+
                       const SizedBox(height: 4),
 
                       // Description (truncated)

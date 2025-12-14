@@ -12,7 +12,7 @@ import 'package:buzz5_quiz_app/models/player.dart';
 import 'package:buzz5_quiz_app/providers/room_provider.dart';
 import 'package:buzz5_quiz_app/models/qrow.dart';
 import 'package:buzz5_quiz_app/services/host_board_service.dart';
-import 'package:buzz5_quiz_app/pages/create_page.dart';
+import 'package:buzz5_quiz_app/pages/collection_page.dart';
 import 'package:provider/provider.dart';
 import 'package:buzz5_quiz_app/config/logger.dart';
 
@@ -316,7 +316,7 @@ class _InstructionsPageState extends State<InstructionsPage> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => const CreatePage(initialTabIndex: 1),
+              builder: (context) => const CollectionPage(initialTabIndex: 1),
             ),
           );
         },
@@ -331,7 +331,7 @@ class _InstructionsPageState extends State<InstructionsPage> {
             ),
             SizedBox(width: 6),
             Text(
-              "Create or manage your boards",
+              "Check your board collection",
               style: TextStyle(
                 fontSize: 13,
                 color: ColorConstants.secondaryContainerColor,

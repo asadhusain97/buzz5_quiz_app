@@ -2,8 +2,8 @@ import 'package:buzz5_quiz_app/config/colors.dart';
 import 'package:buzz5_quiz_app/config/text_styles.dart';
 import 'package:buzz5_quiz_app/pages/instructions_page.dart';
 import 'package:buzz5_quiz_app/pages/joingame_page.dart';
-import 'package:buzz5_quiz_app/pages/create_page.dart';
-import 'package:buzz5_quiz_app/pages/marketplace_page.dart';
+import 'package:buzz5_quiz_app/pages/collection_page.dart';
+import 'package:buzz5_quiz_app/pages/discover_page.dart';
 import 'package:buzz5_quiz_app/widgets/custom_app_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:buzz5_quiz_app/config/logger.dart';
@@ -207,7 +207,7 @@ class HomePage extends StatelessWidget {
                                     // Row 2, Col 1: Create button
                                     _buildGridButton(
                                       context: context,
-                                      label: 'Create',
+                                      label: 'Collection',
                                       icon: Icons.add_circle_outline_rounded,
                                       backgroundColor:
                                           authProvider.isGuest
@@ -220,21 +220,24 @@ class HomePage extends StatelessWidget {
                                               : ColorConstants.lightTextColor,
                                       isEnabled: !authProvider.isGuest,
                                       onPressed: () {
-                                        AppLogger.i("Navigating to CreatePage");
+                                        AppLogger.i(
+                                          "Navigating to CollectionPage",
+                                        );
                                         Navigator.push(
                                           context,
                                           MaterialPageRoute(
-                                            builder: (context) => CreatePage(),
+                                            builder:
+                                                (context) => CollectionPage(),
                                           ),
                                         );
                                       },
                                     ),
                                     const SizedBox(width: 12),
-                                    // Row 2, Col 2: Marketplace button
+                                    // Row 2, Col 2: Browse button
                                     _buildGridButton(
                                       context: context,
-                                      label: 'Marketplace',
-                                      icon: Icons.store_rounded,
+                                      label: 'Browse',
+                                      icon: Icons.explore_rounded,
                                       backgroundColor:
                                           ColorConstants
                                               .secondaryContainerColor,
@@ -242,14 +245,11 @@ class HomePage extends StatelessWidget {
                                           ColorConstants.lightTextColor,
                                       isEnabled: true,
                                       onPressed: () {
-                                        AppLogger.i(
-                                          "Navigating to MarketplacePage",
-                                        );
+                                        AppLogger.i("Navigating to DiscoverPage");
                                         Navigator.push(
                                           context,
                                           MaterialPageRoute(
-                                            builder:
-                                                (context) => MarketplacePage(),
+                                            builder: (context) => DiscoverPage(),
                                           ),
                                         );
                                       },
