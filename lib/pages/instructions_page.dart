@@ -20,16 +20,14 @@ const String howToPlayMD = """
   YOU are the reader/ Quiz Emcee. You will conduct the quiz and 'read' the questions.
   Once you are ready, click the button to start the game.
   - Select a question board to play from the dropdown above
-  - Add players manually if you have an external buzzer system otherwise click 'Let's Go!'
-  - Ask players to join the room using the game code displayed on the next screen
-  - The Emcee can join the game room as well, using another device, to look at the answers
-  - Each Board has 5 sets of 5 questions; each with increasing difficulty from 10 to 50 points
+  - Add players manually if you have an external buzzer system otherwise use the in-game buzzer system
+  - To join the in-game buzzer system, players need to follow the instructions on the next page
+  - The Emcee can join the game room as well, using another device, and look at the answers
   - Click on the set name to learn about what the set means and see example question (if available)
   - A random player starts the game (Green border indicates the player in control of the board)
   - The player in control chooses a question tile. (All questions are open for everyone for answering)
-  - A player retains control to pick the next question, until another player scores
-  - Wrong answers get negative points
-  - The reader/Quiz Emcee can grant part points to players by clicking on their name during a specific question
+  - Green border indicates the player in control of the board
+  - The Quiz Emcee can grant part points to players by clicking on their name during a specific question
   """;
 
 class InstructionsPage extends StatefulWidget {
@@ -331,7 +329,7 @@ class _InstructionsPageState extends State<InstructionsPage> {
             ),
             SizedBox(width: 6),
             Text(
-              "Check your board collection",
+              "Check your collection",
               style: TextStyle(
                 fontSize: 13,
                 color: ColorConstants.secondaryContainerColor,
@@ -1044,8 +1042,8 @@ class _InstructionsPageState extends State<InstructionsPage> {
                   }
                 }
 
-                // Set game start time
-                playerProvider.setGameStartTime(DateTime.now());
+                // Game start time will be set in the instructions popup on the next screen
+                // playerProvider.setGameStartTime(DateTime.now());
 
                 // Navigate to question board with preloaded data
                 navigator.push(
