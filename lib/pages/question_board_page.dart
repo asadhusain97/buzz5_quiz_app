@@ -138,6 +138,7 @@ class _QuestionBoardContentState extends State<QuestionBoardContent> {
         builder:
             (context) => GameInstructionsDialog(
               gameCode: roomProvider.currentRoom?.formattedRoomCode,
+              hasManualPlayers: widget.hasManualPlayers,
             ),
       );
     });

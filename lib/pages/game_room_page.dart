@@ -1827,6 +1827,9 @@ class _GameRoomPageState extends State<GameRoomPage> {
       return Center(child: Text("Error: Room not found"));
     }
 
+    // Determine if current user is the host
+    final isHost = authProvider.user?.uid == room.hostId;
+
     return SingleChildScrollView(
       padding: EdgeInsets.symmetric(
         horizontal: MediaQuery.of(context).size.width > 600 ? 80 : 16,
@@ -1854,32 +1857,36 @@ class _GameRoomPageState extends State<GameRoomPage> {
                     fontSize: 32,
                   ),
                 ),
-                SizedBox(height: 8),
-                Text(
-                  "Final Results",
-                  style: AppTextStyles.titleMedium.copyWith(
-                    color: ColorConstants.lightTextColor,
+                if (!isHost) ...[
+                  SizedBox(height: 8),
+                  Text(
+                    "Final Results",
+                    style: AppTextStyles.titleMedium.copyWith(
+                      color: ColorConstants.lightTextColor,
+                    ),
                   ),
-                ),
+                ],
               ],
             ),
           ),
 
           SizedBox(height: 32),
 
-          // Component A: Final Standings List
-          _buildFinalStandingsList(room.roomId),
+          if (!isHost) ...[
+            // Component A: Final Standings List
+            _buildFinalStandingsList(room.roomId),
 
-          SizedBox(height: 32),
+            SizedBox(height: 32),
 
-          // Component B: My Game Report Card
-          _buildMyGameReportCard(
-            room.roomId,
-            authProvider.user,
-            playerProvider,
-          ),
+            // Component B: My Game Report Card
+            _buildMyGameReportCard(
+              room.roomId,
+              authProvider.user,
+              playerProvider,
+            ),
 
-          SizedBox(height: 32),
+            SizedBox(height: 32),
+          ],
 
           // Leave Room Button
           ElevatedButton(

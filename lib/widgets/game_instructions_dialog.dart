@@ -6,8 +6,13 @@ import 'package:provider/provider.dart';
 
 class GameInstructionsDialog extends StatelessWidget {
   final String? gameCode;
+  final bool hasManualPlayers;
 
-  const GameInstructionsDialog({super.key, this.gameCode});
+  const GameInstructionsDialog({
+    super.key,
+    this.gameCode,
+    this.hasManualPlayers = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -16,9 +21,13 @@ class GameInstructionsDialog extends StatelessWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Container(
         padding: const EdgeInsets.all(24),
-        constraints: const BoxConstraints(maxWidth: 850, maxHeight: 600),
+        constraints: BoxConstraints(
+          maxWidth: hasManualPlayers ? 500 : 850,
+          maxHeight: 600,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
           children: [
             // Header
             Row(
@@ -33,124 +42,159 @@ class GameInstructionsDialog extends StatelessWidget {
             ),
             const SizedBox(height: 24),
 
-            Expanded(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Left Side: Instructions & Rules
-                  Expanded(
-                    flex: 3,
-                    child: SingleChildScrollView(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildSectionTitle('How to Join'),
-                          const SizedBox(height: 8),
-                          Text(
-                            '1. Scan the QR code or go to buzz5quiz.web.app\n'
-                            '2. Login/signup or play as a guest\n'
-                            '3. Enter the game code and your name\n'
-                            '4. Wait for the game to start!',
-                            style: AppTextStyles.titleSmall.copyWith(
-                              fontWeight: FontWeight.normal,
+            if (hasManualPlayers) ...[
+              // Single column layout for manual players
+              Flexible(
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildSectionTitle('Game Rules'),
+                      const SizedBox(height: 8),
+                      Text(
+                        '- 25 questions in total.\n'
+                        '- Points increase with difficulty (10 to 50).\n'
+                        '- All players may buzz; Buzzer order decides who answers.\n'
+                        '- Player has 5 seconds to answer after buzzing/their chance.\n'
+                        '- Correct answer: +Points & Control.\n'
+                        '- Wrong answer: -Points.\n'
+                        '- Quiz Emcee is god',
+                        style: AppTextStyles.titleSmall.copyWith(
+                          fontWeight: FontWeight.normal,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ] else ...[
+              // Two column layout for standard play
+              Expanded(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Left Side: Instructions & Rules
+                    Expanded(
+                      flex: 3,
+                      child: SingleChildScrollView(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildSectionTitle('How to Join'),
+                            const SizedBox(height: 8),
+                            Text(
+                              '1. Scan the QR code or go to buzz5quiz.web.app\n'
+                              '2. Login/signup or play as a guest\n'
+                              '3. Enter the game code and your name\n'
+                              '4. Wait for the game to start!',
+                              style: AppTextStyles.titleSmall.copyWith(
+                                fontWeight: FontWeight.normal,
+                              ),
                             ),
+                            const SizedBox(height: 16),
+
+                            _buildSectionTitle('Game Rules'),
+                            const SizedBox(height: 8),
+                            Text(
+                              '- 25 questions in total.\n'
+                              '- Points increase with difficulty (10 to 50).\n'
+                              '- All players may buzz; Buzzer order decides who answers.\n'
+                              '- Player has 5 seconds to answer after buzzing/their chance.\n'
+                              '- Correct answer: +Points & Control.\n'
+                              '- Wrong answer: -Points.\n'
+                              '- Quiz Emcee is god',
+                              style: AppTextStyles.titleSmall.copyWith(
+                                fontWeight: FontWeight.normal,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(width: 24),
+                    // Vertical Divider
+                    Container(
+                      width: 1,
+                      color: ColorConstants.primaryContainerColor.withValues(
+                        alpha: 0.3,
+                      ),
+                    ),
+                    const SizedBox(width: 24),
+
+                    // Right Side: QR Code
+                    Expanded(
+                      flex: 2,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            'Scan to Join',
+                            style: AppTextStyles.titleMedium,
                           ),
                           const SizedBox(height: 16),
-
-                          _buildSectionTitle('Game Rules'),
-                          const SizedBox(height: 8),
-                          Text(
-                            '- 25 questions in total.\n'
-                            '- Points increase with difficulty (10 to 50).\n'
-                            '- All players may buzz; Buzzer order decides who answers.\n'
-                            '- Player has 5 seconds to answer after buzzing/their chance.\n'
-                            '- Correct answer: +Points & Control.\n'
-                            '- Wrong answer: -Points.\n'
-                            '- Quiz Emcee is god',
-                            style: AppTextStyles.titleSmall.copyWith(
-                              fontWeight: FontWeight.normal,
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child:
+                            // Placeholder for QR Image
+                            // In real implementation, this would be a generated QR or asset.
+                            Image.asset(
+                              'assets/images/join_qr.png',
+                              width: 200,
+                              height: 200,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Container(
+                                  width: 200,
+                                  height: 200,
+                                  alignment: Alignment.center,
+                                  color: Colors.grey[200],
+                                  child: const Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.qr_code_2,
+                                        size: 48,
+                                        color: Colors.grey,
+                                      ),
+                                      SizedBox(height: 8),
+                                      Text(
+                                        'QR Code Placeholder',
+                                        style: TextStyle(color: Colors.black),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
                             ),
                           ),
+                          if (gameCode != null) ...[
+                            const SizedBox(height: 24),
+                            Text(
+                              'Enter the Game Code:',
+                              style: AppTextStyles.titleSmall.copyWith(
+                                color: ColorConstants.lightTextColor.withValues(
+                                  alpha: 0.7,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              gameCode!,
+                              style: AppTextStyles.headlineMedium,
+                            ),
+                          ],
                         ],
                       ),
                     ),
-                  ),
-
-                  const SizedBox(width: 24),
-                  // Vertical Divider
-                  Container(
-                    width: 1,
-                    color: ColorConstants.primaryContainerColor.withOpacity(
-                      0.3,
-                    ),
-                  ),
-                  const SizedBox(width: 24),
-
-                  // Right Side: QR Code
-                  Expanded(
-                    flex: 2,
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text('Scan to Join', style: AppTextStyles.titleMedium),
-                        const SizedBox(height: 16),
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child:
-                          // Placeholder for QR Image
-                          // In real implementation, this would be a generated QR or asset.
-                          Image.asset(
-                            'assets/images/join_qr.png',
-                            width: 200,
-                            height: 200,
-                            errorBuilder: (context, error, stackTrace) {
-                              return Container(
-                                width: 200,
-                                height: 200,
-                                alignment: Alignment.center,
-                                color: Colors.grey[200],
-                                child: const Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(
-                                      Icons.qr_code_2,
-                                      size: 48,
-                                      color: Colors.grey,
-                                    ),
-                                    SizedBox(height: 8),
-                                    Text(
-                                      'QR Code Placeholder',
-                                      style: TextStyle(color: Colors.black),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            },
-                          ),
-                        ),
-                        if (gameCode != null) ...[
-                          const SizedBox(height: 24),
-                          Text(
-                            'Enter the Game Code:',
-                            style: AppTextStyles.titleSmall.copyWith(
-                              color: ColorConstants.lightTextColor.withOpacity(
-                                0.7,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(gameCode!, style: AppTextStyles.headlineMedium),
-                        ],
-                      ],
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
+            ],
+
             const SizedBox(height: 24),
 
             // Start Button
