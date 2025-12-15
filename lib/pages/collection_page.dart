@@ -1,8 +1,8 @@
-// Create Page - Set and Board Management
+// Collection Page - Set and Board Management (User's Library)
 //
-// This page serves as the main hub for creating and managing quiz content.
+// This page serves as the main hub for managing the user's quiz content library.
 // It provides a tabbed interface to view and manage:
-// - Sets: Individual question sets with 5 questions each
+// - Sets: Individual question sets with 5 questions each (both original and downloaded)
 // - Boards: Collections of up to 5 sets for complete quiz games
 //
 // Key Features:
@@ -12,10 +12,11 @@
 // - CRUD operations: Create, Edit, Duplicate, Delete sets/boards
 // - Bulk selection for future batch operations
 // - Import set functionality (from external sources)
+// - Shows original author attribution for downloaded sets
 //
 // Data Flow:
-// - Sets are fetched from Firebase via SetService
-// - Boards currently use mock data (Firebase integration pending)
+// - Sets are fetched from Firebase via SetService (filtered by authorId)
+// - Downloaded sets appear here automatically (copy strategy)
 // - Filters and sorts are applied client-side for performance
 
 import 'package:buzz5_quiz_app/models/all_enums.dart';
@@ -34,20 +35,21 @@ import 'package:buzz5_quiz_app/pages/import_set_page.dart';
 import 'package:buzz5_quiz_app/pages/new_board_page.dart';
 import 'package:buzz5_quiz_app/presentation/components/set_list_item_tile.dart';
 import 'package:buzz5_quiz_app/presentation/components/board_list_item_tile.dart';
+import 'package:buzz5_quiz_app/widgets/pagination_controls.dart';
 import 'package:buzz5_quiz_app/services/set_service.dart';
 import 'package:buzz5_quiz_app/services/board_service.dart';
 
-class CreatePage extends StatefulWidget {
+class CollectionPage extends StatefulWidget {
   /// Initial tab to display (0 = Sets, 1 = Boards)
   final int initialTabIndex;
 
-  const CreatePage({super.key, this.initialTabIndex = 0});
+  const CollectionPage({super.key, this.initialTabIndex = 0});
 
   @override
-  State<CreatePage> createState() => _CreatePageState();
+  State<CollectionPage> createState() => _CollectionPageState();
 }
 
-class _CreatePageState extends State<CreatePage>
+class _CollectionPageState extends State<CollectionPage>
     with SingleTickerProviderStateMixin {
   // ============================================================
   // TAB CONTROLLER AND VIEW STATE
@@ -90,6 +92,13 @@ class _CreatePageState extends State<CreatePage>
   // SELECTION STATE (for bulk operations on both sets and boards)
   // ============================================================
   final Set<String> _selectedItemIds = {};
+
+  // ============================================================
+  // PAGINATION STATE
+  // ============================================================
+  int _currentSetsPage = 0;
+  int _currentBoardsPage = 0;
+  static const int _itemsPerPage = 25;
 
   @override
   void initState() {
@@ -427,6 +436,22 @@ class _CreatePageState extends State<CreatePage>
     return sorted;
   }
 
+  /// Returns the subsets of filtered sets for the current page.
+  List<SetModel> get _paginatedSets {
+    final sets = _filteredSets;
+    if (sets.isEmpty) return [];
+
+    final startIndex = _currentSetsPage * _itemsPerPage;
+    if (startIndex >= sets.length) return [];
+
+    final endIndex =
+        (startIndex + _itemsPerPage < sets.length)
+            ? startIndex + _itemsPerPage
+            : sets.length;
+
+    return sets.sublist(startIndex, endIndex);
+  }
+
   /// Returns the list of boards filtered and sorted by current criteria.
   /// Maps SetStatus filter to BoardStatus for consistency.
   List<BoardModel> get _filteredBoards {
@@ -495,6 +520,22 @@ class _CreatePageState extends State<CreatePage>
     return sorted;
   }
 
+  /// Returns the subsets of filtered boards for the current page.
+  List<BoardModel> get _paginatedBoards {
+    final boards = _filteredBoards;
+    if (boards.isEmpty) return [];
+
+    final startIndex = _currentBoardsPage * _itemsPerPage;
+    if (startIndex >= boards.length) return [];
+
+    final endIndex =
+        (startIndex + _itemsPerPage < boards.length)
+            ? startIndex + _itemsPerPage
+            : boards.length;
+
+    return boards.sublist(startIndex, endIndex);
+  }
+
   /// Resets all active filters to their default state.
   void _clearFilters() {
     setState(() {
@@ -503,6 +544,8 @@ class _CreatePageState extends State<CreatePage>
       _selectedTags.clear();
       _nameSearch = '';
       _creatorSearch = '';
+      _currentSetsPage = 0; // Reset sets pagination
+      _currentBoardsPage = 0; // Reset boards pagination
     });
   }
 
@@ -526,6 +569,9 @@ class _CreatePageState extends State<CreatePage>
           _activeFilters['Status'] =
               result.status == SetStatus.complete ? 'Complete' : 'Draft';
         }
+        // Reset pagination for both as status applies to both
+        _currentSetsPage = 0;
+        _currentBoardsPage = 0;
       });
     }
   }
@@ -546,6 +592,7 @@ class _CreatePageState extends State<CreatePage>
         } else {
           _activeFilters['Tags'] = _selectedTags.join(', ');
         }
+        _currentSetsPage = 0; // Reset sets pagination (tags only for sets)
       });
     }
   }
@@ -566,6 +613,8 @@ class _CreatePageState extends State<CreatePage>
         } else {
           _activeFilters['Name'] = _nameSearch;
         }
+        _currentSetsPage = 0;
+        _currentBoardsPage = 0;
       });
     }
   }
@@ -584,6 +633,8 @@ class _CreatePageState extends State<CreatePage>
         } else {
           _activeFilters['Creator'] = _creatorSearch;
         }
+        _currentSetsPage = 0;
+        _currentBoardsPage = 0;
       });
     }
   }
@@ -596,7 +647,7 @@ class _CreatePageState extends State<CreatePage>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Create', style: AppTextStyles.titleBig),
+        title: Text('Collection', style: AppTextStyles.titleBig),
         backgroundColor: ColorConstants.primaryContainerColor,
         leading: IconButton(
           icon: Icon(Icons.arrow_back),
@@ -657,7 +708,7 @@ class _CreatePageState extends State<CreatePage>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Your Sets and Boards',
+                    'Your Collection',
                     style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                       color:
                           Theme.of(context).brightness == Brightness.dark
@@ -668,7 +719,7 @@ class _CreatePageState extends State<CreatePage>
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Create, edit and organize your quiz questions in sets and boards.',
+                    'Create, edit, and organize your quiz questions in sets and boards.',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: ColorConstants.hintGrey,
                     ),
@@ -857,6 +908,8 @@ class _CreatePageState extends State<CreatePage>
           onSortChanged: (sort) {
             setState(() {
               _currentSort = sort;
+              _currentSetsPage = 0;
+              _currentBoardsPage = 0;
             });
           },
           showDifficulty: _isSetView, // Only show difficulty for Sets
@@ -900,44 +953,63 @@ class _CreatePageState extends State<CreatePage>
       emptyIcon: Icons.inventory_2_outlined,
       emptyTitle: 'No sets found',
       emptySubtitle: 'Try adjusting your filters or create a new set',
-      content: ListView.builder(
-        itemCount: _filteredSets.length,
-        itemBuilder: (context, index) {
-          final set = _filteredSets[index];
-          return SetListItemTile(
-            set: set,
-            isSelected: _selectedItemIds.contains(set.id),
-            onSelectionChanged: (selected) {
-              setState(() {
-                if (selected) {
-                  _selectedItemIds.add(set.id);
-                } else {
-                  _selectedItemIds.remove(set.id);
-                }
-              });
-            },
-            onEdit: () {
-              Navigator.of(context)
-                  .push(
-                    MaterialPageRoute(
-                      builder: (context) => NewSetPage(existingSet: set),
-                    ),
-                  )
-                  .then((_) => _loadSets());
-            },
-            onDuplicate: () => _duplicateSet(set),
-            onDelete: () async {
-              final confirmed = await showDeleteConfirmationDialog(
-                context: context,
-                itemType: 'set',
-                itemName: set.name,
-              );
-              if (confirmed == true) {
-                await _deleteSet(set);
-              }
-            },
-          );
-        },
+      content: Column(
+        children: [
+          Expanded(
+            child: ListView.builder(
+              padding: const EdgeInsets.only(bottom: 16),
+              itemCount: _paginatedSets.length,
+              itemBuilder: (context, index) {
+                final set = _paginatedSets[index];
+                return SetListItemTile(
+                  set: set,
+                  isSelected: _selectedItemIds.contains(set.id),
+                  onSelectionChanged: (selected) {
+                    setState(() {
+                      if (selected) {
+                        _selectedItemIds.add(set.id);
+                      } else {
+                        _selectedItemIds.remove(set.id);
+                      }
+                    });
+                  },
+                  onEdit: () {
+                    Navigator.of(context)
+                        .push(
+                          MaterialPageRoute(
+                            builder: (context) => NewSetPage(existingSet: set),
+                          ),
+                        )
+                        .then((_) => _loadSets());
+                  },
+                  onDuplicate: () => _duplicateSet(set),
+                  onDelete: () async {
+                    final confirmed = await showDeleteConfirmationDialog(
+                      context: context,
+                      itemType: 'set',
+                      itemName: set.name,
+                    );
+                    if (confirmed == true) {
+                      await _deleteSet(set);
+                    }
+                  },
+                );
+              },
+            ),
+          ),
+
+          // Pagination Controls
+          if (_filteredSets.length > _itemsPerPage)
+            PaginationControls(
+              currentPage: _currentSetsPage,
+              totalPages: (_filteredSets.length / _itemsPerPage).ceil(),
+              onPageChanged: (page) {
+                setState(() {
+                  _currentSetsPage = page;
+                });
+              },
+            ),
+        ],
       ),
     );
   }
@@ -952,48 +1024,69 @@ class _CreatePageState extends State<CreatePage>
       isEmpty: _filteredBoards.isEmpty,
       emptyIcon: Icons.dashboard_outlined,
       emptyTitle: 'No boards found',
-      emptySubtitle: _boards.isEmpty
-          ? 'Create your first board to get started'
-          : 'Try adjusting your filters or create a new board',
-      content: ListView.builder(
-        itemCount: _filteredBoards.length,
-        itemBuilder: (context, index) {
-          final board = _filteredBoards[index];
-          return BoardListItemTile(
-            board: board,
-            isSelected: _selectedItemIds.contains(board.id),
-            onSelectionChanged: (selected) {
-              setState(() {
-                if (selected) {
-                  _selectedItemIds.add(board.id);
-                } else {
-                  _selectedItemIds.remove(board.id);
-                }
-              });
-            },
-            onEdit: () {
-              Navigator.of(context)
-                  .push(
-                    MaterialPageRoute(
-                      builder: (context) => NewBoardPage(existingBoard: board),
-                    ),
-                  )
-                  .then((_) => _loadBoards());
-            },
-            onDuplicate: () => _duplicateBoard(board),
-            onDelete: () async {
-              final confirmed = await showDeleteConfirmationDialog(
-                context: context,
-                itemType: 'board',
-                itemName: board.name,
-                additionalMessage: 'This action cannot be undone.',
-              );
-              if (confirmed == true) {
-                _deleteBoard(board);
-              }
-            },
-          );
-        },
+      emptySubtitle:
+          _boards.isEmpty
+              ? 'Create your first board to get started'
+              : 'Try adjusting your filters or create a new board',
+      content: Column(
+        children: [
+          Expanded(
+            child: ListView.builder(
+              padding: const EdgeInsets.only(bottom: 16),
+              itemCount: _paginatedBoards.length,
+              itemBuilder: (context, index) {
+                final board = _paginatedBoards[index];
+                return BoardListItemTile(
+                  board: board,
+                  isSelected: _selectedItemIds.contains(board.id),
+                  onSelectionChanged: (selected) {
+                    setState(() {
+                      if (selected) {
+                        _selectedItemIds.add(board.id);
+                      } else {
+                        _selectedItemIds.remove(board.id);
+                      }
+                    });
+                  },
+                  onEdit: () {
+                    Navigator.of(context)
+                        .push(
+                          MaterialPageRoute(
+                            builder:
+                                (context) => NewBoardPage(existingBoard: board),
+                          ),
+                        )
+                        .then((_) => _loadBoards());
+                  },
+                  onDuplicate: () => _duplicateBoard(board),
+                  onDelete: () async {
+                    final confirmed = await showDeleteConfirmationDialog(
+                      context: context,
+                      itemType: 'board',
+                      itemName: board.name,
+                      additionalMessage: 'This action cannot be undone.',
+                    );
+                    if (confirmed == true) {
+                      _deleteBoard(board);
+                    }
+                  },
+                );
+              },
+            ),
+          ),
+
+          // Pagination Controls
+          if (_filteredBoards.length > _itemsPerPage)
+            PaginationControls(
+              currentPage: _currentBoardsPage,
+              totalPages: (_filteredBoards.length / _itemsPerPage).ceil(),
+              onPageChanged: (page) {
+                setState(() {
+                  _currentBoardsPage = page;
+                });
+              },
+            ),
+        ],
       ),
     );
   }

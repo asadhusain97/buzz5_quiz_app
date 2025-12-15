@@ -52,6 +52,7 @@ class _NewSetPageState extends State<NewSetPage>
   // Selection state
   DifficultyLevel? _selectedDifficulty;
   final Set<PredefinedTags> _selectedTags = {};
+  bool _isPublished = false;
 
   @override
   void initState() {
@@ -90,7 +91,9 @@ class _NewSetPageState extends State<NewSetPage>
 
     // Add listeners to question/answer controllers to update completion count
     for (int i = 0; i < 5; i++) {
-      _questionControllers[i]['questionText']!.addListener(_updateCompletedCount);
+      _questionControllers[i]['questionText']!.addListener(
+        _updateCompletedCount,
+      );
       _questionControllers[i]['answerText']!.addListener(_updateCompletedCount);
     }
 
@@ -101,6 +104,7 @@ class _NewSetPageState extends State<NewSetPage>
       _descriptionController.text = existingSet.description;
       _selectedDifficulty = existingSet.difficulty;
       _selectedTags.addAll(existingSet.tags);
+      _isPublished = !existingSet.isPrivate;
 
       // Also update notifiers so buttons work immediately in edit mode
       _nameNotifier.value = existingSet.name;
@@ -258,6 +262,7 @@ class _NewSetPageState extends State<NewSetPage>
           description: _descriptionController.text.trim(),
           tags: _selectedTags.toList(),
           difficulty: _selectedDifficulty,
+          isPrivate: !_isPublished,
           questionData: questionData,
         );
         AppLogger.i('Set updated successfully with ID: $setId');
@@ -267,6 +272,7 @@ class _NewSetPageState extends State<NewSetPage>
           description: _descriptionController.text.trim(),
           tags: _selectedTags.toList(),
           difficulty: _selectedDifficulty,
+          isPrivate: !_isPublished,
           questionData: questionData,
           isDraft: isDraft,
         );
@@ -545,7 +551,8 @@ class _NewSetPageState extends State<NewSetPage>
                               DynamicSaveButton(
                                 nameNotifier: _nameNotifier,
                                 descriptionNotifier: _descriptionNotifier,
-                                completionCountNotifier: _completedQuestionsNotifier,
+                                completionCountNotifier:
+                                    _completedQuestionsNotifier,
                                 requiredCount: 5,
                                 onSaveDraft: _saveAsDraft,
                                 onSave: _save,
@@ -587,7 +594,7 @@ class _NewSetPageState extends State<NewSetPage>
                           SingleChildScrollView(
                             scrollDirection: Axis.horizontal,
                             child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.end,
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 // Tags
                                 Column(
@@ -738,6 +745,112 @@ class _NewSetPageState extends State<NewSetPage>
                                           ),
                                         ],
                                       ),
+                                    ),
+                                  ],
+                                ),
+
+                                SizedBox(width: 24),
+
+                                // Publish
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Publish',
+                                      style: AppTextStyles.labelSmall.copyWith(
+                                        color: ColorConstants.lightTextColor
+                                            .withValues(alpha: 0.7),
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                    SizedBox(height: 0),
+                                    Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Transform.translate(
+                                          offset: Offset(-4, 0),
+                                          child: Transform.scale(
+                                            scale: 0.8,
+                                            alignment: Alignment.centerLeft,
+                                            child: Switch(
+                                              value: _isPublished,
+                                              onChanged: (widget.existingSet
+                                                          ?.isDownloadedFromMarketplace ??
+                                                      false)
+                                                  ? null // Disable switch for downloaded sets
+                                                  : (value) {
+                                                      setState(() {
+                                                        _isPublished = value;
+                                                      });
+                                                    },
+                                              activeThumbColor:
+                                                  ColorConstants.primaryColor,
+                                              activeTrackColor: ColorConstants
+                                                  .primaryColor
+                                                  .withValues(alpha: 0.5),
+                                              inactiveThumbColor: (widget
+                                                          .existingSet
+                                                          ?.isDownloadedFromMarketplace ??
+                                                      false)
+                                                  ? ColorConstants.hintGrey
+                                                      .withValues(alpha: 0.3)
+                                                  : null,
+                                              inactiveTrackColor: (widget
+                                                          .existingSet
+                                                          ?.isDownloadedFromMarketplace ??
+                                                      false)
+                                                  ? ColorConstants.hintGrey
+                                                      .withValues(alpha: 0.2)
+                                                  : null,
+                                              // THIS CONTROLS THE MARGIN AROUND THE TOGGLE
+                                              materialTapTargetSize:
+                                                  MaterialTapTargetSize
+                                                      .shrinkWrap,
+                                            ),
+                                          ),
+                                        ),
+                                        Transform.translate(
+                                          offset: Offset(3, -5),
+                                          child: Text(
+                                            _isPublished ? 'Public' : 'Private',
+                                            style: TextStyle(
+                                              fontSize: 10,
+                                              fontStyle: FontStyle.italic,
+                                              height: 1.0,
+                                              color:
+                                                  _isPublished
+                                                      ? ColorConstants
+                                                          .primaryColor
+                                                      : ColorConstants
+                                                          .lightTextColor
+                                                          .withValues(
+                                                            alpha: 0.7,
+                                                          ),
+                                            ),
+                                          ),
+                                        ),
+                                        // Helper text for downloaded sets
+                                        if (widget.existingSet
+                                                ?.isDownloadedFromMarketplace ??
+                                            false) ...[
+                                          SizedBox(height: 4),
+                                          SizedBox(
+                                            width: 120,
+                                            child: Text(
+                                              'Downloaded sets cannot be published',
+                                              style: TextStyle(
+                                                fontSize: 9,
+                                                color: ColorConstants.hintGrey
+                                                    .withValues(alpha: 0.7),
+                                                fontStyle: FontStyle.italic,
+                                              ),
+                                              maxLines: 2,
+                                              overflow: TextOverflow.visible,
+                                            ),
+                                          ),
+                                        ],
+                                      ],
                                     ),
                                   ],
                                 ),

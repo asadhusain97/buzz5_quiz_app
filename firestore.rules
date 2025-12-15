@@ -32,6 +32,13 @@ service cloud.firestore {
       allow update: if isAuthenticated()
                     && resource.data.authorId == request.auth.uid;
 
+      // Allow incrementing downloads counter on public sets
+      // This enables marketplace functionality where users can download others' sets
+      allow update: if isAuthenticated()
+                    && resource.data.isPrivate == false
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['downloads'])
+                    && request.resource.data.downloads == resource.data.downloads + 1;
+
       // Users can delete their own sets
       allow delete: if isAuthenticated()
                     && resource.data.authorId == request.auth.uid;
@@ -51,6 +58,13 @@ service cloud.firestore {
     // Game rooms (if you have them)
     match /rooms/{roomId} {
       allow read, write: if isAuthenticated();
+    }
+
+    // Transactions collection - for tracking marketplace activity
+    match /transactions/{transactionId} {
+      allow read: if isAuthenticated() && 
+                  (resource.data.buyerId == request.auth.uid || resource.data.sellerId == request.auth.uid);
+      allow create: if isAuthenticated(); // Application logic handles the content
     }
 
     // Default deny all other collections

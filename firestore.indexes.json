@@ -29,6 +29,20 @@
             ]
         },
         {
+            "collectionGroup": "sets",
+            "queryScope": "COLLECTION",
+            "fields": [
+                {
+                    "fieldPath": "isPrivate",
+                    "order": "ASCENDING"
+                },
+                {
+                    "fieldPath": "creationDate",
+                    "order": "DESCENDING"
+                }
+            ]
+        },
+        {
             "collectionGroup": "boards",
             "queryScope": "COLLECTION",
             "fields": [

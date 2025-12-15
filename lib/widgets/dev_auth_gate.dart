@@ -7,8 +7,8 @@ import 'package:buzz5_quiz_app/widgets/auth_gate.dart';
 // Import all pages for direct navigation
 import 'package:buzz5_quiz_app/pages/home_page.dart';
 import 'package:buzz5_quiz_app/pages/profile_page.dart';
-import 'package:buzz5_quiz_app/pages/create_page.dart';
-import 'package:buzz5_quiz_app/pages/marketplace_page.dart';
+import 'package:buzz5_quiz_app/pages/collection_page.dart';
+import 'package:buzz5_quiz_app/pages/discover_page.dart';
 import 'package:buzz5_quiz_app/pages/joingame_page.dart';
 import 'package:buzz5_quiz_app/pages/instructions_page.dart';
 import 'package:buzz5_quiz_app/pages/final_page.dart';
@@ -54,9 +54,12 @@ class DevAuthGate extends StatelessWidget {
       case 'profile':
         return const ProfilePage();
       case 'create':
-        return const CreatePage();
+      case 'collection':
+        return const CollectionPage();
       case 'marketplace':
-        return const MarketplacePage();
+      case 'browse':
+      case 'discover':
+        return const DiscoverPage();
       case 'joingame':
         return const JoinGamePage();
       case 'gameroom':

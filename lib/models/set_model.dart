@@ -19,6 +19,24 @@ class SetModel {
   final DifficultyLevel? difficulty;
   final bool isPrivate;
 
+  // Lineage tracking fields for marketplace copy/fork strategy
+  /// The ID of the original set if this is a copy from the marketplace.
+  final String? originalSetId;
+
+  /// The UID of the original creator (for attribution).
+  final String? originalAuthorId;
+
+  /// The display name of the original creator (for attribution display).
+  final String? originalAuthorName;
+
+  /// True if this set is a downloaded copy and has been modified.
+  final bool isRemix;
+
+  /// Controls whether this set can be published to the marketplace.
+  /// False for downloaded sets (prevents republishing others' work).
+  /// True for organically created sets.
+  final bool canBePublished;
+
   // The list of questions
   final List<Question> questions;
 
@@ -30,11 +48,16 @@ class SetModel {
     required this.authorName,
     this.tags = const [],
     DateTime? creationDate,
-    this.price,
+    this.price = 0.0,
     this.downloads = 0,
     this.rating = 0.0,
     this.difficulty,
     this.isPrivate = true,
+    this.originalSetId,
+    this.originalAuthorId,
+    this.originalAuthorName,
+    this.isRemix = false,
+    this.canBePublished = true,
     this.questions = const [],
   }) : creationDate = creationDate ?? DateTime.now(),
        assert(
@@ -79,10 +102,14 @@ class SetModel {
   }
 
   /// Returns true if the set can be listed in the marketplace.
-  /// A set can only be listed if it's not private and has complete status.
+  /// A set can only be listed if it's not private, has complete status,
+  /// and is allowed to be published (not a downloaded copy).
   bool get canBeListedInMarketplace {
-    return !isPrivate && status == SetStatus.complete;
+    return !isPrivate && status == SetStatus.complete && canBePublished;
   }
+
+  /// Returns true if this set was downloaded from the marketplace (has lineage).
+  bool get isDownloadedFromMarketplace => originalSetId != null;
 
   // Factory constructor to create a SetModel from a JSON object
   factory SetModel.fromJson(Map<String, dynamic> json) {
@@ -126,7 +153,7 @@ class SetModel {
       authorName: json['authorName'] as String,
       tags: parseTags(json['tags'] as List<dynamic>?),
       creationDate: DateTime.parse(json['creationDate'] as String),
-      price: json['price'] as double?,
+      price: (json['price'] as double?) ?? 0.0,
       downloads: json['downloads'] as int? ?? 0,
       rating: json['rating'] as double? ?? 0.0,
       difficulty: DifficultyLevel.values.firstWhere(
@@ -134,6 +161,12 @@ class SetModel {
         orElse: () => DifficultyLevel.medium,
       ),
       isPrivate: json['isPrivate'] as bool? ?? true,
+      // Lineage tracking fields
+      originalSetId: json['originalSetId'] as String?,
+      originalAuthorId: json['originalAuthorId'] as String?,
+      originalAuthorName: json['originalAuthorName'] as String?,
+      isRemix: json['isRemix'] as bool? ?? false,
+      canBePublished: json['canBePublished'] as bool? ?? true,
       questions:
           (json['questions'] as List<dynamic>? ?? [])
               .map((q) => Question.fromJson(q as Map<String, dynamic>))
@@ -157,6 +190,12 @@ class SetModel {
       'rating': rating,
       'difficulty': difficulty?.toString(),
       'isPrivate': isPrivate,
+      // Lineage tracking fields
+      'originalSetId': originalSetId,
+      'originalAuthorId': originalAuthorId,
+      'originalAuthorName': originalAuthorName,
+      'isRemix': isRemix,
+      'canBePublished': canBePublished,
       'questions': questions.map((q) => q.toJson()).toList(),
     };
   }
