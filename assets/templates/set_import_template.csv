@@ -1,0 +1,6 @@
+set_name,set_explaination,difficulty,points,question,qstn_media,answer,ans_media
+Example Set,This is a sample set to show format,medium,10,Will you remove these rows before uploading?,,Yes you will!,
+Example Set,This is a sample set to show format,medium,10,Which planet is known as the Red Planet?,https://i.imgur.com/4clqUdj.jpeg,Mars,
+Example Set,This is a sample set to show format,medium,10,Will?,,4,
+Example Set,This is a sample set to show format,medium,10,In which year did WW2 end?,,1945,https://i.imgur.com/ekMM4Fx.jpeg
+Example Set,This is a sample set to show format,medium,10,Who wrote Hamlet?,https://i.imgur.com/hvVX24Z.jpeg,Shakespeare,https://i.imgur.com/ekMM4Fx.jpeg

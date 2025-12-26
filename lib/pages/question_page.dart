@@ -1,4 +1,5 @@
 import 'package:buzz5_quiz_app/config/colors.dart';
+
 import 'package:buzz5_quiz_app/config/text_styles.dart';
 import 'package:buzz5_quiz_app/providers/question_done.dart';
 import 'package:flutter/material.dart';
@@ -10,6 +11,7 @@ import 'package:buzz5_quiz_app/providers/room_provider.dart';
 import 'package:buzz5_quiz_app/providers/auth_provider.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'dart:async';
+import 'package:buzz5_quiz_app/widgets/confetti_burst.dart';
 
 // BuzzerEntry class to track player buzzer data
 class BuzzerEntry {
@@ -61,6 +63,31 @@ class _QuestionPageState extends State<QuestionPage> {
   List<BuzzerEntry> _buzzerEntries = [];
   StreamSubscription? _buzzerSubscription;
   int? _questionStartTime; // Track current question start time for validation
+
+  // Confetti functionality
+  Offset? _lastTapDownPosition;
+  int _lastConfettiTimestamp = 0;
+
+  void _showConfetti(Offset? position) {
+    if (position == null) return;
+
+    final now = DateTime.now().millisecondsSinceEpoch;
+    if (now - _lastConfettiTimestamp < 2000) return; // Debounce 2 seconds
+
+    _lastConfettiTimestamp = now;
+
+    late OverlayEntry overlayEntry;
+    overlayEntry = OverlayEntry(
+      builder:
+          (context) => Positioned(
+            left: position.dx,
+            top: position.dy,
+            child: ConfettiBurst(onComplete: () => overlayEntry.remove()),
+          ),
+    );
+
+    Overlay.of(context).insert(overlayEntry);
+  }
 
   // Timer management methods
   void _startTimer() {
@@ -820,11 +847,17 @@ class _QuestionPageState extends State<QuestionPage> {
                         iconData: Icons.check,
                         onColor: ColorConstants.correctAnsBtn,
                         offColor: ColorConstants.cardColor,
+                        onPointerDown: (details) {
+                          _lastTapDownPosition = details.position;
+                        },
                         onToggle: (isOn) {
                           // force update the UI
                           setState(() {
                             buttonState.setCorrect(isOn);
                           });
+                          if (isOn) {
+                            _showConfetti(_lastTapDownPosition);
+                          }
                         },
                       ),
                       SizedBox(
@@ -1303,7 +1336,10 @@ class ToggleButton extends StatefulWidget {
     required this.onColor,
     required this.offColor,
     this.onToggle,
+    this.onPointerDown, // Add this
   });
+
+  final ValueChanged<PointerDownEvent>? onPointerDown; // Add this
 
   @override
   // ignore: library_private_types_in_public_api
@@ -1333,7 +1369,7 @@ class _ToggleButtonState extends State<ToggleButton> {
 
   @override
   Widget build(BuildContext context) {
-    return IconButton(
+    final button = IconButton(
       icon: Icon(widget.iconData, size: 30),
       color:
           widget.isDisabled
@@ -1350,6 +1386,11 @@ class _ToggleButtonState extends State<ToggleButton> {
                 if (widget.onToggle != null) widget.onToggle!(newState);
               },
     );
+
+    if (widget.onPointerDown != null) {
+      return Listener(onPointerDown: widget.onPointerDown, child: button);
+    }
+    return button;
   }
 }
 

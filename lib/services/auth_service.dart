@@ -28,9 +28,16 @@ class AuthService {
         password: password,
       );
 
-      // Update last login timestamp
+      // Fire-and-forget pattern for non-critical lastLogin update
+      // This prevents blocking the critical login path with Firestore writes
       if (result.user != null) {
-        await _updateUserLastLogin(result.user!.uid);
+        _updateUserLastLogin(result.user!.uid).catchError((error) {
+          // Silent error handling - lastLogin is non-critical
+          AppLogger.w(
+            'Background lastLogin update failed (non-critical): $error',
+          );
+          // Do not rethrow - allow login to succeed even if this fails
+        });
         AppLogger.i('User signed in: ${result.user!.email}');
       }
 
@@ -68,11 +75,19 @@ class AuthService {
         // Update display name if provided
         if (displayName != null && displayName.isNotEmpty) {
           await result.user!.updateDisplayName(displayName);
-        }
+          // Reload user to ensure display name is synced with Firebase Auth
+          await result.user!.reload();
+          // Get the refreshed user object
+          final refreshedUser = _auth.currentUser!;
 
-        // Create user document in Firestore
-        await _createUserDocument(result.user!, displayName);
-        AppLogger.i('User registered: ${result.user!.email}');
+          // Create user document in Firestore with refreshed user
+          await _createUserDocument(refreshedUser, displayName);
+          AppLogger.i('User registered: ${refreshedUser.email}');
+        } else {
+          // Create user document in Firestore without display name
+          await _createUserDocument(result.user!, displayName);
+          AppLogger.i('User registered: ${result.user!.email}');
+        }
       }
 
       return result;
@@ -151,15 +166,18 @@ class AuthService {
     }
   }
 
-  // Update user last login timestamp
+  // Now returns Future for error handling, no longer awaited in critical path
+  // Update user last login timestamp (non-critical operation)
   Future<void> _updateUserLastLogin(String uid) async {
     try {
       await _firestore.collection('users').doc(uid).update({
         'lastLogin': FieldValue.serverTimestamp(),
       });
+      AppLogger.i('Last login timestamp updated for user: $uid');
     } catch (e) {
-      AppLogger.w('Warning: Could not update last login timestamp: $e');
-      // Don't throw here as this is not critical for user experience
+      // Now throws instead of silent catch - caller handles with catchError
+      AppLogger.w('Failed to update last login timestamp: $e');
+      rethrow;
     }
   }
 

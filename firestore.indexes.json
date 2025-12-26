@@ -1,0 +1,75 @@
+{
+    "indexes": [
+        {
+            "collectionGroup": "sets",
+            "queryScope": "COLLECTION",
+            "fields": [
+                {
+                    "fieldPath": "authorId",
+                    "order": "ASCENDING"
+                },
+                {
+                    "fieldPath": "creationDate",
+                    "order": "DESCENDING"
+                }
+            ]
+        },
+        {
+            "collectionGroup": "sets",
+            "queryScope": "COLLECTION",
+            "fields": [
+                {
+                    "fieldPath": "authorId",
+                    "order": "ASCENDING"
+                },
+                {
+                    "fieldPath": "name",
+                    "order": "ASCENDING"
+                }
+            ]
+        },
+        {
+            "collectionGroup": "sets",
+            "queryScope": "COLLECTION",
+            "fields": [
+                {
+                    "fieldPath": "isPrivate",
+                    "order": "ASCENDING"
+                },
+                {
+                    "fieldPath": "creationDate",
+                    "order": "DESCENDING"
+                }
+            ]
+        },
+        {
+            "collectionGroup": "boards",
+            "queryScope": "COLLECTION",
+            "fields": [
+                {
+                    "fieldPath": "authorId",
+                    "order": "ASCENDING"
+                },
+                {
+                    "fieldPath": "creationDate",
+                    "order": "DESCENDING"
+                }
+            ]
+        },
+        {
+            "collectionGroup": "boards",
+            "queryScope": "COLLECTION",
+            "fields": [
+                {
+                    "fieldPath": "authorId",
+                    "order": "ASCENDING"
+                },
+                {
+                    "fieldPath": "name",
+                    "order": "ASCENDING"
+                }
+            ]
+        }
+    ],
+    "fieldOverrides": []
+}

@@ -78,7 +78,6 @@ Follow these steps to get your app up and running:
       - Get Firebase config from [Firebase Console](https://console.firebase.google.com)
       - Get Google OAuth client ID from [Google Cloud Console](https://console.cloud.google.com)
       - Get reCAPTCHA site key from [Google reCAPTCHA](https://www.google.com/recaptcha)
-      - Set up your Google Apps Script URL for `GOOGLE_SHEET_API_KEY`
 
    6.1.3. Debug with configuration:
 

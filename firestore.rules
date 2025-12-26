@@ -1,0 +1,75 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper function to check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Helper function to check if user owns the resource
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Users collection - users can only read/write their own data
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow write: if isOwner(userId);
+    }
+
+    // Sets collection - primary quiz set data
+    match /sets/{setId} {
+      // Anyone authenticated can read sets (you can restrict this later)
+      allow read: if isAuthenticated();
+
+      // Users can create sets (new documents)
+      allow create: if isAuthenticated()
+                    && request.resource.data.authorId == request.auth.uid;
+
+      // Users can update their own sets
+      allow update: if isAuthenticated()
+                    && resource.data.authorId == request.auth.uid;
+
+      // Allow incrementing downloads counter on public sets
+      // This enables marketplace functionality where users can download others' sets
+      allow update: if isAuthenticated()
+                    && resource.data.isPrivate == false
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['downloads'])
+                    && request.resource.data.downloads == resource.data.downloads + 1;
+
+      // Users can delete their own sets
+      allow delete: if isAuthenticated()
+                    && resource.data.authorId == request.auth.uid;
+    }
+
+    // Boards collection
+    match /boards/{boardId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated()
+                    && request.resource.data.authorId == request.auth.uid;
+      allow update: if isAuthenticated()
+                    && resource.data.authorId == request.auth.uid;
+      allow delete: if isAuthenticated()
+                    && resource.data.authorId == request.auth.uid;
+    }
+
+    // Game rooms (if you have them)
+    match /rooms/{roomId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // Transactions collection - for tracking marketplace activity
+    match /transactions/{transactionId} {
+      allow read: if isAuthenticated() && 
+                  (resource.data.buyerId == request.auth.uid || resource.data.sellerId == request.auth.uid);
+      allow create: if isAuthenticated(); // Application logic handles the content
+    }
+
+    // Default deny all other collections
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

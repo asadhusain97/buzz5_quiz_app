@@ -2,6 +2,8 @@ import 'package:buzz5_quiz_app/config/colors.dart';
 import 'package:buzz5_quiz_app/config/text_styles.dart';
 import 'package:buzz5_quiz_app/pages/instructions_page.dart';
 import 'package:buzz5_quiz_app/pages/joingame_page.dart';
+import 'package:buzz5_quiz_app/pages/collection_page.dart';
+import 'package:buzz5_quiz_app/pages/discover_page.dart';
 import 'package:buzz5_quiz_app/widgets/custom_app_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:buzz5_quiz_app/config/logger.dart';
@@ -19,6 +21,50 @@ class HomePage extends StatelessWidget {
       context: context,
       barrierDismissible: true,
       builder: (context) => const AuthModal(),
+    );
+  }
+
+  Widget _buildGridButton({
+    required BuildContext context,
+    required String label,
+    required IconData icon,
+    required Color backgroundColor,
+    required Color foregroundColor,
+    required bool isEnabled,
+    required VoidCallback onPressed,
+  }) {
+    return SizedBox(
+      width: 200,
+      height: 70,
+      child: ElevatedButton(
+        onPressed: isEnabled ? onPressed : null,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: backgroundColor,
+          foregroundColor: foregroundColor,
+          elevation: isEnabled ? 2 : 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          disabledBackgroundColor: Colors.grey.shade700,
+          disabledForegroundColor: Colors.grey.shade400,
+          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 26),
+            const SizedBox(height: 6),
+            Text(
+              label,
+              style: AppTextStyles.homeButton.copyWith(fontSize: 14),
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -88,53 +134,135 @@ class HomePage extends StatelessWidget {
                             ),
                             textAlign: TextAlign.center,
                           ),
-                          const SizedBox(height: 64),
+                          const SizedBox(height: 48),
 
                           // Show different buttons based on authentication status
                           if (authProvider.isAuthenticated) ...[
-                            // Authenticated user - show game buttons
-                            ElevatedButton(
-                              onPressed: authProvider.isGuest ? null : () {
-                                AppLogger.i("Navigating to InstructionsPage");
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => InstructionsPage(),
-                                  ),
-                                );
-                              },
-                              style: ElevatedButton.styleFrom(
-                                minimumSize: Size(280, 56),
-                                backgroundColor: authProvider.isGuest
-                                    ? Colors.grey.shade700
-                                    : ColorConstants.primaryColor,
-                                foregroundColor: authProvider.isGuest
-                                    ? Colors.grey.shade400
-                                    : ColorConstants.lightTextColor,
-                                elevation: authProvider.isGuest ? 0 : 2,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
+                            // Authenticated user - show 2x2 grid of buttons
+                            Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    // Row 1, Col 1: Host button
+                                    _buildGridButton(
+                                      context: context,
+                                      label: 'Host',
+                                      icon: Icons.play_arrow_rounded,
+                                      backgroundColor:
+                                          authProvider.isGuest
+                                              ? Colors.grey.shade700
+                                              : ColorConstants
+                                                  .secondaryContainerColor,
+                                      foregroundColor:
+                                          authProvider.isGuest
+                                              ? Colors.grey.shade400
+                                              : ColorConstants.lightTextColor,
+                                      isEnabled: !authProvider.isGuest,
+                                      onPressed: () {
+                                        AppLogger.i(
+                                          "Navigating to InstructionsPage",
+                                        );
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder:
+                                                (context) => InstructionsPage(),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                    const SizedBox(width: 12),
+                                    // Row 1, Col 2: Join Game button
+                                    _buildGridButton(
+                                      context: context,
+                                      label: 'Join Game',
+                                      icon: Icons.group_add_rounded,
+                                      backgroundColor:
+                                          ColorConstants
+                                              .secondaryContainerColor,
+                                      foregroundColor:
+                                          ColorConstants.lightTextColor,
+                                      isEnabled: true,
+                                      onPressed: () {
+                                        AppLogger.i(
+                                          "Navigating to JoinGamePage",
+                                        );
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder:
+                                                (context) => JoinGamePage(),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  ],
                                 ),
-                                disabledBackgroundColor: Colors.grey.shade700,
-                                disabledForegroundColor: Colors.grey.shade400,
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(Icons.play_arrow_rounded, size: 24),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    'Start Game',
-                                    style: AppTextStyles.homeButton,
-                                  ),
-                                ],
-                              ),
+                                const SizedBox(height: 12),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    // Row 2, Col 1: Create button
+                                    _buildGridButton(
+                                      context: context,
+                                      label: 'Collection',
+                                      icon: Icons.add_circle_outline_rounded,
+                                      backgroundColor:
+                                          authProvider.isGuest
+                                              ? Colors.grey.shade700
+                                              : ColorConstants
+                                                  .secondaryContainerColor,
+                                      foregroundColor:
+                                          authProvider.isGuest
+                                              ? Colors.grey.shade400
+                                              : ColorConstants.lightTextColor,
+                                      isEnabled: !authProvider.isGuest,
+                                      onPressed: () {
+                                        AppLogger.i(
+                                          "Navigating to CollectionPage",
+                                        );
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder:
+                                                (context) => CollectionPage(),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                    const SizedBox(width: 12),
+                                    // Row 2, Col 2: Browse button
+                                    _buildGridButton(
+                                      context: context,
+                                      label: 'Browse',
+                                      icon: Icons.explore_rounded,
+                                      backgroundColor:
+                                          ColorConstants
+                                              .secondaryContainerColor,
+                                      foregroundColor:
+                                          ColorConstants.lightTextColor,
+                                      isEnabled: true,
+                                      onPressed: () {
+                                        AppLogger.i("Navigating to DiscoverPage");
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) => DiscoverPage(),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  ],
+                                ),
+                              ],
                             ),
                             // Show helper text for guest users
                             if (authProvider.isGuest) ...[
                               const SizedBox(height: 8),
                               Text(
-                                'Guest users can only join games, not host them',
+                                'Please sign in to host or create a game',
                                 style: TextStyle(
                                   fontSize: 13,
                                   color: ColorConstants.hintGrey,
@@ -143,39 +271,6 @@ class HomePage extends StatelessWidget {
                                 textAlign: TextAlign.center,
                               ),
                             ],
-                            const SizedBox(height: 20),
-                            ElevatedButton(
-                              onPressed: () {
-                                AppLogger.i("Navigating to JoinGamePage");
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => JoinGamePage(),
-                                  ),
-                                );
-                              },
-                              style: ElevatedButton.styleFrom(
-                                minimumSize: Size(280, 56),
-                                backgroundColor:
-                                    ColorConstants.secondaryContainerColor,
-                                foregroundColor: ColorConstants.lightTextColor,
-                                elevation: 2,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(Icons.group_add_rounded, size: 24),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    'Join Game',
-                                    style: AppTextStyles.homeButton,
-                                  ),
-                                ],
-                              ),
-                            ),
                           ] else ...[
                             // Non-authenticated user - show login button
                             ElevatedButton(

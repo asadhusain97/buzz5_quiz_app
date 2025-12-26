@@ -8,7 +8,6 @@ class AppConfig {
   static late final String firebaseDatabaseUrl;
   static late final String firebaseStorageBucket;
   static late final String recaptchaKey;
-  static late final String googleSheetApiKey;
 
   /// Initializes the application configuration.
   ///
@@ -27,7 +26,6 @@ class AppConfig {
     firebaseStorageBucket = const String.fromEnvironment(
       'FIREBASE_STORAGE_BUCKET',
     );
-    googleSheetApiKey = const String.fromEnvironment('GOOGLE_SHEET_API_KEY');
     recaptchaKey = const String.fromEnvironment('RECAPTCHA_SITE_KEY');
   }
 
@@ -60,14 +58,13 @@ class AppConfig {
 
   // Validation helpers
   static bool get areOtherConfigsValid {
-    return googleSheetApiKey.isNotEmpty && recaptchaKey.isNotEmpty;
+    return recaptchaKey.isNotEmpty;
   }
 
   static List<String> get missingOtherVariables {
     final missing = <String>[];
 
     if (recaptchaKey.isEmpty) missing.add('RECAPTCHA_SITE_KEY');
-    if (googleSheetApiKey.isEmpty) missing.add('GOOGLE_SHEET_API_KEY');
 
     return missing;
   }

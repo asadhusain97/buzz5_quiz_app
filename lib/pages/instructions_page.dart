@@ -1,3 +1,5 @@
+// ignore_for_file: deprecated_member_use
+
 import 'package:buzz5_quiz_app/config/colors.dart';
 import 'package:buzz5_quiz_app/pages/question_board_page.dart';
 import 'package:buzz5_quiz_app/widgets/custom_app_bar.dart';
@@ -9,6 +11,8 @@ import 'package:buzz5_quiz_app/providers/player_provider.dart';
 import 'package:buzz5_quiz_app/models/player.dart';
 import 'package:buzz5_quiz_app/providers/room_provider.dart';
 import 'package:buzz5_quiz_app/models/qrow.dart';
+import 'package:buzz5_quiz_app/services/host_board_service.dart';
+import 'package:buzz5_quiz_app/pages/collection_page.dart';
 import 'package:provider/provider.dart';
 import 'package:buzz5_quiz_app/config/logger.dart';
 
@@ -16,16 +20,14 @@ const String howToPlayMD = """
   YOU are the reader/ Quiz Emcee. You will conduct the quiz and 'read' the questions.
   Once you are ready, click the button to start the game.
   - Select a question board to play from the dropdown above
-  - Add players manually if you have an external buzzer system otherwise click 'Let's Go!'
-  - Ask players to join the room using the game code displayed on the next screen
-  - The Emcee can join the game room as well, using another device, to look at the answers
-  - Each Board has 5 sets of 5 questions; each with increasing difficulty from 10 to 50 points
+  - Add players manually if you have an external buzzer system otherwise use the in-game buzzer system
+  - To join the in-game buzzer system, players need to follow the instructions on the next page
+  - The Emcee can join the game room as well, using another device, and look at the answers
   - Click on the set name to learn about what the set means and see example question (if available)
   - A random player starts the game (Green border indicates the player in control of the board)
   - The player in control chooses a question tile. (All questions are open for everyone for answering)
-  - A player retains control to pick the next question, until another player scores
-  - Wrong answers get negative points
-  - The reader/Quiz Emcee can grant part points to players by clicking on their name during a specific question
+  - Green border indicates the player in control of the board
+  - The Quiz Emcee can grant part points to players by clicking on their name during a specific question
   """;
 
 class InstructionsPage extends StatefulWidget {
@@ -39,7 +41,10 @@ class _InstructionsPageState extends State<InstructionsPage> {
   bool _showBuzzerSection = false;
   bool _showInstructionsSection = false;
 
-  // API loading state
+  // Firebase service for fetching boards
+  final HostBoardService _hostBoardService = HostBoardService();
+
+  // Board loading state
   List<QRow> _allQRows = [];
   List<String> _uniqueRounds = [];
   String? _selectedRound;
@@ -69,8 +74,8 @@ class _InstructionsPageState extends State<InstructionsPage> {
     });
 
     try {
-      AppLogger.i("Starting to fetch QRows from API");
-      _qrowsFuture = QRow.fetchAll();
+      AppLogger.i("Starting to fetch boards from Firebase");
+      _qrowsFuture = _hostBoardService.fetchHostableBoardsAsQRows();
       await _loadData();
     } catch (e) {
       AppLogger.e("Error in _fetchQRows: $e");
@@ -85,7 +90,7 @@ class _InstructionsPageState extends State<InstructionsPage> {
     try {
       _allQRows = await _qrowsFuture;
 
-      AppLogger.i("Loaded ${_allQRows.length} QRows from API");
+      AppLogger.i("Loaded ${_allQRows.length} QRows from Firebase");
 
       final uniqueRoundsResult = QRow.getUniqueRounds(_allQRows);
 
@@ -292,7 +297,48 @@ class _InstructionsPageState extends State<InstructionsPage> {
               }
             },
           ),
+          SizedBox(height: 16),
+
+          // Link to create/manage boards
+          _buildManageBoardsLink(context),
         ],
+      ),
+    );
+  }
+
+  Widget _buildManageBoardsLink(BuildContext context) {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: InkWell(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const CollectionPage(initialTabIndex: 1),
+            ),
+          );
+        },
+        borderRadius: BorderRadius.circular(4),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.add_circle_outline,
+              color: ColorConstants.secondaryContainerColor,
+              size: 16,
+            ),
+            SizedBox(width: 6),
+            Text(
+              "Check your collection",
+              style: TextStyle(
+                fontSize: 13,
+                color: ColorConstants.secondaryContainerColor,
+                decoration: TextDecoration.underline,
+                decorationColor: ColorConstants.secondaryContainerColor,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -996,8 +1042,8 @@ class _InstructionsPageState extends State<InstructionsPage> {
                   }
                 }
 
-                // Set game start time
-                playerProvider.setGameStartTime(DateTime.now());
+                // Game start time will be set in the instructions popup on the next screen
+                // playerProvider.setGameStartTime(DateTime.now());
 
                 // Navigate to question board with preloaded data
                 navigator.push(

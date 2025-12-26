@@ -10,6 +10,9 @@ import 'package:buzz5_quiz_app/widgets/base_page.dart';
 import 'package:flutter/material.dart';
 import 'package:buzz5_quiz_app/config/logger.dart';
 import 'package:buzz5_quiz_app/models/qrow.dart';
+import 'package:buzz5_quiz_app/providers/room_provider.dart';
+import 'package:buzz5_quiz_app/widgets/game_instructions_dialog.dart';
+import 'package:provider/provider.dart';
 
 /// The main question board page where players can select and answer quiz questions.
 ///
@@ -127,6 +130,17 @@ class _QuestionBoardContentState extends State<QuestionBoardContent> {
     // Precache all images in the background after the UI is rendered
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _precacheAllQuestionImages();
+      // Show game instructions popup
+      final roomProvider = Provider.of<RoomProvider>(context, listen: false);
+      showDialog(
+        context: context,
+        barrierDismissible: false, // User must press Start
+        builder:
+            (context) => GameInstructionsDialog(
+              gameCode: roomProvider.currentRoom?.formattedRoomCode,
+              hasManualPlayers: widget.hasManualPlayers,
+            ),
+      );
     });
   }
 
@@ -345,8 +359,6 @@ class _QuestionBoardContentState extends State<QuestionBoardContent> {
       'answer': qrow.answer,
       'ans_media': qrow.ansMedia,
       'set_explanation': qrow.setExplanation,
-      'set_example_question': qrow.setExampleQuestion,
-      'set_example_answer': qrow.setExampleAnswer,
     };
   }
 }

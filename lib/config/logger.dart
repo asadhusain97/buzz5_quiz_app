@@ -19,8 +19,8 @@ class AppLogger {
     _logger.w(message);
   }
 
-  static void e(String message) {
-    _logger.e(message);
+  static void e(String message, {Object? error, StackTrace? stackTrace}) {
+    _logger.e(message, error: error, stackTrace: stackTrace);
   }
 
   static void d(String message) {

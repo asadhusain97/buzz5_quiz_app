@@ -19,6 +19,8 @@ launch.json
 CLAUDE.md
 .github/instructions/
 dev.json
+pubspec.lock
+
 
 # IntelliJ related
 *.iml
