@@ -42,7 +42,34 @@ class EndGameButton extends StatelessWidget {
   /// Handles the end game logic
   Future<void> _handleEndGame(BuildContext context) async {
     // Show celebratory confetti immediately
-    // _showEndGameConfetti(context);
+    // Show celebratory confetti immediately
+    if (context.mounted) {
+      late OverlayEntry overlayEntry;
+      overlayEntry = OverlayEntry(
+        builder:
+            (context) => Positioned.fill(
+              child: Align(
+                alignment: Alignment.topCenter,
+                child: ConfettiBurst(
+                  onComplete: () => overlayEntry.remove(),
+                  duration: const Duration(seconds: 3),
+                  minBlastForce: 10,
+                  maxBlastForce: 30,
+                  numberOfParticles: 30,
+                  gravity: 0.8,
+                  maximumSize: const Size(50, 20),
+                  minimumSize: const Size(20, 10),
+                  containerWidth: MediaQuery.of(context).size.width,
+                  containerHeight: MediaQuery.of(context).size.height,
+                  blastDirectionality: BlastDirectionality.directional,
+                  blastDirection: pi / 2, // Down
+                ),
+              ),
+            ),
+      );
+
+      Overlay.of(context).insert(overlayEntry);
+    }
 
     final playerProvider = Provider.of<PlayerProvider>(context, listen: false);
     final roomProvider = Provider.of<RoomProvider>(context, listen: false);
@@ -135,35 +162,5 @@ class EndGameButton extends StatelessWidget {
       minimumSize: const Size(150, 50),
       backgroundColor: Theme.of(context).colorScheme.primary,
     );
-  }
-
-  void _showEndGameConfetti(BuildContext context) {
-    if (!context.mounted) return;
-
-    late OverlayEntry overlayEntry;
-    overlayEntry = OverlayEntry(
-      builder:
-          (context) => Positioned.fill(
-            child: Align(
-              alignment: Alignment.topCenter,
-              child: ConfettiBurst(
-                onComplete: () => overlayEntry.remove(),
-                duration: const Duration(seconds: 3),
-                minBlastForce: 10,
-                maxBlastForce: 30,
-                numberOfParticles: 30,
-                gravity: 0.8,
-                maximumSize: const Size(50, 20),
-                minimumSize: const Size(20, 10),
-                containerWidth: MediaQuery.of(context).size.width,
-                containerHeight: MediaQuery.of(context).size.height,
-                blastDirectionality: BlastDirectionality.directional,
-                blastDirection: pi / 2, // Down
-              ),
-            ),
-          ),
-    );
-
-    Overlay.of(context).insert(overlayEntry);
   }
 }
