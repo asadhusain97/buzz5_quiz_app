@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:buzz5_quiz_app/config/logger.dart';
@@ -11,7 +12,7 @@ class StorageService {
   final FirebaseStorage _storage;
 
   StorageService({FirebaseStorage? storage})
-      : _storage = storage ?? FirebaseStorage.instance;
+    : _storage = storage ?? FirebaseStorage.instance;
 
   /// Upload a media file to Firebase Storage and return a Media object
   ///
@@ -36,8 +37,14 @@ class StorageService {
       );
 
       // Validate file
-      if (file.path == null) {
-        throw Exception('File path is null');
+      if (kIsWeb) {
+        if (file.bytes == null) {
+          throw Exception('File bytes are null on web');
+        }
+      } else {
+        if (file.path == null) {
+          throw Exception('File path is null');
+        }
       }
 
       if (file.size == 0) {
@@ -74,10 +81,15 @@ class StorageService {
       );
 
       // Upload file
-      final File fileToUpload = File(file.path!);
-      AppLogger.d('Uploading file: ${file.path}');
-
-      final UploadTask uploadTask = storageRef.putFile(fileToUpload, metadata);
+      final UploadTask uploadTask;
+      if (kIsWeb) {
+        AppLogger.d('Uploading file bytes (Web)');
+        uploadTask = storageRef.putData(file.bytes!, metadata);
+      } else {
+        final File fileToUpload = File(file.path!);
+        AppLogger.d('Uploading file: ${file.path}');
+        uploadTask = storageRef.putFile(fileToUpload, metadata);
+      }
 
       // Monitor upload progress
       uploadTask.snapshotEvents.listen((TaskSnapshot snapshot) {
@@ -112,7 +124,11 @@ class StorageService {
       AppLogger.i('Media object created successfully for ${file.name}');
       return media;
     } catch (e, stackTrace) {
-      AppLogger.e('Error uploading media: $e', error: e, stackTrace: stackTrace);
+      AppLogger.e(
+        'Error uploading media: $e',
+        error: e,
+        stackTrace: stackTrace,
+      );
       rethrow;
     }
   }
@@ -128,11 +144,7 @@ class StorageService {
       await storageRef.delete();
       AppLogger.i('Media deleted successfully');
     } catch (e, stackTrace) {
-      AppLogger.e(
-        'Error deleting media: $e',
-        error: e,
-        stackTrace: stackTrace,
-      );
+      AppLogger.e('Error deleting media: $e', error: e, stackTrace: stackTrace);
       rethrow;
     }
   }

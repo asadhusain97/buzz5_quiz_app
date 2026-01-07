@@ -1,0 +1,35 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // Helper function to check if a user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Explicitly permissive rule for the sets directory to debug issues
+    match /sets/{setId}/{allPaths=**} {
+       allow read, write: if isAuthenticated();
+    }
+
+    // Helper function to validate file metadata
+    function isAllowedFile(maxSizeInMB, allowedContentTypes) {
+      return request.resource.size < maxSizeInMB * 1024 * 1024 &&
+             request.resource.contentType.matches(allowedContentTypes);
+    }
+    
+    // User-specific files
+    match /users/{userId}/{allPaths=**} {
+      allow read: if isAuthenticated();
+      allow write: if request.auth.uid == userId &&
+                      isAllowedFile(20, 'image/.*|audio/.*|video/.*|application/vnd.openxmlformats-officedocument.spreadsheetml.sheet|text/csv');
+    }
+
+    // General fallback
+    match /{allPaths=**} {
+      allow read, write: if isAuthenticated() &&
+                           isAllowedFile(20, 'image/.*|audio/.*|video/.*|application/vnd.openxmlformats-officedocument.spreadsheetml.sheet|text/csv');
+    }
+  }
+}
